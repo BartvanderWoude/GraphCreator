@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Trash2Icon } from 'lucide-react'
+import { InfoTip } from '@/components/InfoTip'
 import { ListEditor } from '@/components/ListEditor'
+import { RolePicker } from '@/components/RolePicker'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,13 +14,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { FIELD_TIPS, VAR_TYPE_LABELS } from '@/lib/copy'
 import type { GNode } from '@/model/graph'
 import {
   isLeveledType,
   isNumericType,
-  ROLES,
   VAR_TYPES,
-  type Role,
   type VarType,
 } from '@/model/schema'
 import { useGraphStore } from '@/store/graphStore'
@@ -76,13 +77,16 @@ export function NodeEditor({ node }: { node: GNode }) {
 
   return (
     <section aria-label="Node" className="flex flex-col gap-4">
-      <h2 className="text-base font-semibold">Node</h2>
+      <h2 className="text-xs font-semibold tracking-[0.06em] text-accent-foreground uppercase">
+        Node
+      </h2>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-name`}>Name</Label>
         <Input
           id={`${id}-name`}
           ref={nameRef}
+          className="rounded-md"
           value={name}
           aria-invalid={nameError !== null}
           aria-describedby={nameError ? `${id}-name-error` : undefined}
@@ -102,34 +106,29 @@ export function NodeEditor({ node }: { node: GNode }) {
           <p
             id={`${id}-name-error`}
             role="alert"
-            className="text-sm text-destructive"
+            className="text-[13px] leading-[1.4] text-destructive"
           >
             {nameError}
           </p>
         )}
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${id}-role`}>Role</Label>
-        <Select
+      <div className="flex flex-col gap-2">
+        <FieldLabel htmlFor={`${id}-role`} label="Role" tip={FIELD_TIPS.role} />
+        <RolePicker
+          id={`${id}-role`}
           value={node.role}
-          onValueChange={(role) => updateNode(node.id, { role: role as Role })}
-        >
-          <SelectTrigger id={`${id}-role`} className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLES.map((role) => (
-              <SelectItem key={role} value={role}>
-                {role}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onChange={(role) => updateNode(node.id, { role })}
+        />
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`${id}-type`}>Type</Label>
+      <div className="flex flex-col gap-2">
+        <FieldLabel
+          htmlFor={`${id}-type`}
+          label="Type"
+          tipLabel="Variable type"
+          tip={FIELD_TIPS.varType}
+        />
         <Select
           value={node.varType ?? UNTYPED}
           onValueChange={(value) =>
@@ -138,14 +137,14 @@ export function NodeEditor({ node }: { node: GNode }) {
             })
           }
         >
-          <SelectTrigger id={`${id}-type`} className="w-full">
+          <SelectTrigger id={`${id}-type`} className="w-full rounded-md">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={UNTYPED}>—</SelectItem>
             {VAR_TYPES.map((t) => (
               <SelectItem key={t} value={t}>
-                {t}
+                {VAR_TYPE_LABELS[t]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -156,17 +155,20 @@ export function NodeEditor({ node }: { node: GNode }) {
         <div
           role="group"
           aria-labelledby={`${id}-levels`}
-          className="flex flex-col gap-1.5"
+          className="flex flex-col gap-2"
         >
-          <span
-            id={`${id}-levels`}
-            className="text-sm leading-none font-medium"
-          >
-            Levels
-          </span>
+          <div className="flex items-center gap-1">
+            <span
+              id={`${id}-levels`}
+              className="text-sm leading-none font-medium"
+            >
+              Levels
+            </span>
+            <InfoTip label="Levels" text={FIELD_TIPS.levels} />
+          </div>
           {node.varType === 'ordinal' && (
-            <p className="text-xs text-muted-foreground">
-              Order matters: lowest first
+            <p className="text-[13px] leading-[1.4] text-muted-foreground">
+              Order matters: lowest first.
             </p>
           )}
           <ListEditor
@@ -186,10 +188,11 @@ export function NodeEditor({ node }: { node: GNode }) {
         />
       )}
 
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-description`}>Description</Label>
         <Textarea
           id={`${id}-description`}
+          className="rounded-md"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={commitDescription}
@@ -199,13 +202,37 @@ export function NodeEditor({ node }: { node: GNode }) {
       <Button
         type="button"
         variant="destructive"
-        className="self-start"
+        className="self-start rounded-md"
         onClick={() => removeSelection([node.id], [])}
       >
-        <Trash2Icon data-icon="inline-start" />
+        <Trash2Icon data-icon="inline-start" strokeWidth={1.75} />
         Delete node
       </Button>
     </section>
+  )
+}
+
+/**
+ * A field label followed by its info tip. The tip sits outside the `<label>`, so the field's
+ * accessible name stays the label alone.
+ */
+function FieldLabel({
+  htmlFor,
+  label,
+  tipLabel = label,
+  tip,
+}: {
+  htmlFor: string
+  label: string
+  /** The field name the tip is about, when it differs from the label. */
+  tipLabel?: string
+  tip: string
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      <InfoTip label={tipLabel} text={tip} />
+    </div>
   )
 }
 
@@ -224,10 +251,11 @@ function UnitField({
     if (draft !== (unit ?? '')) onCommit(draft)
   }
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>Unit</Label>
+    <div className="flex flex-col gap-2">
+      <FieldLabel htmlFor={id} label="Unit" tip={FIELD_TIPS.unit} />
       <Input
         id={id}
+        className="rounded-md"
         value={draft}
         placeholder="e.g. g, years"
         onChange={(e) => setDraft(e.target.value)}

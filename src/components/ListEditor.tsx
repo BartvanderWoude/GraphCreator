@@ -2,6 +2,7 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { cn } from 'cn'
 
 interface Row {
   key: number
@@ -19,6 +20,8 @@ export interface ListEditorProps {
   addLabel: string
   /** Placeholder for each item input. */
   placeholder?: string
+  /** Show items in Plex Mono, for text that is an identifier (evidence, spec 5.7.3). */
+  mono?: boolean
 }
 
 /**
@@ -32,6 +35,7 @@ export function ListEditor({
   itemLabel,
   addLabel,
   placeholder,
+  mono = false,
 }: ListEditorProps) {
   const [rows, setRows] = useState<Row[]>(() =>
     items.map((value, key) => ({ key, value })),
@@ -89,13 +93,14 @@ export function ListEditor({
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {rows.length > 0 && (
         <ul className="flex flex-col gap-1.5" aria-label={`${itemLabel} list`}>
           {rows.map((row, i) => (
-            <li key={row.key} className="flex items-center gap-1">
+            <li key={row.key} className="flex items-center gap-0.5">
               <Input
                 ref={setInput(row.key)}
+                className={cn('mr-1 rounded-md', mono && 'font-mono')}
                 aria-label={`${itemLabel} ${i + 1}`}
                 placeholder={placeholder}
                 value={row.value}
@@ -113,30 +118,33 @@ export function ListEditor({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
+                className="rounded-md text-muted-foreground"
                 aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} up`}
                 disabled={i === 0}
                 onClick={() => move(i, -1)}
               >
-                <ArrowUpIcon />
+                <ArrowUpIcon strokeWidth={1.75} />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
+                className="rounded-md text-muted-foreground"
                 aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} down`}
                 disabled={i === rows.length - 1}
                 onClick={() => move(i, 1)}
               >
-                <ArrowDownIcon />
+                <ArrowDownIcon strokeWidth={1.75} />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
+                className="rounded-md text-muted-foreground"
                 aria-label={`Remove ${itemLabel.toLowerCase()} ${i + 1}`}
                 onClick={() => remove(i)}
               >
-                <XIcon />
+                <XIcon strokeWidth={1.75} />
               </Button>
             </li>
           ))}
@@ -146,10 +154,10 @@ export function ListEditor({
         type="button"
         variant="outline"
         size="sm"
-        className="self-start"
+        className="self-start rounded-md"
         onClick={add}
       >
-        <PlusIcon data-icon="inline-start" />
+        <PlusIcon data-icon="inline-start" strokeWidth={1.75} />
         {addLabel}
       </Button>
     </div>

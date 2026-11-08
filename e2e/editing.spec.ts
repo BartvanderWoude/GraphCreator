@@ -37,6 +37,62 @@ async function choose(page: Page, label: string, option: string) {
   await page.getByRole('option', { name: option, exact: true }).click()
 }
 
+/** spec 5.7.8: `ROLE_DESCRIPTIONS`, keyed by the role's label. */
+const ROLE_DESCRIPTIONS = {
+  Exposure: 'The cause whose effect you want to estimate.',
+  Outcome: 'The effect you want to estimate.',
+  Latent: 'A variable you did not or cannot measure.',
+  Adjusted:
+    'A variable you control for in the analysis, by stratifying or adding it to the model.',
+  Selected:
+    'A variable the study population was selected on, such as hospital admission.',
+  Other: 'Any other variable in the model.',
+}
+
+/** spec 5.7.8: `FIELD_TIPS`. */
+const FIELD_TIPS = {
+  role: "Role: the part this variable plays in your causal question. The circle's color shows the role on the canvas.",
+  varType:
+    'Variable type: how the variable is measured. Categorical and ordinal variables have levels; continuous and discrete variables can have a unit.',
+  levels:
+    'Levels: the values a categorical or ordinal variable can take. For ordinal variables, list them from lowest to highest.',
+  unit: 'Unit: the unit a continuous or discrete variable is measured in, such as g or years.',
+  evidence:
+    'Evidence: references that support this arrow, such as PMID:123 or doi:10.1000/xyz. One reference per line.',
+  note: 'Note: why you drew this arrow, or what is uncertain about it.',
+}
+
+/**
+ * Focuses or hovers the side panel's "About <field>" info button, checks that its tooltip shows
+ * `text`, then closes it again. Match the open tooltip by name: a closing one lingers while it
+ * fades out.
+ */
+async function expectTip(
+  page: Page,
+  field: string,
+  text: string,
+  how: 'focus' | 'hover',
+) {
+  const button = panel(page).getByRole('button', {
+    name: `About ${field}`,
+    exact: true,
+  })
+  await (how === 'focus' ? button.focus() : button.hover())
+  await expect(
+    page.getByRole('tooltip', { name: text, exact: true }),
+  ).toBeVisible()
+  await expect(button).toHaveAccessibleDescription(text)
+  // Blurring or moving the pointer away closes it, so it covers no field afterwards. The pointer
+  // moves down in steps, away from the tooltip above, so it leaves Radix's hover grace area.
+  if (how === 'focus') {
+    await button.blur()
+  } else {
+    const { x, y } = await centre(button)
+    await page.mouse.move(x, y + 120, { steps: 10 })
+  }
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+}
+
 const stored = (page: Page) =>
   page.evaluate(() => localStorage.getItem('graphcreator:current'))
 
@@ -75,14 +131,69 @@ test('rename commits on Enter and refuses a duplicate name', async ({
 
 test('role changes the node badge', async ({ page }) => {
   await addNodeAt(page, 200, 200)
-  await choose(page, 'Role', 'exposure')
+  await choose(page, 'Role', 'Exposure')
   await expect(node(page, 'Node 1').getByLabel('Role: exposure')).toHaveText(
     'E',
   )
-  await choose(page, 'Role', 'latent')
+  await choose(page, 'Role', 'Latent')
   await expect(node(page, 'Node 1').getByLabel('Role: latent')).toHaveText('L')
-  await choose(page, 'Role', 'other')
+  await expect(panel(page).getByRole('combobox', { name: 'Role' })).toHaveText(
+    'Latent',
+  )
+  await choose(page, 'Role', 'Other')
   await expect(node(page, 'Node 1').getByLabel(/Role:/)).toHaveCount(0)
+})
+
+test('role and type options show labels; role options carry their description', async ({
+  page,
+}) => {
+  await addNodeAt(page, 200, 200)
+  await panel(page).getByRole('combobox', { name: 'Role' }).click()
+  for (const [label, description] of Object.entries(ROLE_DESCRIPTIONS)) {
+    const option = page.getByRole('option', { name: label, exact: true })
+    await expect(option).toBeVisible()
+    await expect(option).toHaveAccessibleDescription(description)
+  }
+  await page.keyboard.press('Escape')
+
+  await panel(page).getByRole('combobox', { name: 'Type' }).click()
+  await expect(page.getByRole('option')).toHaveText([
+    '—',
+    'Categorical',
+    'Ordinal',
+    'Continuous',
+    'Discrete',
+  ])
+  await page.keyboard.press('Escape')
+})
+
+test('the side panel shows the cheat sheet when nothing is selected', async ({
+  page,
+}) => {
+  await expect(panel(page).getByRole('heading')).toHaveText('Nothing selected.')
+  for (const [action, how] of [
+    ['Add a node', 'Double-click the canvas or press N'],
+    ['Connect', 'Drag from the rim of a circle, or press C'],
+    ['Delete', 'Select, then press Delete'],
+    ['Select several', 'Shift-click'],
+  ]) {
+    await expect(
+      panel(page).getByRole('term').filter({ hasText: action }),
+    ).toBeVisible()
+    await expect(panel(page)).toContainText(action + how)
+  }
+})
+
+test('info tooltips open on keyboard focus and on hover', async ({ page }) => {
+  await addNodeAt(page, 200, 200)
+  await expectTip(page, 'role', FIELD_TIPS.role, 'focus')
+  await expectTip(page, 'variable type', FIELD_TIPS.varType, 'focus')
+
+  await choose(page, 'Type', 'Ordinal')
+  await expectTip(page, 'levels', FIELD_TIPS.levels, 'focus')
+
+  await choose(page, 'Type', 'Continuous')
+  await expectTip(page, 'unit', FIELD_TIPS.unit, 'hover')
 })
 
 test('variable type shows levels or unit, and levels can be edited', async ({
@@ -92,9 +203,9 @@ test('variable type shows levels or unit, and levels can be edited', async ({
   const levels = panel(page).getByRole('group', { name: 'Levels' })
   const unit = panel(page).getByRole('textbox', { name: 'Unit' })
 
-  await choose(page, 'Type', 'ordinal')
+  await choose(page, 'Type', 'Ordinal')
   await expect(levels).toBeVisible()
-  await expect(panel(page)).toContainText('Order matters: lowest first')
+  await expect(panel(page)).toContainText('Order matters: lowest first.')
   await expect(unit).toHaveCount(0)
 
   await levels.getByRole('button', { name: 'Add level' }).click()
@@ -117,7 +228,7 @@ test('variable type shows levels or unit, and levels can be edited', async ({
   await expect(level2).toHaveValue('high')
   await expect.poll(() => stored(page)).toContain('levels: [low, high]')
 
-  await choose(page, 'Type', 'continuous')
+  await choose(page, 'Type', 'Continuous')
   await expect(levels).toHaveCount(0)
   await expect(unit).toBeVisible()
   await unit.fill('g')
@@ -147,7 +258,7 @@ test('warning badge count drops when a node gets a type', async ({ page }) => {
     node(page, 'Node 2').getByTitle('No variable type'),
   ).toBeVisible()
 
-  await choose(page, 'Type', 'continuous')
+  await choose(page, 'Type', 'Continuous')
   await expect(badge).toHaveText('⚠ 1')
   await expect(node(page, 'Node 2').getByTitle('No variable type')).toHaveCount(
     0,
@@ -185,6 +296,9 @@ test('edge evidence and note can be added', async ({ page }) => {
   await expect(
     panel(page).getByRole('heading', { name: 'Node 1 → Node 2' }),
   ).toBeVisible()
+
+  await expectTip(page, 'evidence', FIELD_TIPS.evidence, 'focus')
+  await expectTip(page, 'note', FIELD_TIPS.note, 'focus')
 
   const evidence = panel(page).getByRole('group', { name: 'Evidence' })
   await evidence.getByRole('button', { name: 'Add evidence' }).click()
