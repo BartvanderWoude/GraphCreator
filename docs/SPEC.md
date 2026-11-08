@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -415,7 +415,7 @@ The set-aside graph is held in module scope next to the store (not in the store'
  rail 56 px                   canvas (teal tint)                    side panel 320 px
 ```
 
-- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save; a `dagitty` menu with Import… and Export…; on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node) and **Lessons** (opens the welcome slides, 5.7.9). File buttons are ghost buttons with icon and word.
+- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save; a `dagitty` menu with Import… and Export…; on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node) **Lessons** (opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word.
 - **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−). The active tool is solid teal.
 - **Lesson panel:** only while a lesson runs (5.7.10); 300 px, between the rail and the canvas.
 - **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
@@ -482,7 +482,7 @@ Agreed with the user on 2026-11-08 through rounds of visual options. The full se
 
 #### 5.7.2 Colour tokens
 
-All colours are CSS variables in `src/index.css`. Light values sit in `:root`, dark values in `.dark` (set by `next-themes` from the system setting). Components use only these variables, never raw hex. Contrast ratios are checked by `src/lib/theme.test.ts` (phase 10): text pairs ≥ 4.5:1; circle outlines, edges and the selection border ≥ 3:1 against `--canvas`.
+All colours are CSS variables in `src/index.css`. Light values sit in `:root`, dark values in `.dark` (set by `next-themes` when the user switches to dark with the top bar's Dark mode toggle). The app starts light, whatever the system setting; the choice is kept in `localStorage` under `graphcreator:theme`. Components use only these variables, never raw hex. Contrast ratios are checked by `src/lib/theme.test.ts` (phase 10): text pairs ≥ 4.5:1; circle outlines, edges and the selection border ≥ 3:1 against `--canvas`.
 
 **Core (shadcn variables, replacing the neutral preset):**
 
@@ -766,8 +766,9 @@ export function findLesson(id: string): Lesson | undefined
 | Spec placement | Rewrite 5.1–5.3 in place, new 5.7, v1 look kept in 5.6 | A separate section 11 overriding section 5 | User's choice. |
 | Rollout | New parts built unmounted in wave 7, switched on in phase 16; CI green on every commit | Edit live parts and accept red e2e until the end | User's choice. |
 | Circle size | Pure estimate in `src/model/nodeSize.ts` | Measuring text in the browser | User's choice: deterministic and usable by `autoLayout` without the DOM. |
-| Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle (open issue). |
-| Dark theme mechanism | `next-themes` (`attribute="class"`, `defaultTheme="system"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
+| Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle at first; added in phase 17 (see "Theme toggle"). |
+| Dark theme mechanism | `next-themes` (`attribute="class"`; `defaultTheme="system"` until phase 17, then `"light"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
+| Theme toggle (2026-11-08, phase 17) | Two-state Dark mode button at the right end of the top bar; light by default even when the system is dark; stored in `graphcreator:theme` | Follow the system only; three-way light/dark/system switch | User's choice. Closes the former open issue. |
 | Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. Phase 10: every 5.7.2 value passed unchanged. The test loads `node:fs` with a dynamic `import()` and types `readFileSync` by hand, because `tsconfig.app.json` has no Node types and Vite's `?raw` returns an empty string for CSS in Vitest. |
 | Welcome closing | Escape, Skip, "Get started", "Take the tour" and a click on the dimmed overlay all close the slides and set the welcomed flag; no close (X) button; dots on all four slides | An X button; overlay clicks ignored | Phase 14 judgement call; the spec lists no X button. |
 | Lesson panel details | Header text "LESSON · STEP n OF m" written literally; no callout on a step without a task; Back disabled on step 1; the callout is `role="status"`; the lesson's own title is not shown | Lesson title in the header | Phase 15 judgement calls within 5.7.10. |
@@ -813,6 +814,7 @@ General rules for every phase:
 | 14 | Welcome slides | 10 | 7 | `src/components/WelcomeDialog.tsx`, `src/lib/welcome.ts`, `welcome.test.ts` |
 | 15 | Lesson panel | 10 | 7 | `src/components/LessonPanel.tsx` |
 | 16 | Redesign integration and end-to-end tests | 11, 12, 13, 14, 15 | 8 | `src/App.tsx`, `src/main.tsx`, `src/components/Canvas.tsx`, deletes `DagNode.tsx` and `Toolbar.tsx`, `src/model/layout.ts` (+ test), `src/index.css`, `src/store/autosave.ts` (+ test), `e2e/*`, this spec's Status line and Open issues |
+| 17 | Light/dark toggle | 16 | 9 | `src/main.tsx`, `src/components/TopBar.tsx`, `e2e/smoke.spec.ts` |
 
 Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
 
@@ -827,7 +829,7 @@ Wave 4 is the wide one: its five phases share no files, and each codes against t
 **Redesign contracts (fixed here, used by phases 10–16).** Waves 6–8 rebuild the look in the same way as waves 3–5. Phase 10 fixes the tokens, stores, texts and lesson types. Wave 7 builds the new parts in parallel, and all but phase 13 build them as new files the app does not mount yet, so the existing e2e tests keep passing on every commit. Phase 16 switches everything on and updates the e2e tests.
 
 - New components are named exports with no props that read and write the stores: `TopBar()`, `ToolRail()`, `SavedIndicator()`, `WelcomeDialog()`, `LessonPanel()`, plus the hook `useToolShortcuts(): void`. `CircleNode` and `FloatingEdge` are React Flow node and edge components; `src/components/canvas/types.ts` exports `nodeTypes = { circle: CircleNode }`, `edgeTypes = { floating: FloatingEdge }`, `CircleConnectionLine`, and the data types `CircleNodeData = { name: string; role: Role; untyped: boolean; connectSource: boolean }` and `FloatingEdgeData = { evidenceCount: number }`.
-- `App` (phase 16) renders, inside `<ReactFlowProvider>`: `<TopBar />` on top; below it, side by side, `<ToolRail />`, `<LessonPanel />` (renders nothing without a lesson), `<main aria-label="Canvas"><Canvas /><SavedIndicator /></main>` and `<SidePanel />`; plus `<WelcomeDialog />` and `<Toaster />`. `App` calls `useToolShortcuts()`. `main.tsx` wraps `App` in `next-themes`' `ThemeProvider` (`attribute="class"`, `defaultTheme="system"`, `enableSystem`).
+- `App` (phase 16) renders, inside `<ReactFlowProvider>`: `<TopBar />` on top; below it, side by side, `<ToolRail />`, `<LessonPanel />` (renders nothing without a lesson), `<main aria-label="Canvas"><Canvas /><SavedIndicator /></main>` and `<SidePanel />`; plus `<WelcomeDialog />` and `<Toaster />`. `App` calls `useToolShortcuts()`. `main.tsx` wraps `App` in `next-themes`' `ThemeProvider` (`attribute="class"`, `defaultTheme="light"`, `enableSystem={false}`, `storageKey="graphcreator:theme"`, `disableTransitionOnChange`; phase 17).
 - Fitting the view after Open, Import, Auto-layout and the L and F shortcuts is done by the top bar and the rail with `fitView({ duration: 300 })` in `requestAnimationFrame`.
 - **As built in wave 7 (binding for phase 16):**
   - `useToolShortcuts()` uses no React Flow hooks, because `App`'s own body sits outside `<ReactFlowProvider>`. `useToolShortcuts.ts` also exports `useCanvasActions()` (fit view, zoom in and out, auto-layout, add a node at the view centre), which must be called inside the provider. `TopBar` and `ToolRail` call it and register their actions in module scope; the L, F, + and − shortcuts run the registered actions, so they work once `TopBar` or `ToolRail` is mounted. V, N, C and Escape work regardless.
@@ -1118,6 +1120,23 @@ Phases: 16. Parallel: single phase. Integration check after the wave: all checks
 - **Done when:** all checks pass and CI is green; the manual run-through works in light and dark; `DagNode.tsx`, `Toolbar.tsx`, `NODE_WIDTH` and `NODE_HEIGHT` no longer exist; the Status line says the redesign is implemented.
 - **Out of scope:** the six real lessons and the other lesson features in IDEAS.md, a theme toggle, rewording the raw-exception messages (Open issues).
 
+### Wave 9: Theme toggle [ ]
+
+Phases: 17. Parallel: single phase. Check after the wave: all checks, and a manual run in the browser with the system set to dark (the app starts light, the toggle switches and the choice survives a reload).
+
+#### Phase 17: Light/dark toggle [ ]
+
+- **Goal:** the user switches between the light and dark theme from the top bar; light is the default.
+- **Depends on:** phase 16.
+- **Owns files:** `src/main.tsx`, `src/components/TopBar.tsx`, `e2e/smoke.spec.ts`, this spec.
+- **Work:**
+  - **`main.tsx`:** the `ThemeProvider` props in the component contracts (`defaultTheme="light"`, `enableSystem={false}`, `storageKey="graphcreator:theme"`, `disableTransitionOnChange`).
+  - **`TopBar.tsx`:** a `ThemeToggle` after Lessons as described in 5.1: ghost icon button, `useTheme()`, `setTheme(isDark ? 'light' : 'dark')`.
+  - **`smoke.spec.ts`:** replace the "follows the system setting" test (section 9).
+- **Tests:** `e2e/smoke.spec.ts` (section 9).
+- **Done when:** all checks pass; with the system set to dark the app starts light; the toggle switches the canvas, panels, dialogs and toasts; the choice survives a reload.
+- **Out of scope:** a "follow the system" option.
+
 ## 9. Tests
 
 - `src/model/graph.test.ts`: `newId` and `defaultNodeName` pick the smallest unused value; `addNode` returns a new graph and leaves the input unchanged; `renameNode` trims, refuses empty and duplicate names (case-sensitive: `Age` vs `age` allowed) and keeps edges; `updateNode` clears `levels`/`unit` when the type changes; `removeNodes` removes incident edges; `canAddEdge` returns `self`, `duplicate` and `cycle` with the exact messages, including the cycle path text; `addEdge` creates an edge with `evidence: []`.
@@ -1151,11 +1170,11 @@ Redesign (phases 10–16):
 - `e2e/welcome.spec.ts` (phase 16): a first visit shows slide 1; "Get started" closes the slides and they stay closed after a reload; Lessons reopens them at slide 1; "Take the tour" opens the lesson panel.
 - `e2e/lesson.spec.ts` (phase 16): the tour's Next button enables only after each action; Finish restores the user's earlier graph; the practice graph is never written to `graphcreator:current`; New and Open are disabled during the lesson.
 - `e2e/smoke.spec.ts` (phase 16 update): the top bar and the "Canvas tools" rail render; with `colorScheme: 'dark'` emulated, `<html>` has the class `dark` and there are no console errors.
+- `e2e/smoke.spec.ts` (phase 17 update, replaces the dark test above): with `colorScheme: 'dark'` emulated the app starts light; the Dark mode button (`aria-pressed`) adds `dark` to `<html>` and React Flow and gives the canvas the dark `--canvas` colour; the choice survives a reload; clicking again returns to light; no console errors.
 
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
-- **Theme toggle:** the dark theme follows the system setting only (5.7.2). A manual light/dark/system switch can come later.
 - **Raw exception text in messages:** `Could not save the graph: …`, `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
 - **Lessons:** only the tour exists (5.7.10). The real lessons and lesson features are listed under "Lessons" in [IDEAS.md](IDEAS.md).
 - **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.

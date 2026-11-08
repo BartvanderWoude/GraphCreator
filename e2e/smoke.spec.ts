@@ -74,25 +74,43 @@ test('app loads with top bar, tool rail, canvas and side panel and no console er
   expect(errors).toEqual([])
 })
 
-test.describe('dark theme', () => {
+test.describe('theme', () => {
+  // The system asks for dark; the app still starts light (spec 5.7.2).
   test.use({ colorScheme: 'dark' })
 
-  test('follows the system setting with no console errors', async ({
+  test('starts light and the toggle switches to dark and back', async ({
     page,
   }) => {
     const errors = collectErrors(page)
     await page.goto('/')
-    await expect(page.locator('html')).toHaveClass(/\bdark\b/)
-    await expect(page.locator('.react-flow')).toHaveClass(/\bdark\b/)
+    const html = page.locator('html')
+    const flow = page.locator('.react-flow')
+    const toggle = page
+      .getByRole('toolbar', { name: 'Toolbar' })
+      .getByRole('button', { name: 'Dark mode' })
+    await expect(html).not.toHaveClass(/\bdark\b/)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+
+    await toggle.click()
+    await expect(html).toHaveClass(/\bdark\b/)
+    await expect(flow).toHaveClass(/\bdark\b/)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
     // The canvas uses the dark --canvas token (#111A18).
-    await expect(page.locator('.react-flow')).toHaveCSS(
-      'background-color',
-      'rgb(17, 26, 24)',
-    )
+    await expect(flow).toHaveCSS('background-color', 'rgb(17, 26, 24)')
     await page
       .locator('.react-flow__pane')
       .dblclick({ position: { x: 200, y: 200 } })
     await expect(page.locator('.react-flow__node')).toHaveCount(1)
+
+    // The choice survives a reload.
+    await page.reload()
+    await expect(html).toHaveClass(/\bdark\b/)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+
+    await toggle.click()
+    await expect(html).not.toHaveClass(/\bdark\b/)
+    await expect(flow).not.toHaveClass(/\bdark\b/)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
     expect(errors).toEqual([])
   })
 })

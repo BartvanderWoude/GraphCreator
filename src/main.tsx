@@ -14,7 +14,13 @@ if (!hasBeenWelcomed(safeLocalStorage())) useUiStore.getState().openWelcome()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="light"
+      enableSystem={false}
+      storageKey="graphcreator:theme"
+      disableTransitionOnChange
+    >
       <App />
     </ThemeProvider>
   </StrictMode>,

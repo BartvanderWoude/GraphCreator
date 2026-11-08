@@ -5,8 +5,11 @@ import {
   Download,
   FilePlus,
   FolderOpen,
+  Moon,
+  Sun,
   TriangleAlert,
 } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { DagittyExportDialog } from '@/components/DagittyExportDialog'
 import { DagittyImportDialog } from '@/components/DagittyImportDialog'
@@ -118,8 +121,36 @@ function LessonLock({
 }
 
 /**
+ * Switches between the light and dark theme (spec 5.1, 5.7.2). Light is the default; next-themes
+ * keeps the choice in localStorage. The name stays "Dark mode" and `aria-pressed` gives the state.
+ */
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-md"
+          aria-label="Dark mode"
+          aria-pressed={isDark}
+          onClick={() => setTheme(isDark ? 'light' : 'dark')}
+        >
+          {isDark ? <Sun {...ICON} /> : <Moon {...ICON} />}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6}>
+        Dark mode
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+/**
  * The top bar (spec 5.1, 5.4): logo, graph name, New, Open…, Save, the dagitty menu, the
- * warnings badge and Lessons, plus their dialogs and toasts. New, Open… and Import… are
+ * warnings badge, Lessons and the Dark mode toggle, plus their dialogs and toasts. New, Open… and Import… are
  * disabled during a lesson. Must be rendered inside App's `<ReactFlowProvider>`.
  */
 export function TopBar() {
@@ -341,6 +372,7 @@ export function TopBar() {
             <BookOpen {...ICON} />
             Lessons
           </Button>
+          <ThemeToggle />
         </div>
 
         <IssuesDialog
