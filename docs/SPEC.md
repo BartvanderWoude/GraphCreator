@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; phase 1 of 6 done. This document is the brief for the implementation sessions: one phase per session and per commit. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; phases 1–2 of 6 done. This document is the brief for the implementation sessions: one phase per session and per commit. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -103,7 +103,7 @@ export type Result<T> =
   | { ok: false; errors: Issue[] }
 ```
 
-Every parser and every operation that can fail returns a `Result`. Messages are complete sentences shown to the user verbatim (e.g. `Node name "Age" is used twice.`).
+Every parser and every operation that can fail returns a `Result`. Messages are complete sentences shown to the user verbatim (e.g. `Node name "Age" is used more than once.`).
 
 ## 4. Formats and interfaces
 
@@ -267,7 +267,9 @@ export function findPath(graph: Graph, from: string, to: string): string[] | nul
 ```
 
 - `renameNode` trims; errors `A node needs a name.` and `There is already a node called "Age".` Renaming to the same name is ok. Edges reference ids, so they follow automatically.
-- `updateNode` with a new `varType` clears fields not allowed for it: switching to continuous/discrete or to untyped drops `levels`; switching to categorical/ordinal or to untyped drops `unit`.
+- `updateNode` clears fields not allowed for the node's resulting type: continuous/discrete or untyped drops `levels`; categorical/ordinal or untyped drops `unit`. Pass `varType: undefined` to make a node untyped. Empty or whitespace-only `description` and `unit` become `undefined`; `updateEdge` does the same for `note`.
+- `addNode` trims a given name; a missing or blank name gets `defaultNodeName`. It does not check uniqueness (callers pass fresh names).
+- `canAddEdge` throws an `Error` on unknown node ids (a programming error, not a user error).
 - `canAddEdge(s, t)` messages: self `A node cannot point to itself.`; duplicate `This edge already exists.`; cycle when `findPath(t, s)` exists: `A → B → C → A would form a cycle.` (names of s, then the path from t back to s, then s again).
 
 ### 4.4 Validation (`src/model/validate.ts`)
@@ -276,11 +278,19 @@ export function findPath(graph: Graph, from: string, to: string): string[] | nul
 export function validateGraph(graph: Graph): { errors: Issue[]; warnings: Issue[] }
 ```
 
-- Errors: everything listed in `parseYaml` step 4, applied to an in-memory graph (used by tests and by autosave loading).
+- Errors: everything listed in `parseYaml` step 4, applied to an in-memory graph (used by tests and by autosave loading). All are collected, in this order:
+  - `A node has no name.` (per empty name)
+  - `Node name "Age" is used more than once.` (once per duplicated name)
+  - `Node "SES" has levels, but only categorical and ordinal variables can have levels.`
+  - `Node "SES" has a unit, but only continuous and discrete variables can have a unit.`
+  - `Node "A" points to itself.` (per self-edge)
+  - `The edge from "A" to "B" appears more than once.` (per repeat)
+  - `An edge refers to a node that does not exist.` (once, for any dangling in-memory edge; `parseYaml` reports missing names more specifically)
+  - `The graph has a cycle: A → B → C → A.` (one cycle, ignoring self-edges)
 - Warnings (non-blocking, shown in the UI):
   - `Node "SES" has no variable type.` (one per untyped node)
-  - `Node "SES" is categorical but has fewer than two levels.` (categorical/ordinal with 0–1 levels)
-  - `Node "SES" has duplicate levels ("low").`
+  - `Node "SES" is categorical but has fewer than two levels.` (categorical/ordinal with 0–1 levels; says `ordinal` for ordinal nodes)
+  - `Node "SES" has duplicate levels ("low").` (all duplicated levels, comma-separated)
 
 ### 4.5 Layout (`src/model/layout.ts`)
 
@@ -390,13 +400,14 @@ The store persists the current graph to `localStorage` key `graphcreator:current
 | Document location | `docs/SPEC.md`, `docs/IDEAS.md`, research moved to `docs/research.md` | Root files; delete research | User's choice. |
 | Product stance | GraphCreator is its own tool; dagitty is an exchange format | DAGitty clone | User's direction. |
 | shadcn base and preset (phase 1) | Radix base, `radix-nova` preset | Base UI or React Aria base; other presets | Radix is the base most shadcn docs and examples use; Nova is the CLI's default preset. Settled during phase 1, not in the interview. |
+| Validation error messages (phase 2) | Exact texts listed in 4.4 | — | The spec named only some messages; the rest were fixed during phase 2 so later phases and tests can rely on them. |
 | Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
 
 ## 8. Implementation phases
 
 One phase per session and per commit. Each phase leaves the full test suite passing. Status: `[ ]` to do, `[x]` done (with the commit hash).
 
-### Phase 1: Tooling, CI and app shell [x] (commit hash to add after committing; CI on the pushed commit still to confirm)
+### Phase 1: Tooling, CI and app shell [x] (e46eb88)
 
 - **Goal:** all dependencies, scripts, tests and CI are in place, and the Vite demo is replaced by an empty GraphCreator shell (toolbar, canvas area, side panel placeholders).
 - **Depends on:** none.
@@ -417,7 +428,7 @@ One phase per session and per commit. Each phase leaves the full test suite pass
 - **Done when:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e` and `npm run build` pass locally; CI is green on the pushed commit; the app shows the empty shell.
 - **Out of scope:** any model logic, canvas behaviour, deployment.
 
-### Phase 2: Model core [ ]
+### Phase 2: Model core [x] (hash added with the next phase's commit)
 
 - **Goal:** the in-memory graph, its operations, cycle detection and validation exist as pure, tested TypeScript.
 - **Depends on:** phase 1.
