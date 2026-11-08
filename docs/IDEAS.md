@@ -25,10 +25,8 @@ Features deliberately left out of v1. Nothing here is designed yet. When one is 
 
 ## Editor
 
-- Undo / redo (snapshot history; snapshot on drag stop).
 - Keyboard-accessible list view of nodes and edges, for screen readers and bulk metadata editing.
 - A local library of several named graphs in the browser.
-- Share links: the graph compressed into the URL `#fragment` (never sent to a server).
 - Optional LLM-suggested edges: opt-in, labelled by provenance, citations verified.
 
 ## Lessons
@@ -44,7 +42,7 @@ The lesson engine and the tour ("Drawing your first DAG") are specified in SPEC.
 
 ## Import and export
 
-- Image export: SVG, PNG, TikZ.
+- More image export: PDF, a legend of the role colours, a dark-theme image (SVG, PNG and TikZ are in SPEC.md wave 12).
 - Optional toggle to embed GraphCreator metadata (types, levels, description, unit, evidence) as dagitty attributes.
 - More formats: GML, DOT, networkx node-link JSON, bnlearn modelstring, Tetrad text, Mermaid.
 - A versioned JSON Schema for the YAML format.

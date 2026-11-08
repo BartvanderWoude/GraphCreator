@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08) are specified in 4.10–4.12 and not yet built. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -30,7 +30,7 @@ src/
     result.ts            Result / Issue types
     __fixtures__/        .dag.yaml and .dagitty.txt fixture files for tests
   store/
-    graphStore.ts        Zustand store wrapping the model operations (4.6)
+    graphStore.ts        Zustand store wrapping the model operations (4.6), with undo history (4.10, phase 21)
     uiStore.ts           canvas tool, connect source, welcome dialog, autosave status (4.7, phase 10)
     lessonStore.ts       active lesson and the set-aside user graph (4.8, phase 10)
     autosave.ts          localStorage autosave (5.5)
@@ -43,9 +43,13 @@ src/
     WelcomeDialog.tsx                                                     (phase 14)
     LessonPanel.tsx                                                       (phase 15)
     canvas/CircleNode.tsx, canvas/FloatingEdge.tsx, canvas/canvas.css     (phase 11)
+    ExportDialog.tsx                                                      (phase 22)
+    SharedGraphDialog.tsx                                                 (phase 23)
     (Toolbar.tsx, DagNode.tsx: v1 parts, deleted in phase 16)
     ui/                  shadcn/ui generated components
-  lib/download.ts        downloadText helper for Save and dagitty export
+  lib/download.ts        downloadText / downloadBlob helpers for Save and Export
+  lib/imageExport.ts     SVG, PNG and TikZ from the graph (4.11, phase 22)
+  lib/shareLink.ts       share links: the graph compressed into the URL fragment (4.12, phase 23)
   lib/copy.ts            tooltip and role texts (5.7.8, phase 10)
   lib/geometry.ts        edge end points between circles (phase 11)
   lib/welcome.ts         first-visit flag for the welcome slides (phase 14)
@@ -415,13 +419,70 @@ useThemeStore: { theme: Theme; setTheme(theme: Theme): void }   // initial theme
 
 `index.html` has a small inline script that adds the `dark` class and `color-scheme: dark` when `localStorage['graphcreator:theme']` is `'dark'`, so a dark choice shows before the app's JavaScript runs. Values written by `next-themes` (`'light'`/`'dark'` under the same key) keep working.
 
+### 4.10 Undo history (`src/store/graphStore.ts`, phase 21)
+
+Additions to `GraphState` (4.6):
+
+```ts
+past: Graph[]                 // older graphs, most recent last; at most HISTORY_LIMIT
+future: Graph[]               // graphs undone, most recent last; at most HISTORY_LIMIT
+revision: number              // starts at 0; +1 on every undo and redo
+moveNodes(moves: { id: string; pos: Position }[]): void   // one history step for any number of moves
+undo(): void                  // no-op when past is empty
+redo(): void                  // no-op when future is empty
+export const HISTORY_LIMIT = 100
+```
+
+- **Recording:** every action that changes `graph` (`addNodeAt`, a successful `renameNode`, `updateNode`, `moveNode`, `moveNodes`, a valid `connect`, `updateEdge`, `removeSelection`, `setGraphName`, `layout`) pushes the previous graph onto `past` and clears `future`. When `past` would exceed `HISTORY_LIMIT` the oldest entry is dropped. An action that leaves the graph as it was pushes nothing and does not replace `graph`: a failed rename or connect, `updateNode`/`updateEdge` whose patch equals the current values (arrays compared item by item), `moveNode(s)` to the same positions, `removeSelection` of nothing, `setGraphName` with the current name. Snapshots are the immutable graph objects themselves; nothing is copied.
+- **`replaceGraph`** clears `past` and `future` (and leaves `revision` alone). New, Open, the autosave restore, lesson start and exit, and opening a share link all go through it, so none of them can be undone and the history never crosses into or out of a lesson's practice graph.
+- **`undo`** moves the current graph onto `future` and the last of `past` into `graph`; **`redo`** does the reverse. Both keep `selection` only when the selected node or edge exists in the new graph (otherwise `null`), set `focusNameOf` to `null` and increment `revision`.
+- **Side panel:** `SidePanel` keys `NodeEditor` and `EdgeEditor` with `` `${id}:${revision}` `` so that their local field state (read on mount, 5.3) shows the restored values after an undo or redo.
+- **Canvas drag stop** commits all dragged nodes with one `moveNodes` call, so a multi-node drag is one undo step. `moveNode` stays for single moves.
+- History is editor state: it is not autosaved, not part of the file, and a reload starts with an empty history.
+
+### 4.11 Image export (`src/lib/imageExport.ts`, phase 22)
+
+```ts
+export type ImageFormat = 'svg' | 'png' | 'tikz'
+export const EXPORT_PALETTE: { background: string; edge: string; roles: Record<Role, { fill: string; line: string; text: string }> }
+export const EXPORT_MARGIN = 24
+export function toSvg(graph: Graph, opts?: { fontDataUrl?: string }): string
+export function svgSize(graph: Graph): { width: number; height: number }   // bounds + 2 × margin, rounded up; 2 × margin square for an empty graph
+export function svgToPng(svg: string, scale: 1 | 2 | 3): Promise<Blob>    // the only function that uses the DOM
+export function toTikz(graph: Graph): string
+export function imageFileName(graphName: string | undefined, format: ImageFormat): string   // `${fileSlug(name)}.svg|.png|.tex`
+```
+
+The picture is built from the graph data with the canvas geometry, not by capturing the DOM, so no dependency is needed and the result does not depend on zoom, selection or theme.
+
+- **Palette:** always the light theme. `EXPORT_PALETTE` holds the `:root` values of `--role-<role>-fill|line|text` and `--edge` from `src/index.css` as hex literals; `background` is `#ffffff`. A unit test checks the literals against `index.css` with the same parsing as `theme.test.ts`.
+- **Geometry:** a node with diameter `d = nodeDiameter(name)` is a circle centred on `pos + d/2`. Its 2 px outline is drawn inside the circle (radius `d/2 − 1`) so the outer size matches the canvas. The name is `wrapLabel(name).lines`, centred, 13 px, weight 500, 16 px line pitch, in the role's text colour. An edge runs from `edgeEndpoints(source, target, 2)` with a 1.5 px stroke in the edge colour and a closed 9 × 9 arrowhead whose tip is the end point (as `FloatingEdge`). Edges are drawn before nodes. Nothing else: no selection, untyped dot, evidence chip or shadow. The drawing's top-left is the nodes' bounding box minus `EXPORT_MARGIN`.
+- **SVG:** a standalone document with `xmlns`, `width`, `height` and `viewBox` from `svgSize`, a `<title>` with the graph name (or `Graph`), a white background `<rect>`, then the edges and nodes. Text uses `font-family: 'IBM Plex Sans', system-ui, sans-serif`. With `fontDataUrl`, a `<style>` adds an `@font-face` for IBM Plex Sans 500 from that data URL. `ExportDialog` passes the `?inline` import of `@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-500-normal.woff2`, so downloaded SVGs and PNGs look like the canvas on machines without the font. Names are XML-escaped.
+- **PNG:** `svgToPng` loads the SVG (with the embedded font) into an `Image` from a Blob URL, draws it on a canvas of `width × scale` by `height × scale`, and resolves `canvas.toBlob(…, 'image/png')`. It rejects with `Could not create the PNG image.` when loading or encoding fails.
+- **TikZ:** a `tikzpicture` fragment for a LaTeX document. It starts with the comment lines `% GraphCreator export: <name>` and `% Needs \usepackage{tikz} and \usetikzlibrary{arrows.meta}`. The picture uses `x=0.75pt, y=-0.75pt`, so canvas pixels (96 per inch) are used directly and y grows downward as on the canvas. Each role in use gets `\definecolor{gc<Role>Fill|Line|Text}{HTML}{…}` from the palette, and the edge colour `gcEdge`. Each node is `\node[circle, draw=…, fill=…, text=…, line width=1.5pt, minimum size=<0.75·d>pt, inner sep=0pt, align=center, font=\sffamily\small] (v<i>) at (<cx>,<cy>) {<lines joined by \\>};` with `v1, v2, …` in graph order. Each edge is `\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcEdge, shorten >=1.5pt] (v<i>) -- (v<j>);`, so TikZ finds the rims itself. Names are LaTeX-escaped (`\ { } $ & # ^ _ ~ %`).
+- **`src/lib/download.ts`** gains `downloadBlob(filename: string, blob: Blob): void`; `downloadText` uses it.
+
+### 4.12 Share links (`src/lib/shareLink.ts`, phase 23)
+
+```ts
+export const SHARE_PREFIX = '#g='
+export const SHARE_LONG = 8000           // characters; longer links get a warning
+export function encodeShare(graph: Graph): Promise<string>          // base64url(deflate-raw(UTF-8 toYaml(graph))), no padding
+export function shareUrl(graph: Graph, base?: string): Promise<string>   // base defaults to location.origin + location.pathname; returns base + SHARE_PREFIX + payload
+export function decodeShare(hash: string): Promise<Result<Graph> | null>  // null when hash does not start with SHARE_PREFIX
+```
+
+- Compression uses the browser's `CompressionStream('deflate-raw')` and `DecompressionStream`, so there is no dependency. The payload is the canonical `toYaml` text, so a link carries everything a `.dag.yaml` file does.
+- `decodeShare` decompresses and parses with `parseYaml`. A payload that is not valid base64url or does not decompress gives the error `This share link is damaged or incomplete.`; a payload that decompresses but does not parse gives `parseYaml`'s own errors.
+- The fragment is never sent to a server: browsers do not send the part after `#`, and the app has no backend. This keeps the "No backend" constraint (section 1).
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
 
 ```
 +--------------------------------------------------------------------------------+
-| (o->o) [Graph name____] | New  Open…  Save|▾ |       [⚠ 1 warning] [Help] [☾] |  top bar, 48 px
+| (o->o) [Graph name____] | New Open… Save|▾ Export… Share |  [⚠ 1 warning] [Help] [☾] |  top bar, 48 px
 +----+---------------+-------------------------------------------+---------------+
 | ▶  | Lesson panel  |                                           | NODE          |
 | ⊕  | (only during  |        ( SES )                            | Name [______] |
@@ -433,22 +494,22 @@ useThemeStore: { theme: Theme; setTheme(theme: Theme): void }   // initial theme
  rail 56 px                   canvas (teal tint)                    side panel 320 px
 ```
 
-- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save as a split button: **Save**, a 1 px vertical divider (16 px tall) and a narrow icon-only ▾ button, grouped with no gap between them, (`aria-label="Save as…"`) whose menu has **GraphCreator…** and **dagitty…** (5.4); on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node), **Help** (`CircleHelp` icon; opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word. There is no separate dagitty menu (phase 18).
-- **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−). The active tool is solid teal.
+- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save as a split button: **Save**, a 1 px vertical divider (16 px tall) and a narrow icon-only ▾ button, grouped with no gap between them, (`aria-label="Save as…"`) whose menu has **GraphCreator…** and **dagitty…** (5.4); **Export…** (`ImageDown` icon, phase 22) and **Share** (`Link` icon, phase 23), both ghost buttons with icon and word (5.4); on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node), **Help** (`CircleHelp` icon; opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word. There is no separate dagitty menu (phase 18).
+- **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−), a divider, Undo (`Undo2` icon, Ctrl+Z) and Redo (`Redo2` icon, Ctrl+Shift+Z) (phase 21). The active tool is solid teal. Undo and Redo are disabled when `past` or `future` is empty. Their tooltips read "Undo  Ctrl+Z" and "Redo  Ctrl+Shift+Z", with ⌘ in place of Ctrl on a Mac (`/Mac|iPhone|iPad/` in `navigator.userAgent`); their `aria-keyshortcuts` are `Control+Z Meta+Z` and `Control+Shift+Z Meta+Shift+Z Control+Y`.
 - **Lesson panel:** only while a lesson runs (5.7.10); 300 px, between the rail and the canvas.
 - **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow attribution, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
-- **Side panel:** fixed width (320 px). Shows NodeEditor or EdgeEditor for the single selected item. With nothing selected it shows a cheat sheet (exact text in 5.7.8): add a node, connect, delete, select several.
+- **Side panel:** fixed width (320 px). Shows NodeEditor or EdgeEditor for the single selected item. With nothing selected it shows a cheat sheet (exact text in 5.7.8): add a node, connect, delete, select several, undo.
 
 ### 5.2 Canvas interactions
 
 - **Add node:** double-click empty canvas (React Flow zoom-on-double-click is disabled), or the Add node tool (N): with it active, the next click on empty canvas adds a node there and the tool returns to Select. The rail's Add node button with the tool already active adds a node at the viewport centre. The new node is centred on the click point (its box is `nodeDiameter(name)` wide), gets `defaultNodeName`, becomes selected, and the side panel's name field is focused with its text selected.
 - **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true.
 - **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source.
-- **Shortcuts:** V, N, C set the tool; L runs auto-layout and fits the view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source. Shortcuts are ignored while focus is in a text field, select or textarea, and while a dialog is open.
+- **Shortcuts:** V, N, C set the tool; L runs auto-layout and fits the view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source. Ctrl+Z or ⌘+Z undoes; Ctrl+Shift+Z, ⌘+Shift+Z and Ctrl+Y redo (4.10, phase 21); they call `preventDefault`. Shortcuts are ignored while focus is in a text field, select or textarea, and while a dialog is open, so Ctrl+Z inside a field is the browser's own text undo.
 - **Rename by double-click:** double-clicking a circle while the Select tool is active calls `focusName`: the node is selected and the side panel's name field is focused with its text selected, as after adding a node. It never adds a node (the pane double-click handler only reacts to the pane itself).
 - **Select:** click a node or edge. Multi-select with Shift-click or box-select is React Flow default and is only used for deletion and moving.
 - **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`.
-- **Move:** dragging updates positions; the store commits with `moveNode` on drag stop.
+- **Move:** dragging updates positions; the store commits on drag stop, with one `moveNodes` call for all dragged nodes (one undo step; `moveNode` per node until phase 21).
 - **Node look (`canvas/CircleNode.tsx`):** a circle of diameter `nodeDiameter(name)` with the wrapped name centred inside (`wrapLabel`, 5.7.6; full name in `title` when truncated). The fill, outline and text colours come from the role (5.7.2); colour is the only role cue on the canvas, by the user's choice. The node's accessible name is `<name>, <Role label>` (for example `SES, Adjusted`) and the element keeps `data-role`. An untyped node shows a small yellow warning dot on its rim, top right, with `title="No variable type"` and the same `aria-label`. States are in 5.7.7.
 - **Edges (`canvas/FloatingEdge.tsx`):** straight lines. An edge starts on the source circle's rim, where the line between the two centres crosses it, and its closed arrowhead ends 2 px before the target's rim (`edgeEndpoints`, phase 11). Moving a circle re-aims its edges. An edge with evidence shows a chip at its midpoint: a bookmark icon and the number of evidence items (`aria-label="2 evidence items"`). Clicking the chip selects the edge.
 - **Saved indicator (`SavedIndicator.tsx`):** a chip in the canvas's bottom-right corner, driven by `useUiStore().autosave`: `on` → teal check and "Saved in this browser"; `blocked` → warning style, "Not saved: browser storage is blocked"; `paused` → muted, "Practice graph: not saved".
@@ -468,8 +529,15 @@ useThemeStore: { theme: Theme; setTheme(theme: Theme): void }   // initial theme
 - **Open… (`OpenDialog`, phase 18):** a dialog titled "Open a graph" with the description "Paste GraphCreator or dagitty code, or open a file. Opening replaces the current graph.", a textarea (`aria-label="Graph code"`) and the buttons **Open file…** (any text file), Cancel and **Open** (disabled while the textarea is blank). Both paths use `parseGraphText` (4.2), so the format is recognised automatically; a file's name helps (`.yaml`/`.yml`). Open file… parses the chosen file at once. Errors are listed inside the dialog under `Could not open <file>:` (file) or `Could not open:` (pasted text), with line numbers when known, and nothing changes. On success the graph is replaced, after the same confirmation as New if the graph has nodes (its button reads "Open"); then the dialog closes, the view fits and warnings show as one toast (`Opened with 3 warnings`, its Show button opens IssuesDialog).
 - **Save:** opens the "Save as GraphCreator" dialog below, the same as Save as… → GraphCreator…; its Download button saves `toYaml(graph)` as `<slug>.dag.yaml` (4.1). No server involved. (Until phase 20, Save downloaded the file directly.)
 - **Save as… menu (`CodeDialog`, phase 18):** **GraphCreator…** opens "Save as GraphCreator": a read-only textarea (`aria-label="GraphCreator code"`) with `toYaml(graph)`, the note "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.", Copy and Download (`<slug>.dag.yaml`). **dagitty…** opens "Save as dagitty": textarea `dagitty code` with `toDagitty(graph)`, the note "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.", Copy and Download (`<slug>.dagitty.txt`). Copy toasts `Copied <GraphCreator|dagitty> code to the clipboard.`
+- **Export… (`ExportDialog`, phase 22):** a dialog titled "Export image" with the description "The image shows names, roles (by colour) and arrows. Types, levels and evidence are not included." It has a **Format** select (`aria-label="Format"`: SVG, PNG, TikZ; SVG by default; the choice is not remembered between visits). For SVG and PNG it shows a preview: an `<img alt="Preview of the image">` of `toSvg(graph)` on a white, bordered area at most 384 px tall, scaled to fit. PNG adds a **Scale** select (`aria-label="Scale"`: 1×, 2×, 3×; 2× by default) and the line `<width> × <height> pixels`. For TikZ it shows a read-only mono textarea (`aria-label="TikZ code"`) with `toTikz(graph)`, like `CodeDialog`. Buttons: **Copy** for SVG (the SVG text) and TikZ (toasts `Copied SVG code to the clipboard.` / `Copied TikZ code to the clipboard.`; the same error toast as `CodeDialog`), none for PNG; **Download**, which saves `imageFileName(name, format)` (`image/svg+xml`, `image/png`, `text/x-tex`). With no nodes the dialog shows "There is nothing to export yet. Add a node first." in place of the preview and both buttons are disabled. A failed PNG shows the error as a toast. The texts are computed when the dialog opens.
+- **Share (phase 23):** builds `shareUrl(graph)` and writes it with `navigator.clipboard.writeText`. On success it toasts `Link copied. The graph is stored in the link itself, not on a server.`; when the link is longer than `SHARE_LONG` the toast's description adds `The link is long and may not work in every app. Save as GraphCreator to share a file instead.` When the clipboard fails it shows the error toast `Could not copy the link to the clipboard.` There is no dialog.
+- **Opening a share link (phase 23):** `main.tsx` checks `location.hash` after the autosave restore and before the first render. With `#g=…` it removes the fragment at once with `history.replaceState` (so a reload or the autosaved page never applies the link again), does not open the welcome slides automatically on this load, and passes the decoded result to `offerSharedGraph` (exported by `SharedGraphDialog.tsx`, which `App` mounts inside the `ReactFlowProvider`):
+  - **Damaged link:** the error toast `Could not open the shared graph.` with the first error message as its description; the stored graph stays.
+  - **Stored graph empty, or its `toYaml` equal to the shared one's:** `replaceGraph(shared)`, fit the view, toast `Opened the shared graph.` (or `Opened the shared graph with N warning(s).`).
+  - **Otherwise:** a dialog titled "Open the shared graph?" with the description "This replaces the graph saved in this browser. Save it first if you want to keep it." and the buttons **Keep my graph** (outline; closes, nothing changes) and **Open shared graph** (primary; replaces, fits the view, the same toast). Escape counts as Keep my graph.
+  - The shared graph is then autosaved like any other change.
 - **Auto-layout:** `autoLayout(graph)`, then fit the view.
-- **During a lesson** (5.7.10): New and Open… are disabled, with the tooltip "Not available during a lesson." Save and the Save as… menu work on the practice graph.
+- **During a lesson** (5.7.10): New and Open… are disabled, with the tooltip "Not available during a lesson." Save, the Save as… menu, Export… and Share work on the practice graph.
 
 ### 5.5 Autosave
 
@@ -650,7 +718,7 @@ GraphCreator speaks like a careful colleague reviewing your DAG: precise, neutra
 | `FIELD_TIPS.unit` | "Unit: the unit a continuous or discrete variable is measured in, such as g or years." |
 | `FIELD_TIPS.evidence` | "Evidence: references that support this arrow, such as PMID:123 or doi:10.1000/xyz. One reference per line." |
 | `FIELD_TIPS.note` | "Note: why you drew this arrow, or what is uncertain about it." |
-| `PANEL_HELP` | typed `{ title: string; rows: readonly { action: string; how: string }[] }`: the title "Nothing selected." (kept from v1; `e2e/smoke.spec.ts` and `e2e/canvas.spec.ts` check it) followed by four rows: "Add a node" / "Double-click the canvas or press N"; "Connect" / "Drag from the rim of a circle, or press C"; "Delete" / "Select, then press Delete"; "Select several" / "Shift-click" |
+| `PANEL_HELP` | typed `{ title: string; rows: readonly { action: string; how: string }[] }`: the title "Nothing selected." (kept from v1; `e2e/smoke.spec.ts` and `e2e/canvas.spec.ts` check it) followed by four rows: "Add a node" / "Double-click the canvas or press N"; "Connect" / "Drag from the rim of a circle, or press C"; "Delete" / "Select, then press Delete"; "Select several" / "Shift-click"; from phase 21 a fifth row "Undo" / "Press Ctrl+Z" |
 
 #### 5.7.9 Welcome slides (`WelcomeDialog.tsx`)
 
@@ -740,9 +808,9 @@ export function findLesson(id: string): Lesson | undefined
 | Node naming | Single name, any text | id + display label | User's choice. |
 | Names in dagitty | Converted to safe ids (spaces → `_`) with the original kept as `label="..."` | Quote names on export; safe id without label | User's choice: dagitty-friendly ids, and re-import restores the original names. |
 | dagitty metadata | Plain dagitty only | Embed as attributes; toggle | YAML is GraphCreator's own format and the source of truth. |
-| v1 editor extras | Auto-layout (dagre) | Undo/redo; share link; list view | User's choice; others go to IDEAS.md. |
+| v1 editor extras | Auto-layout (dagre) | Undo/redo; share link; list view | User's choice; others go to IDEAS.md. Undo/redo and share links follow in wave 12. |
 | Storage | One autosaved graph + YAML files | Local library of named graphs | Simple; files are the durable store. |
-| Image export | None in v1 | SVG; PNG; TikZ | User's choice; goes to IDEAS.md. |
+| Image export | None in v1; SVG, PNG and TikZ from wave 12 (4.11) | SVG only; SVG and PNG | User's choice (2026-11-08): TikZ added for LaTeX papers. |
 | Stack | React Flow, Zustand, Zod, `yaml`, dagre, shadcn/ui + Tailwind v4 | Same with plain CSS | Most documentation and examples. |
 | Tests / CI | Vitest + Playwright in GitHub Actions | Vitest only | Logic and UI regressions both caught. |
 | YAML identity | `schema: graphcreator/0.1`, `.dag.yaml` | Plain `.yaml`, optional version | The format can evolve safely. |
@@ -805,6 +873,14 @@ export function findLesson(id: string): Lesson | undefined
 | Rail Add node | Pressing Add node while the add tool is active places a node at the view centre and returns to Select, like an add-tool click on the canvas | Stay in the add tool | Phase 12 judgement call, consistent with 5.2. |
 | Tooltip look | Phase 10 restyles the generated shadcn `tooltip.tsx` to `rounded-lg`, elevation 2 and 180 ms ease-out (5.7.4, 5.7.5), keeping the foreground-coloured background | Leave the generated `rounded-md` look | Only phase 10 owns `tooltip.tsx`, so wave 7 cannot fix it. |
 | `renameNode` keeps the centre | The store shifts `pos` when the diameter changes | Grow from the top-left corner | Circles stay where the user put them; `pos` keeps its file meaning. |
+| Undo history (wave 12) | Snapshot stacks of immutable graphs in `graphStore` (4.10), 100 steps; `replaceGraph` clears them; not autosaved | A library such as zundo; command objects; undoing New and Open | Graphs are immutable, so snapshots are cheap and need no dependency. New and Open already ask first. |
+| Undo controls (wave 12) | Ctrl/⌘+Z, Ctrl/⌘+Shift+Z, Ctrl+Y and two buttons in the tool rail | Top bar buttons; shortcuts only | User's choice. |
+| Image export source (wave 12) | Drawn from the graph data with the canvas geometry, light palette, embedded IBM Plex Sans | Capturing the DOM (e.g. `html-to-image`); following the current theme | No dependency; the image is independent of zoom, selection and theme. |
+| Export dialog look (wave 12) | Built in the Calm teal style of the existing dialogs, no design rounds | Design rounds first | User's choice. |
+| Share behaviour (wave 12) | Share copies the link at once and toasts; no dialog | A dialog with the link and a Copy button | User's choice. |
+| Share link format (wave 12) | `#g=` + base64url of deflate-raw `toYaml` text, via the browser's `CompressionStream` | `lz-string`; uncompressed base64; a query parameter | No dependency; the fragment is never sent to a server. |
+| Opening a share link (wave 12) | Replace at once when the stored graph is empty or the same; otherwise ask ("Keep my graph" / "Open shared graph"); the fragment is removed after reading | Always replace; always ask; keep the fragment | The same rule as New and Open: never lose a graph without asking. |
+| Wave 12 file sharing | Phases 22 and 23 both add one button to `TopBar.tsx`, at fixed places; the conflict is resolved when phase 23 lands | A fourth integration phase; one phase owning both buttons | Two small additions do not justify an extra phase. The single exception to disjoint file ownership. |
 
 ## 8. Implementation phases
 
@@ -842,6 +918,11 @@ General rules for every phase:
 | 18 | Top bar rework and double-click rename | 17 | 10 | `src/model/fileFormat.ts` (+ test), `src/store/graphStore.ts` (+ test), `src/components/TopBar.tsx`, `OpenDialog.tsx`, `CodeDialog.tsx` (replace the two dagitty dialogs), `Canvas.tsx`, `src/index.css`, `IssuesDialog.tsx` (comment), `e2e/*.spec.ts` |
 | 19 | Own theme store instead of next-themes | 18 | 11 | `src/store/themeStore.ts` (+ test), `index.html`, `src/main.tsx`, `src/components/TopBar.tsx`, `Canvas.tsx`, `src/components/ui/sonner.tsx`, `package.json`, `package-lock.json` |
 | 20 | Save opens the GraphCreator dialog | 19 | 11 | `src/components/TopBar.tsx`, `e2e/files.spec.ts` |
+| 21 | Undo and redo | 20 | 12 | `src/store/graphStore.ts` (+ test), `src/components/Canvas.tsx`, `SidePanel.tsx`, `ToolRail.tsx`, `useToolShortcuts.ts`, `src/lib/copy.ts`, `e2e/undo.spec.ts` |
+| 22 | Image export | 20 | 12 | `src/lib/imageExport.ts` (+ test), `src/lib/download.ts`, `src/components/ExportDialog.tsx`, `TopBar.tsx` (the Export… button and dialog only), `e2e/export.spec.ts` |
+| 23 | Share links | 20 | 12 | `src/lib/shareLink.ts` (+ test), `src/components/SharedGraphDialog.tsx`, `src/main.tsx`, `src/App.tsx`, `TopBar.tsx` (the Share button only), `e2e/share.spec.ts` |
+
+Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
 Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
 
@@ -1184,11 +1265,11 @@ Phases: 18. Parallel: single phase. Check after the wave: all checks, and a manu
 - **Done when:** all checks pass; the manual run above works.
 - **Out of scope:** drag-and-drop of files onto the canvas; remembering the last Save format.
 
-### Wave 11: Theme store and Save dialog [ ]
+### Wave 11: Theme store and Save dialog [x]
 
 Phases: 19, 20 (done one after the other; both touch `TopBar.tsx`). Check after the wave: all checks; in the browser the theme toggle, reload and the console (no "Encountered a script tag" warning), and Save opening the GraphCreator dialog.
 
-#### Phase 19: Own theme store instead of next-themes [ ]
+#### Phase 19: Own theme store instead of next-themes [x] (0f6a0b9)
 
 - **Goal:** the light/dark switch works exactly as in phase 17 without `next-themes`, so React 19 no longer warns about its inline script.
 - **Depends on:** phase 18.
@@ -1203,7 +1284,7 @@ Phases: 19, 20 (done one after the other; both touch `TopBar.tsx`). Check after 
 - **Done when:** all checks pass; `next-themes` appears nowhere in `src`, `index.html` or `package.json`; the toggle, the reload and a dark first paint work in the browser.
 - **Out of scope:** a "follow the system" option.
 
-#### Phase 20: Save opens the GraphCreator dialog [ ]
+#### Phase 20: Save opens the GraphCreator dialog [x] (0f6a0b9)
 
 - **Goal:** the Save button opens the "Save as GraphCreator" dialog (5.4) instead of downloading at once.
 - **Depends on:** phase 19.
@@ -1212,6 +1293,55 @@ Phases: 19, 20 (done one after the other; both touch `TopBar.tsx`). Check after 
 - **Tests:** `e2e/files.spec.ts` (section 9).
 - **Done when:** all checks pass; Save shows the GraphCreator text and its Download gives `<slug>.dag.yaml`.
 - **Out of scope:** a keyboard shortcut for Save.
+
+### Wave 12: Undo, image export and share links [ ]
+
+Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree); they share only `TopBar.tsx`, as described under the task graph. Land them in the order 21, 22, 23. Check after the wave: all checks; in the browser undo and redo by keys and rail buttons (including a multi-node drag and an undo while the node stays selected), the Export dialog's three formats and downloads, and a share link copied, opened in a new tab over a different stored graph, and opened again over an empty one. Parallel e2e runs need `CI=1` and a lock, because the worktrees share port 4173: `CI=1 flock /tmp/gc-e2e.lock npm run test:e2e`.
+
+#### Phase 21: Undo and redo [ ]
+
+- **Goal:** every edit can be undone and redone with Ctrl/⌘+Z, Ctrl/⌘+Shift+Z, Ctrl+Y and two rail buttons.
+- **Depends on:** phase 20.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **`graphStore.ts`:** `past`, `future`, `revision`, `HISTORY_LIMIT`, `moveNodes`, `undo`, `redo` and the recording rules of 4.10; `replaceGraph` clears the stacks.
+  - **`Canvas.tsx`:** `onNodeDragStop` commits all dragged nodes with one `moveNodes` call.
+  - **`SidePanel.tsx`:** editor keys `` `${id}:${revision}` ``.
+  - **`useToolShortcuts.ts`:** the undo and redo keys (5.2), handled before the guard that ignores modifier keys, with the same text-field and dialog guards.
+  - **`ToolRail.tsx`:** the divider, Undo and Redo (5.1), disabled from the store.
+  - **`copy.ts`:** the `PANEL_HELP` row "Undo" / "Press Ctrl+Z" (5.7.8).
+- **Tests:** the `graphStore.test.ts` additions and `e2e/undo.spec.ts` (section 9). The `beforeEach` reset in `graphStore.test.ts` also resets `past`, `future` and `revision`.
+- **Done when:** all checks pass; the browser checks for undo in the wave line work.
+- **Out of scope:** undoing New, Open or a lesson; a history panel; keeping history across reloads; coalescing several edits into one step (each committed edit is one step).
+
+#### Phase 22: Image export [ ]
+
+- **Goal:** Export… in the top bar opens a dialog that exports the graph as SVG, PNG or TikZ.
+- **Depends on:** phase 20.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **`imageExport.ts`:** as in 4.11.
+  - **`download.ts`:** `downloadBlob`, with `downloadText` built on it.
+  - **`ExportDialog.tsx`:** as in 5.4; props `{ open: boolean; onOpenChange(open: boolean): void }`; reads the graph from the store when it opens.
+  - **`TopBar.tsx`:** the Export… button directly after the Save split button, and the dialog's open state. Nothing else.
+- **Tests:** `imageExport.test.ts` and `e2e/export.spec.ts` (section 9).
+- **Done when:** all checks pass; the three downloads open correctly in a browser (SVG, PNG) and the TikZ text compiles in a LaTeX document with `tikz` and `arrows.meta` (checked by hand when LaTeX is available; otherwise say so).
+- **Out of scope:** a legend; a dark-theme export; exporting only the selection; PDF; remembering the format.
+
+#### Phase 23: Share links [ ]
+
+- **Goal:** Share copies a link that recreates the graph when opened, without any server.
+- **Depends on:** phase 20.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **`shareLink.ts`:** as in 4.12.
+  - **`SharedGraphDialog.tsx`:** `export function SharedGraphDialog()` (no props) and `export function offerSharedGraph(result: Result<Graph>): void`, with the dialog state in a small module-level Zustand store in the same file; the three cases of 5.4 "Opening a share link". Fitting the view uses `useReactFlow().fitView({ duration: 300 })` in `requestAnimationFrame`.
+  - **`main.tsx`:** after `startAutosave`, read and clear the fragment, skip the automatic welcome when a share link was present, and call `offerSharedGraph` when `decodeShare` resolves.
+  - **`App.tsx`:** mount `<SharedGraphDialog />` inside the `ReactFlowProvider`.
+  - **`TopBar.tsx`:** the Share button (5.4) directly after Export… (or after the Save split button if Export… is not there). Nothing else.
+- **Tests:** `shareLink.test.ts` and `e2e/share.spec.ts` (section 9).
+- **Done when:** all checks pass; the browser checks for share links in the wave line work.
+- **Out of scope:** short links or any server; a QR code; read-only shared views; sharing several graphs.
 
 ## 9. Tests
 
@@ -1252,6 +1382,15 @@ Redesign (phases 10–16):
 - `src/store/themeStore.test.ts` (phase 19): `readTheme` is light by default, with null storage, for unknown values and for a throwing storage, and dark only for `'dark'`; `writeTheme` stores under `graphcreator:theme` and ignores null or throwing storage; the store starts light without a DOM and `setTheme` switches it.
 - e2e (phase 18): the top bar shows New, Open…, Save, Save as…, Help and Dark mode (`smoke`); Help reopens the slides (`welcome`, `lesson`); during a lesson New and Open… are disabled and both Save as… items work (`lesson`); `files`: Open file… with `smoking.dag.yaml` (warning toast) and with `confounding.dagitty.txt` (5 nodes, 7 edges, roles, `Opened with 5 warnings`), a cycle file lists its error in the dialog and keeps the graph, pasted YAML opens, pasted dagitty over a graph asks first, pasted bidirected dagitty shows the line-numbered error, both Save as… dialogs show the exact text and download the right file; `canvas`: double-clicking a circle focuses its name with the text selected, adds no node, and typing plus Enter renames it.
 
+Wave 12 (phases 21–23):
+
+- `src/store/graphStore.test.ts` (phase 21 addition): each recording action pushes exactly one entry and clears `future`; no-op actions (failed rename and connect, equal patches, same positions, removing nothing, the same name) push nothing and keep the same `graph` object; `undo` then `redo` returns the identical graph objects; `past` stops at `HISTORY_LIMIT` and drops the oldest; `replaceGraph` empties both stacks; `moveNodes` with three moves is one step; `undo` keeps a selection that still exists, clears one that does not, clears `focusNameOf` and increments `revision`; `undo` and `redo` on empty stacks change nothing.
+- `e2e/undo.spec.ts` (phase 21): add a node, Ctrl+Z removes it, Ctrl+Shift+Z and Ctrl+Y bring it back; the rail's Undo and Redo do the same and are disabled at the ends; renaming a node and undoing while it stays selected shows the old name in the side panel; a box-selected two-node drag is undone in one step; Ctrl+Z while typing in the name field does not change the graph; after a reload Undo is disabled; the undone state is what autosave stores.
+- `src/lib/imageExport.test.ts` (phase 22): `EXPORT_PALETTE` equals the `:root` tokens in `index.css`; for `smoking.dag.yaml`, `toSvg` has one `<circle>` per node, one `<text>` (or `<tspan>`) per wrapped line, one line and one arrowhead per edge, the size from `svgSize`, the `<title>`, and the `@font-face` only with `fontDataUrl`; names with `<`, `&` and quotes are escaped; an empty graph gives a valid empty SVG; `toTikz` has the header comments, one `\node` per node and one `\draw` per edge, only the colours in use, LaTeX-escaped names (`R&D_1 %` → `R\&D\_1 \%`) and wrapped lines joined by `\\`; `imageFileName` gives `smoking-and-birth-weight.svg|.png|.tex` and `graph.svg` without a name.
+- `e2e/export.spec.ts` (phase 22): with no nodes the dialog shows the empty message and Download is disabled; with `smoking.dag.yaml` open, SVG shows the preview and downloads `<slug>.svg` starting with `<svg`; PNG with Scale 2× shows the pixel size and downloads a file starting with the PNG signature (`89 50 4E 47`); TikZ shows the code, Copy toasts, and Download gives `<slug>.tex` equal to the textarea text.
+- `src/lib/shareLink.test.ts` (phase 23): `decodeShare(SHARE_PREFIX + await encodeShare(g))` returns a graph whose `toYaml` equals `g`'s for `smoking.dag.yaml` and the empty graph; the payload uses only `A–Z a–z 0–9 - _`; `shareUrl` uses the given base; a hash without the prefix gives null; a damaged or truncated payload gives the exact damaged-link message; a valid payload of invalid YAML gives `parseYaml`'s errors.
+- `e2e/share.spec.ts` (phase 23, with clipboard permissions granted): Share copies a URL starting with the page URL and `#g=` and toasts; opening that URL in a fresh context (empty storage) shows the graph, the toast, no welcome slides and no fragment in the address bar; opening it over a different stored graph shows the dialog, Keep my graph keeps the stored graph and Open shared graph replaces it; a damaged link shows the error toast and keeps the stored graph; a reload after opening does not ask again.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
@@ -1261,4 +1400,5 @@ Redesign (phases 10–16):
 - **Lesson viewport:** starting or ending a lesson keeps the current viewport instead of fitting the view, so the practice graph can open zoomed in (up to React Flow's 2×) after a fit on a small graph.
 - **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.
 - **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
+- **Share links and hosting:** a link names the address it was made on, so links made on a local or preview build only open there. Once a host and domain are chosen, links should be made on that domain.
 - Everything in [IDEAS.md](IDEAS.md).
