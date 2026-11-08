@@ -6,6 +6,7 @@ import {
   FilePlus,
   FolderOpen,
   ImageDown,
+  Link,
   Moon,
   Sun,
   TriangleAlert,
@@ -32,6 +33,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { copyShareLink } from '@/lib/shareLink'
 import {
   Tooltip,
   TooltipContent,
@@ -329,6 +331,14 @@ export function TopBar() {
         >
           <ImageDown {...ICON} />
           Export…
+        </Button>
+        <Button
+          variant="ghost"
+          className="rounded-md"
+          onClick={() => void copyShareLink(useGraphStore.getState().graph)}
+        >
+          <Link {...ICON} />
+          Share
         </Button>
 
         <div className="ml-auto flex items-center gap-2">

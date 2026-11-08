@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08) are specified in 4.10–4.12 and not yet built. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -479,6 +479,8 @@ export function decodeShare(hash: string): Promise<Result<Graph> | null>  // nul
 - Compression uses the browser's `CompressionStream('deflate-raw')` and `DecompressionStream`, so there is no dependency. The payload is the canonical `toYaml` text, so a link carries everything a `.dag.yaml` file does.
 - `decodeShare` decompresses and parses with `parseYaml`. A payload that is not valid base64url or does not decompress gives the error `This share link is damaged or incomplete.`; a payload that decompresses but does not parse gives `parseYaml`'s own errors.
 - The fragment is never sent to a server: browsers do not send the part after `#`, and the app has no backend. This keeps the "No backend" constraint (section 1).
+
+Details fixed in phase 23: `shareLink.ts` also exports the message texts and `copyShareLink(graph)`, the Share action itself (clipboard and toasts), so `TopBar` only adds the button; any Share failure, encoding included, shows the clipboard error toast. Base64url uses `btoa`/`atob`; an empty payload, `=` padding, a length of 1 modulo 4, invalid UTF-8 and trailing bytes all count as damaged. "Stored graph empty" means no nodes (as `confirmReplace`), so a named graph without nodes is replaced without asking. A `#g=` fragment skips the automatic welcome even when the link is damaged, without marking the visitor as welcomed. The "with N warnings" toast has no Show button (the warnings badge lists them). The shared-graph dialog keeps the close (X) button, which counts as Keep my graph. The fit uses 300 ms, or 0 with reduced motion (5.7.5). `SharedGraphDialog.tsx` exports a function next to the component, with an `oxlint-disable-next-line react/only-export-components` comment.
 
 ## 5. Behaviour
 
@@ -1318,7 +1320,7 @@ Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree
 - **Done when:** all checks pass; the browser checks for undo in the wave line work.
 - **Out of scope:** undoing New, Open or a lesson; a history panel; keeping history across reloads; coalescing several edits into one step (each committed edit is one step).
 
-#### Phase 22: Image export [ ]
+#### Phase 22: Image export [x] (c5bc9de)
 
 - **Goal:** Export… in the top bar opens a dialog that exports the graph as SVG, PNG or TikZ.
 - **Depends on:** phase 20.
