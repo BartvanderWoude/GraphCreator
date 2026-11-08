@@ -17,7 +17,6 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import './canvas/canvas.css'
-import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import {
   CircleConnectionLine,
@@ -30,6 +29,7 @@ import { cn } from '@/lib/utils'
 import { canAddEdge, defaultNodeName, type Graph } from '@/model/graph'
 import { nodeDiameter } from '@/model/nodeSize'
 import { useGraphStore, type GraphState } from '@/store/graphStore'
+import { useThemeStore } from '@/store/themeStore'
 import { useUiStore } from '@/store/uiStore'
 
 type Selection = GraphState['selection']
@@ -156,20 +156,14 @@ function connectOrExplain(source: string, target: string) {
   if (!check.ok) toast(check.message)
 }
 
-/** React Flow's colour mode for next-themes' resolved theme (spec 7, "Dark theme mechanism"). */
-function colorModeOf(resolvedTheme: string | undefined): ColorMode {
-  if (resolvedTheme === 'dark') return 'dark'
-  if (resolvedTheme === 'light') return 'light'
-  return 'system'
-}
-
 /** The React Flow canvas (spec 5.2). Must be rendered inside a `<ReactFlowProvider>`. */
 export function Canvas() {
   const graph = useGraphStore((s) => s.graph)
   const selection = useGraphStore((s) => s.selection)
   const tool = useUiStore((s) => s.tool)
   const connectFrom = useUiStore((s) => s.connectFrom)
-  const { resolvedTheme } = useTheme()
+  // React Flow's colour mode follows the theme (spec 7, "Dark theme mechanism").
+  const colorMode: ColorMode = useThemeStore((s) => s.theme)
   const { screenToFlowPosition } = useReactFlow()
   const [flow, setFlow] = useState<Flow>(() =>
     syncFlow(
@@ -335,7 +329,7 @@ export function Canvas() {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         connectionLineComponent={CircleConnectionLine}
-        colorMode={colorModeOf(resolvedTheme)}
+        colorMode={colorMode}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onSelectionChange={onSelectionChange}

@@ -9,7 +9,6 @@ import {
   Sun,
   TriangleAlert,
 } from 'lucide-react'
-import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { CodeDialog } from '@/components/CodeDialog'
 import { IssuesDialog } from '@/components/IssuesDialog'
@@ -37,7 +36,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { downloadText } from '@/lib/download'
 import { toDagitty } from '@/model/dagitty'
 import type { GraphFormat } from '@/model/fileFormat'
 import { emptyGraph, type Graph } from '@/model/graph'
@@ -46,6 +44,7 @@ import { validateGraph } from '@/model/validate'
 import { fileSlug, toYaml } from '@/model/yaml'
 import { useGraphStore } from '@/store/graphStore'
 import { useLessonStore } from '@/store/lessonStore'
+import { useThemeStore } from '@/store/themeStore'
 import { useUiStore } from '@/store/uiStore'
 
 /** What the IssuesDialog shows: the live warnings of the graph, or a fixed list. */
@@ -122,12 +121,12 @@ function LessonLock({
 }
 
 /**
- * Switches between the light and dark theme (spec 5.1, 5.7.2). Light is the default; next-themes
- * keeps the choice in localStorage. The name stays "Dark mode" and `aria-pressed` gives the state.
+ * Switches between the light and dark theme (spec 5.1, 5.7.2). Light is the default; the theme
+ * store keeps the choice in localStorage. The name stays "Dark mode" and `aria-pressed` gives the state.
  */
 function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
+  const isDark = useThemeStore((s) => s.theme === 'dark')
+  const setTheme = useThemeStore((s) => s.setTheme)
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -208,20 +207,7 @@ export function TopBar() {
     confirmReplace('New graph', () => replaceGraph(emptyGraph()))
   }
 
-  function save() {
-    try {
-      const g = useGraphStore.getState().graph
-      downloadText(
-        `${fileSlug(g.name)}.dag.yaml`,
-        toYaml(g),
-        'application/yaml',
-      )
-    } catch (e) {
-      toast.error(`Could not save the graph: ${errorMessage(e)}`)
-    }
-  }
-
-  /** Opens the "Save as…" code dialog for `format` (spec 5.4). */
+  /** Opens the code dialog for `format`: Save and "Save as…" → GraphCreator… use 'yaml' (spec 5.4). */
   function openCode(format: GraphFormat) {
     try {
       const g = useGraphStore.getState().graph
@@ -302,7 +288,7 @@ export function TopBar() {
           <Button
             variant="ghost"
             className="rounded-md rounded-r-none pr-2"
-            onClick={save}
+            onClick={() => openCode('yaml')}
           >
             <Download {...ICON} />
             Save

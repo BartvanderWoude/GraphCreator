@@ -66,6 +66,18 @@ async function download(page: Page, action: () => Promise<void>) {
   return { name: d.suggestedFilename(), file, text: readFileSync(file, 'utf8') }
 }
 
+/** Clicks Save, downloads from the "Save as GraphCreator" dialog it opens, and closes it. */
+async function saveFile(page: Page) {
+  await button(page, 'Save').click()
+  const dialog = page.getByRole('dialog', { name: 'Save as GraphCreator' })
+  const file = await download(page, () =>
+    dialog.getByRole('button', { name: 'Download' }).click(),
+  )
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  return file
+}
+
 /** Opens Save's "Save as…" menu and picks `item`. */
 async function saveAs(page: Page, item: 'GraphCreator…' | 'dagitty…') {
   await button(page, 'Save as…').click()
@@ -96,7 +108,16 @@ test('Open loads a YAML file and Save writes the same text back', async ({
   ).toBeVisible()
   await page.keyboard.press('Escape')
 
-  const saved = await download(page, () => button(page, 'Save').click())
+  // Save opens the GraphCreator dialog with the file's text.
+  await button(page, 'Save').click()
+  await expect(
+    page
+      .getByRole('dialog', { name: 'Save as GraphCreator' })
+      .getByRole('textbox', { name: 'GraphCreator code' }),
+  ).toHaveValue(fixtureText('smoking.dag.yaml'))
+  await page.keyboard.press('Escape')
+
+  const saved = await saveFile(page)
   expect(saved.name).toBe('smoking-and-birth-weight.dag.yaml')
   expect(saved.text).toBe(fixtureText('smoking.dag.yaml'))
 })
@@ -116,7 +137,7 @@ test('a graph made in the app survives Save, New and Open', async ({
   await connect(page, 'Age', 'BMI')
   await expect(edges(page)).toHaveCount(1)
 
-  const first = await download(page, () => button(page, 'Save').click())
+  const first = await saveFile(page)
   expect(first.name).toBe('my-dag.dag.yaml')
   expect(first.text).toContain('name: My DAG!')
   expect(first.text).toContain('- from: Age\n    to: BMI\n')
@@ -137,7 +158,7 @@ test('a graph made in the app survives Save, New and Open', async ({
   await openFile(page, first.file)
   await expect(nodes(page)).toHaveCount(2)
   await expect(edges(page)).toHaveCount(1)
-  const second = await download(page, () => button(page, 'Save').click())
+  const second = await saveFile(page)
   expect(second.text).toBe(first.text)
 })
 

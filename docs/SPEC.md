@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -402,6 +402,19 @@ export function isStepDone(): boolean   // current step's isDone(useGraphStore.g
 
 The set-aside graph is held in module scope next to the store (not in the store's state), so autosave never sees it. `start` while a lesson is active first exits the old one. `start` with an unknown id throws `Unknown lesson "<id>".` before anything changes, so a running lesson keeps running. `next` on the last step calls `exit`, but like every step only once `isStepDone()` is true. Lessons are looked up in `LESSONS` (5.7.10).
 
+### 4.9 Theme store (`src/store/themeStore.ts`, phase 19)
+
+```ts
+type Theme = 'light' | 'dark'
+const THEME_KEY = 'graphcreator:theme'
+readTheme(storage: Pick<Storage, 'getItem'> | null): Theme   // 'dark' only when stored as 'dark'; null or throwing storage → 'light'
+writeTheme(storage: Pick<Storage, 'setItem'> | null, theme: Theme): void   // ignores null or throwing storage
+applyTheme(theme: Theme, instant = false): void   // toggles the `dark` class and sets `color-scheme` on <html>; `instant` pauses CSS transitions for one frame; no-op without a DOM
+useThemeStore: { theme: Theme; setTheme(theme: Theme): void }   // initial theme from readTheme(safeLocalStorage()); setTheme writes, applies (instant) and sets
+```
+
+`index.html` has a small inline script that adds the `dark` class and `color-scheme: dark` when `localStorage['graphcreator:theme']` is `'dark'`, so a dark choice shows before the app's JavaScript runs. Values written by `next-themes` (`'light'`/`'dark'` under the same key) keep working.
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -453,7 +466,7 @@ The set-aside graph is held in module scope next to the store (not in the store'
 
 - **New:** if the graph has nodes, confirm `Start a new graph? Unsaved changes to the current graph will be lost.` Then `emptyGraph()`.
 - **Open… (`OpenDialog`, phase 18):** a dialog titled "Open a graph" with the description "Paste GraphCreator or dagitty code, or open a file. Opening replaces the current graph.", a textarea (`aria-label="Graph code"`) and the buttons **Open file…** (any text file), Cancel and **Open** (disabled while the textarea is blank). Both paths use `parseGraphText` (4.2), so the format is recognised automatically; a file's name helps (`.yaml`/`.yml`). Open file… parses the chosen file at once. Errors are listed inside the dialog under `Could not open <file>:` (file) or `Could not open:` (pasted text), with line numbers when known, and nothing changes. On success the graph is replaced, after the same confirmation as New if the graph has nodes (its button reads "Open"); then the dialog closes, the view fits and warnings show as one toast (`Opened with 3 warnings`, its Show button opens IssuesDialog).
-- **Save:** downloads `toYaml(graph)` as `<slug>.dag.yaml` (4.1). No server involved.
+- **Save:** opens the "Save as GraphCreator" dialog below, the same as Save as… → GraphCreator…; its Download button saves `toYaml(graph)` as `<slug>.dag.yaml` (4.1). No server involved. (Until phase 20, Save downloaded the file directly.)
 - **Save as… menu (`CodeDialog`, phase 18):** **GraphCreator…** opens "Save as GraphCreator": a read-only textarea (`aria-label="GraphCreator code"`) with `toYaml(graph)`, the note "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.", Copy and Download (`<slug>.dag.yaml`). **dagitty…** opens "Save as dagitty": textarea `dagitty code` with `toDagitty(graph)`, the note "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.", Copy and Download (`<slug>.dagitty.txt`). Copy toasts `Copied <GraphCreator|dagitty> code to the clipboard.`
 - **Auto-layout:** `autoLayout(graph)`, then fit the view.
 - **During a lesson** (5.7.10): New and Open… are disabled, with the tooltip "Not available during a lesson." Save and the Save as… menu work on the practice graph.
@@ -487,7 +500,7 @@ Agreed with the user on 2026-11-08 through rounds of visual options. The full se
 
 #### 5.7.2 Colour tokens
 
-All colours are CSS variables in `src/index.css`. Light values sit in `:root`, dark values in `.dark` (set by `next-themes` when the user switches to dark with the top bar's Dark mode toggle). The app starts light, whatever the system setting; the choice is kept in `localStorage` under `graphcreator:theme`. Components use only these variables, never raw hex. Contrast ratios are checked by `src/lib/theme.test.ts` (phase 10): text pairs ≥ 4.5:1; circle outlines, edges and the selection border ≥ 3:1 against `--canvas`.
+All colours are CSS variables in `src/index.css`. Light values sit in `:root`, dark values in `.dark` (set by the theme store, 4.9, when the user switches to dark with the top bar's Dark mode toggle). The app starts light, whatever the system setting; the choice is kept in `localStorage` under `graphcreator:theme`. Components use only these variables, never raw hex. Contrast ratios are checked by `src/lib/theme.test.ts` (phase 10): text pairs ≥ 4.5:1; circle outlines, edges and the selection border ≥ 3:1 against `--canvas`.
 
 **Core (shadcn variables, replacing the neutral preset):**
 
@@ -704,7 +717,7 @@ export function findLesson(id: string): Lesson | undefined
 - CI: `.github/workflows/ci.yml`, on push to `develop` and on pull requests: checkout, setup-node from `.nvmrc` with npm cache, `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. Deployment from `develop` to `production` is added once a host is chosen (see Open issues).
 - Claude Code: `.claude/settings.json` has a Stop hook `npm run typecheck 1>&2 || exit 2`. CLAUDE.md lists the scripts and the rules: `docs/SPEC.md` is the source of truth; `src/model` has no React imports; no backend; MIT, no GPL code.
 - Path alias `@/` → `src/` (required by shadcn/ui), set in `tsconfig.json`, `tsconfig.app.json` and `vite.config.ts`. `paths` only, without `baseUrl` (TypeScript 7 deprecates `baseUrl`).
-- shadcn/ui is initialised with the Radix base and the `radix-nova` preset (`npx shadcn@latest init -t vite -b radix -p nova`). This adds `radix-ui`, `lucide-react`, `class-variance-authority`, `cn` (shadcn's own clsx + tailwind-merge replacement), `tw-animate-css`, `@fontsource-variable/geist`, `next-themes` (used by the `sonner` wrapper) and `shadcn` (for `shadcn/tailwind.css`). Generated files in `src/components/ui/` are exempt from oxlint's `react/only-export-components` (override in `.oxlintrc.json`).
+- shadcn/ui is initialised with the Radix base and the `radix-nova` preset (`npx shadcn@latest init -t vite -b radix -p nova`). This adds `radix-ui`, `lucide-react`, `class-variance-authority`, `cn` (shadcn's own clsx + tailwind-merge replacement), `tw-animate-css`, `@fontsource-variable/geist`, `next-themes` (used by the `sonner` wrapper; removed in phase 19 in favour of the theme store, 4.9) and `shadcn` (for `shadcn/tailwind.css`). Generated files in `src/components/ui/` are exempt from oxlint's `react/only-export-components` (override in `.oxlintrc.json`).
 - `tsconfig.node.json` also includes `playwright.config.ts` and `e2e/`, so `npm run typecheck` covers the end-to-end tests.
 - `.prettierignore` also lists `docs`: Prettier would rewrite the hand-aligned code blocks and tables in this spec.
 - `LICENSE`: MIT, `Copyright (c) 2026 Bart van der Woude`.
@@ -772,12 +785,13 @@ export function findLesson(id: string): Lesson | undefined
 | Rollout | New parts built unmounted in wave 7, switched on in phase 16; CI green on every commit | Edit live parts and accept red e2e until the end | User's choice. |
 | Circle size | Pure estimate in `src/model/nodeSize.ts` | Measuring text in the browser | User's choice: deterministic and usable by `autoLayout` without the DOM. |
 | Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle at first; added in phase 17 (see "Theme toggle"). |
-| Dark theme mechanism | `next-themes` (`attribute="class"`; `defaultTheme="system"` until phase 17, then `"light"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
+| Dark theme mechanism | Own Zustand theme store (`src/store/themeStore.ts`, 4.9) since phase 19: the `dark` class and `color-scheme` on `<html>`, a stored dark theme applied by a script in `index.html`; React Flow `colorMode` and the sonner wrapper read the store | `next-themes` (phases 10–18: `attribute="class"`, `defaultTheme="system"`, then `"light"` from phase 17); CSS media query only | User's choice in phase 19: `next-themes` renders an inline `<script>` meant for server rendering, which never runs in this browser-only app and makes React 19 warn "Encountered a script tag" in development. With a fixed light default the library adds nothing. |
 | Theme toggle (2026-11-08, phase 17) | Two-state Dark mode button at the right end of the top bar; light by default even when the system is dark; stored in `graphcreator:theme` | Follow the system only; three-way light/dark/system switch | User's choice. Closes the former open issue. |
 | Help button (phase 18) | The top bar's Lessons button is called Help | Keep "Lessons" | User's choice. It still opens the welcome slides. |
 | Open (phase 18) | One Open dialog: paste GraphCreator or dagitty code, or Open file…; the format is recognised by `detectFormat` | Separate YAML Open and dagitty Import… | User's choice; removes the dagitty menu. Errors stay inside the dialog instead of a separate IssuesDialog. |
 | Confirm before Open (phase 18) | Open asks before replacing a graph that has nodes, like New and the old dagitty import | Replace without asking (v1 YAML Open) | One rule for every way of replacing the graph now that Open and import are one action. |
-| Save (phase 18) | Split button: Save downloads `.dag.yaml` as before; the ▾ menu offers GraphCreator… and dagitty…, each a code dialog with Copy and Download | dagitty menu; a direct dagitty download | User's choice. The YAML code dialog is new and mirrors the dagitty one. |
+| Save (phase 18) | Split button: Save downloads `.dag.yaml` as before (until phase 20); the ▾ menu offers GraphCreator… and dagitty…, each a code dialog with Copy and Download | dagitty menu; a direct dagitty download | User's choice. The YAML code dialog is new and mirrors the dagitty one. |
+| Save opens the dialog (phase 20) | The Save button opens the "Save as GraphCreator" code dialog; the file is downloaded from there | Direct download (phases 1–19) | User's choice: one place to copy or download the GraphCreator text. |
 | Rename by double-click (phase 18) | Double-clicking a circle focuses the side panel's name field (`focusName`) | Inline text box on the canvas | User's choice; the same path as after adding a node. |
 | Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. Phase 10: every 5.7.2 value passed unchanged. The test loads `node:fs` with a dynamic `import()` and types `readFileSync` by hand, because `tsconfig.app.json` has no Node types and Vite's `?raw` returns an empty string for CSS in Vitest. |
 | Welcome closing | Escape, Skip, "Get started", "Take the tour" and a click on the dimmed overlay all close the slides and set the welcomed flag; no close (X) button; dots on all four slides | An X button; overlay clicks ignored | Phase 14 judgement call; the spec lists no X button. |
@@ -826,6 +840,8 @@ General rules for every phase:
 | 16 | Redesign integration and end-to-end tests | 11, 12, 13, 14, 15 | 8 | `src/App.tsx`, `src/main.tsx`, `src/components/Canvas.tsx`, deletes `DagNode.tsx` and `Toolbar.tsx`, `src/model/layout.ts` (+ test), `src/index.css`, `src/store/autosave.ts` (+ test), `e2e/*`, this spec's Status line and Open issues |
 | 17 | Light/dark toggle | 16 | 9 | `src/main.tsx`, `src/components/TopBar.tsx`, `e2e/smoke.spec.ts` |
 | 18 | Top bar rework and double-click rename | 17 | 10 | `src/model/fileFormat.ts` (+ test), `src/store/graphStore.ts` (+ test), `src/components/TopBar.tsx`, `OpenDialog.tsx`, `CodeDialog.tsx` (replace the two dagitty dialogs), `Canvas.tsx`, `src/index.css`, `IssuesDialog.tsx` (comment), `e2e/*.spec.ts` |
+| 19 | Own theme store instead of next-themes | 18 | 11 | `src/store/themeStore.ts` (+ test), `index.html`, `src/main.tsx`, `src/components/TopBar.tsx`, `Canvas.tsx`, `src/components/ui/sonner.tsx`, `package.json`, `package-lock.json` |
+| 20 | Save opens the GraphCreator dialog | 19 | 11 | `src/components/TopBar.tsx`, `e2e/files.spec.ts` |
 
 Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
 
@@ -840,7 +856,7 @@ Wave 4 is the wide one: its five phases share no files, and each codes against t
 **Redesign contracts (fixed here, used by phases 10–16).** Waves 6–8 rebuild the look in the same way as waves 3–5. Phase 10 fixes the tokens, stores, texts and lesson types. Wave 7 builds the new parts in parallel, and all but phase 13 build them as new files the app does not mount yet, so the existing e2e tests keep passing on every commit. Phase 16 switches everything on and updates the e2e tests.
 
 - New components are named exports with no props that read and write the stores: `TopBar()`, `ToolRail()`, `SavedIndicator()`, `WelcomeDialog()`, `LessonPanel()`, plus the hook `useToolShortcuts(): void`. `CircleNode` and `FloatingEdge` are React Flow node and edge components; `src/components/canvas/types.ts` exports `nodeTypes = { circle: CircleNode }`, `edgeTypes = { floating: FloatingEdge }`, `CircleConnectionLine`, and the data types `CircleNodeData = { name: string; role: Role; untyped: boolean; connectSource: boolean }` and `FloatingEdgeData = { evidenceCount: number }`.
-- `App` (phase 16) renders, inside `<ReactFlowProvider>`: `<TopBar />` on top; below it, side by side, `<ToolRail />`, `<LessonPanel />` (renders nothing without a lesson), `<main aria-label="Canvas"><Canvas /><SavedIndicator /></main>` and `<SidePanel />`; plus `<WelcomeDialog />` and `<Toaster />`. `App` calls `useToolShortcuts()`. `main.tsx` wraps `App` in `next-themes`' `ThemeProvider` (`attribute="class"`, `defaultTheme="light"`, `enableSystem={false}`, `storageKey="graphcreator:theme"`, `disableTransitionOnChange`; phase 17).
+- `App` (phase 16) renders, inside `<ReactFlowProvider>`: `<TopBar />` on top; below it, side by side, `<ToolRail />`, `<LessonPanel />` (renders nothing without a lesson), `<main aria-label="Canvas"><Canvas /><SavedIndicator /></main>` and `<SidePanel />`; plus `<WelcomeDialog />` and `<Toaster />`. `App` calls `useToolShortcuts()`. `main.tsx` calls `applyTheme(useThemeStore.getState().theme)` before the first render, and `index.html` applies a stored dark theme before the page paints (4.9, phase 19; phase 17 used `next-themes`' `ThemeProvider`).
 - Fitting the view after Open, Import, Auto-layout and the L and F shortcuts is done by the top bar and the rail with `fitView({ duration: 300 })` in `requestAnimationFrame`.
 - **As built in wave 7 (binding for phase 16):**
   - `useToolShortcuts()` uses no React Flow hooks, because `App`'s own body sits outside `<ReactFlowProvider>`. `useToolShortcuts.ts` also exports `useCanvasActions()` (fit view, zoom in and out, auto-layout, add a node at the view centre), which must be called inside the provider. `TopBar` and `ToolRail` call it and register their actions in module scope; the L, F, + and − shortcuts run the registered actions, so they work once `TopBar` or `ToolRail` is mounted. V, N, C and Escape work regardless.
@@ -1148,11 +1164,11 @@ Phases: 17. Parallel: single phase. Check after the wave: all checks, and a manu
 - **Done when:** all checks pass; with the system set to dark the app starts light; the toggle switches the canvas, panels, dialogs and toasts; the choice survives a reload.
 - **Out of scope:** a "follow the system" option.
 
-### Wave 10: Top bar and renaming [ ]
+### Wave 10: Top bar and renaming [x]
 
 Phases: 18. Parallel: single phase. Check after the wave: all checks, and a manual run in the browser of Help, Open (paste and file, both formats, an error), Save and both Save as… dialogs, and double-click renaming.
 
-#### Phase 18: Top bar rework and double-click rename [ ]
+#### Phase 18: Top bar rework and double-click rename [x] (294c057)
 
 - **Goal:** Lessons is called Help; the dagitty menu is gone: Open… takes pasted text or a file in either format, and Save gets a Save as… menu with GraphCreator and dagitty code dialogs; double-clicking a node opens its name for renaming.
 - **Depends on:** phase 17.
@@ -1168,6 +1184,35 @@ Phases: 18. Parallel: single phase. Check after the wave: all checks, and a manu
 - **Done when:** all checks pass; the manual run above works.
 - **Out of scope:** drag-and-drop of files onto the canvas; remembering the last Save format.
 
+### Wave 11: Theme store and Save dialog [ ]
+
+Phases: 19, 20 (done one after the other; both touch `TopBar.tsx`). Check after the wave: all checks; in the browser the theme toggle, reload and the console (no "Encountered a script tag" warning), and Save opening the GraphCreator dialog.
+
+#### Phase 19: Own theme store instead of next-themes [ ]
+
+- **Goal:** the light/dark switch works exactly as in phase 17 without `next-themes`, so React 19 no longer warns about its inline script.
+- **Depends on:** phase 18.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **`themeStore.ts`:** as in 4.9.
+  - **`index.html`:** the early dark-theme script (4.9).
+  - **`main.tsx`:** drop `ThemeProvider`; call `applyTheme` before the first render.
+  - **`TopBar.tsx`, `Canvas.tsx`, `ui/sonner.tsx`:** read and set the theme through `useThemeStore` instead of `useTheme()`.
+  - **`package.json`:** `npm uninstall next-themes`.
+- **Tests:** `themeStore.test.ts` (section 9); the phase 17 e2e theme test keeps passing unchanged.
+- **Done when:** all checks pass; `next-themes` appears nowhere in `src`, `index.html` or `package.json`; the toggle, the reload and a dark first paint work in the browser.
+- **Out of scope:** a "follow the system" option.
+
+#### Phase 20: Save opens the GraphCreator dialog [ ]
+
+- **Goal:** the Save button opens the "Save as GraphCreator" dialog (5.4) instead of downloading at once.
+- **Depends on:** phase 19.
+- **Owns files:** see the task graph row.
+- **Work:** in `TopBar.tsx`, Save calls `openCode('yaml')`; remove the direct-download `save()`. In `e2e/files.spec.ts`, a `saveFile` helper clicks Save, then Download in the dialog.
+- **Tests:** `e2e/files.spec.ts` (section 9).
+- **Done when:** all checks pass; Save shows the GraphCreator text and its Download gives `<slug>.dag.yaml`.
+- **Out of scope:** a keyboard shortcut for Save.
+
 ## 9. Tests
 
 - `src/model/graph.test.ts`: `newId` and `defaultNodeName` pick the smallest unused value; `addNode` returns a new graph and leaves the input unchanged; `renameNode` trims, refuses empty and duplicate names (case-sensitive: `Age` vs `age` allowed) and keeps edges; `updateNode` clears `levels`/`unit` when the type changes; `removeNodes` removes incident edges; `canAddEdge` returns `self`, `duplicate` and `cycle` with the exact messages, including the cycle path text; `addEdge` creates an edge with `evidence: []`.
@@ -1182,7 +1227,7 @@ Phases: 18. Parallel: single phase. Check after the wave: all checks, and a manu
 - `e2e/smoke.spec.ts`: the app loads with title `GraphCreator` and no console errors.
 - `e2e/canvas.spec.ts`: double-click adds "Node 1"; connecting two nodes adds an edge; closing a cycle shows the cycle toast; Delete removes a node and its edges; reload restores the graph.
 - `e2e/editing.spec.ts`: rename refuses a duplicate name; setting type to ordinal shows the levels editor and the hint; switching to continuous hides levels and shows unit; the warning badge count drops when a node gets a type; edge evidence can be added.
-- `e2e/files.spec.ts`: Save downloads a `.dag.yaml` whose text parses back to the same graph; Open of `cycle.dag.yaml` shows the error dialog and leaves the graph unchanged; dagitty import of `confounding.dagitty.txt` creates its nodes and edges; importing `bidirected.dagitty.txt` shows the error; dagitty export text matches `toDagitty`.
+- `e2e/files.spec.ts`: Save (from phase 20: Save, then Download in its dialog) downloads a `.dag.yaml` whose text parses back to the same graph; Open of `cycle.dag.yaml` shows the error dialog and leaves the graph unchanged; dagitty import of `confounding.dagitty.txt` creates its nodes and edges; importing `bidirected.dagitty.txt` shows the error; dagitty export text matches `toDagitty`.
 
 Redesign (phases 10–16):
 
@@ -1204,12 +1249,13 @@ Redesign (phases 10–16):
 - `e2e/smoke.spec.ts` (phase 17 update, replaces the dark test above): with `colorScheme: 'dark'` emulated the app starts light; the Dark mode button (`aria-pressed`) adds `dark` to `<html>` and React Flow and gives the canvas the dark `--canvas` colour; the choice survives a reload; clicking again returns to light; no console errors.
 - `src/model/fileFormat.test.ts` (phase 18): every YAML and dagitty fixture is recognised from its text alone; headerless dagitty is dagitty; `.yaml`/`.yml` names force YAML; YAML keys are found after comments; `parseGraphText` returns the right parser's result and errors.
 - `src/store/graphStore.test.ts` (phase 18 addition): `focusName` selects the node and sets `focusNameOf` without changing `graph`.
+- `src/store/themeStore.test.ts` (phase 19): `readTheme` is light by default, with null storage, for unknown values and for a throwing storage, and dark only for `'dark'`; `writeTheme` stores under `graphcreator:theme` and ignores null or throwing storage; the store starts light without a DOM and `setTheme` switches it.
 - e2e (phase 18): the top bar shows New, Open…, Save, Save as…, Help and Dark mode (`smoke`); Help reopens the slides (`welcome`, `lesson`); during a lesson New and Open… are disabled and both Save as… items work (`lesson`); `files`: Open file… with `smoking.dag.yaml` (warning toast) and with `confounding.dagitty.txt` (5 nodes, 7 edges, roles, `Opened with 5 warnings`), a cycle file lists its error in the dialog and keeps the graph, pasted YAML opens, pasted dagitty over a graph asks first, pasted bidirected dagitty shows the line-numbered error, both Save as… dialogs show the exact text and download the right file; `canvas`: double-clicking a circle focuses its name with the text selected, adds no node, and typing plus Enter renames it.
 
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
-- **Raw exception text in messages:** `Could not save the graph: …`, `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
+- **Raw exception text in messages:** `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
 - **Lessons:** only the tour exists (5.7.10). The real lessons and lesson features are listed under "Lessons" in [IDEAS.md](IDEAS.md).
 - **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.
 - **Lesson viewport:** starting or ending a lesson keeps the current viewport instead of fitting the view, so the practice graph can open zoomed in (up to React Flow's 2×) after a fit on a small graph.
