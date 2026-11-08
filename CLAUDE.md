@@ -6,6 +6,24 @@
 - [docs/IDEAS.md](docs/IDEAS.md) lists deferred features. Don't build them unless asked.
 - [docs/research.md](docs/research.md) is background research only.
 
+## Rules
+
+- `src/model/` is pure TypeScript: no React, Zustand, `@xyflow/react` or DOM imports.
+- No backend. The app is static files; graphs are never sent to a server.
+- MIT licence. No GPL code (in particular not DAGitty's `jslib`); write algorithms here.
+
+## Commands
+
+- `npm run dev`: Vite dev server on http://localhost:5173.
+- `npm run build`: typecheck and production build into `dist/`.
+- `npm run preview`: serve the production build.
+- `npm run typecheck`: `tsc -b` (also run by the Stop hook in `.claude/settings.json`).
+- `npm run lint`: oxlint.
+- `npm test`: Vitest unit tests (`src/**/*.test.ts`), once. `npm run test:watch` for watch mode.
+- `npm run test:e2e`: Playwright tests in `e2e/` (Chromium; builds and serves on port 4173). First run needs `npx playwright install chromium`.
+- `npm run format`: Prettier on the whole repo.
+- shadcn/ui components: `npx shadcn@latest add <name>` (they land in `src/components/ui/`).
+
 ## Git workflow
 
 - **Always commit with the `/anthropic-skills:commit` skill**, on branch `develop`. Do not commit by hand.

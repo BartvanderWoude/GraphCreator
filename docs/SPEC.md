@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08, not implemented yet. This document is the brief for the implementation sessions: one phase per session and per commit. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; phase 1 of 6 done. This document is the brief for the implementation sessions: one phase per session and per commit. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -351,7 +351,10 @@ The store persists the current graph to `localStorage` key `graphcreator:current
 - Node version pinned in `.nvmrc` (`26`).
 - CI: `.github/workflows/ci.yml`, on push to `develop` and on pull requests: checkout, setup-node from `.nvmrc` with npm cache, `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npx playwright install --with-deps chromium`, `npm run test:e2e`. Deployment from `develop` to `production` is added once a host is chosen (see Open issues).
 - Claude Code: `.claude/settings.json` has a Stop hook `npm run typecheck 1>&2 || exit 2`. CLAUDE.md lists the scripts and the rules: `docs/SPEC.md` is the source of truth; `src/model` has no React imports; no backend; MIT, no GPL code.
-- Path alias `@/` → `src/` (required by shadcn/ui), set in `tsconfig.json`, `tsconfig.app.json` and `vite.config.ts`.
+- Path alias `@/` → `src/` (required by shadcn/ui), set in `tsconfig.json`, `tsconfig.app.json` and `vite.config.ts`. `paths` only, without `baseUrl` (TypeScript 7 deprecates `baseUrl`).
+- shadcn/ui is initialised with the Radix base and the `radix-nova` preset (`npx shadcn@latest init -t vite -b radix -p nova`). This adds `radix-ui`, `lucide-react`, `class-variance-authority`, `cn` (shadcn's own clsx + tailwind-merge replacement), `tw-animate-css`, `@fontsource-variable/geist`, `next-themes` (used by the `sonner` wrapper) and `shadcn` (for `shadcn/tailwind.css`). Generated files in `src/components/ui/` are exempt from oxlint's `react/only-export-components` (override in `.oxlintrc.json`).
+- `tsconfig.node.json` also includes `playwright.config.ts` and `e2e/`, so `npm run typecheck` covers the end-to-end tests.
+- `.prettierignore` also lists `docs`: Prettier would rewrite the hand-aligned code blocks and tables in this spec.
 - `LICENSE`: MIT, `Copyright (c) 2026 Bart van der Woude`.
 
 ## 7. Decisions and alternatives considered
@@ -386,12 +389,14 @@ The store persists the current graph to `localStorage` key `graphcreator:current
 | Name uniqueness | Unique after trim, case-sensitive | Case-insensitive | Predictable. |
 | Document location | `docs/SPEC.md`, `docs/IDEAS.md`, research moved to `docs/research.md` | Root files; delete research | User's choice. |
 | Product stance | GraphCreator is its own tool; dagitty is an exchange format | DAGitty clone | User's direction. |
+| shadcn base and preset (phase 1) | Radix base, `radix-nova` preset | Base UI or React Aria base; other presets | Radix is the base most shadcn docs and examples use; Nova is the CLI's default preset. Settled during phase 1, not in the interview. |
+| Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
 
 ## 8. Implementation phases
 
 One phase per session and per commit. Each phase leaves the full test suite passing. Status: `[ ]` to do, `[x]` done (with the commit hash).
 
-### Phase 1: Tooling, CI and app shell [ ]
+### Phase 1: Tooling, CI and app shell [x] (commit hash to add after committing; CI on the pushed commit still to confirm)
 
 - **Goal:** all dependencies, scripts, tests and CI are in place, and the Vite demo is replaced by an empty GraphCreator shell (toolbar, canvas area, side panel placeholders).
 - **Depends on:** none.
