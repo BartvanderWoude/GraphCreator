@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7) was agreed on 2026-11-08 and is not implemented yet: waves 6–8 (phases 10–16) are open, next is wave 6. Where sections 4.5–5.3 describe the redesign, they describe the app as it will be after wave 8; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7) was agreed on 2026-11-08; wave 6 (phase 10, groundwork) is done, waves 7–8 (phases 11–16) are open, next is wave 7. Where sections 4.5–5.3 describe the redesign, they describe the app as it will be after wave 8; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -397,7 +397,7 @@ export const useLessonStore: UseBoundStore<StoreApi<LessonState>>
 export function isStepDone(): boolean   // current step's isDone(useGraphStore.getState().graph); true when no lesson
 ```
 
-The set-aside graph is held in module scope next to the store (not in the store's state), so autosave never sees it. `start` while a lesson is active first exits the old one. `start` with an unknown id throws `Unknown lesson "<id>".` `next` on the last step calls `exit`. Lessons are looked up in `LESSONS` (5.7.10).
+The set-aside graph is held in module scope next to the store (not in the store's state), so autosave never sees it. `start` while a lesson is active first exits the old one. `start` with an unknown id throws `Unknown lesson "<id>".` before anything changes, so a running lesson keeps running. `next` on the last step calls `exit`, but like every step only once `isStepDone()` is true. Lessons are looked up in `LESSONS` (5.7.10).
 
 ## 5. Behaviour
 
@@ -634,7 +634,7 @@ GraphCreator speaks like a careful colleague reviewing your DAG: precise, neutra
 | `FIELD_TIPS.unit` | "Unit: the unit a continuous or discrete variable is measured in, such as g or years." |
 | `FIELD_TIPS.evidence` | "Evidence: references that support this arrow, such as PMID:123 or doi:10.1000/xyz. One reference per line." |
 | `FIELD_TIPS.note` | "Note: why you drew this arrow, or what is uncertain about it." |
-| `PANEL_HELP` | the title "Nothing selected." (kept from v1; `e2e/smoke.spec.ts` and `e2e/canvas.spec.ts` check it) followed by four rows: "Add a node" / "Double-click the canvas or press N"; "Connect" / "Drag from the rim of a circle, or press C"; "Delete" / "Select, then press Delete"; "Select several" / "Shift-click" |
+| `PANEL_HELP` | typed `{ title: string; rows: readonly { action: string; how: string }[] }`: the title "Nothing selected." (kept from v1; `e2e/smoke.spec.ts` and `e2e/canvas.spec.ts` check it) followed by four rows: "Add a node" / "Double-click the canvas or press N"; "Connect" / "Drag from the rim of a circle, or press C"; "Delete" / "Select, then press Delete"; "Select several" / "Shift-click" |
 
 #### 5.7.9 Welcome slides (`WelcomeDialog.tsx`)
 
@@ -770,7 +770,8 @@ export function findLesson(id: string): Lesson | undefined
 | Circle size | Pure estimate in `src/model/nodeSize.ts` | Measuring text in the browser | User's choice: deterministic and usable by `autoLayout` without the DOM. |
 | Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle (open issue). |
 | Dark theme mechanism | `next-themes` (`attribute="class"`, `defaultTheme="system"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
-| Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. |
+| Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. Phase 10: every 5.7.2 value passed unchanged. The test loads `node:fs` with a dynamic `import()` and types `readFileSync` by hand, because `tsconfig.app.json` has no Node types and Vite's `?raw` returns an empty string for CSS in Vitest. |
+| Tooltip look | Phase 10 restyles the generated shadcn `tooltip.tsx` to `rounded-lg`, elevation 2 and 180 ms ease-out (5.7.4, 5.7.5), keeping the foreground-coloured background | Leave the generated `rounded-md` look | Only phase 10 owns `tooltip.tsx`, so wave 7 cannot fix it. |
 | `renameNode` keeps the centre | The store shifts `pos` when the diameter changes | Grow from the top-left corner | Circles stay where the user put them; `pos` keeps its file meaning. |
 
 ## 8. Implementation phases
@@ -960,11 +961,11 @@ Phases: 9. Parallel: single phase. Integration check after the wave: all checks 
 - **Done when:** all checks pass and CI is green; a manual run-through of every 5.x behaviour in the browser works; the Status line says v1 is implemented.
 - **Out of scope:** everything in IDEAS.md.
 
-### Wave 6: Design groundwork [ ]
+### Wave 6: Design groundwork [x]
 
 Phases: 10. Parallel: single phase. Integration check after the wave: all checks. The app still shows the v1 layout, now in IBM Plex and the teal tokens.
 
-#### Phase 10: Design groundwork and contracts [ ]
+#### Phase 10: Design groundwork and contracts [x] (d44403a)
 
 - **Goal:** the Calm teal tokens, fonts, texts, node sizing, UI store, lesson store and tour lesson exist, together with the shadcn tooltip, so that wave 7 can build every new part in parallel against them.
 - **Depends on:** phase 9.
