@@ -79,6 +79,37 @@ describe('graphStore', () => {
     expect(store().graph).toBe(before)
   })
 
+  it('renameNode keeps the circle centre when the diameter changes', () => {
+    store().replaceGraph({
+      nodes: [{ id: 'n1', name: 'Age', role: 'other', pos: { x: 100, y: 50 } }],
+      edges: [],
+    })
+    // 64 px → 132 px: pos shifts by (64 - 132) / 2 = -34 on both axes.
+    const result = store().renameNode('n1', 'Maternal smoking during pregnancy')
+    expect(result.ok).toBe(true)
+    expect(store().graph.nodes[0].pos).toEqual({ x: 66, y: 16 })
+    expect(result.ok && result.value).toBe(store().graph)
+    // And back again.
+    store().renameNode('n1', 'Age')
+    expect(store().graph.nodes[0].pos).toEqual({ x: 100, y: 50 })
+    // Same diameter: no shift.
+    store().renameNode('n1', 'Sex')
+    expect(store().graph.nodes[0].pos).toEqual({ x: 100, y: 50 })
+  })
+
+  it('renameNode leaves pos unchanged when the rename fails', () => {
+    store().replaceGraph(sample())
+    store().renameNode('n2', 'Maternal smoking during pregnancy')
+    const before = store().graph
+    // A longer name that is taken, and a blank one: both refused, nothing moves.
+    expect(
+      store().renameNode('n1', 'Maternal smoking during pregnancy').ok,
+    ).toBe(false)
+    expect(store().renameNode('n1', '   ').ok).toBe(false)
+    expect(store().graph).toBe(before)
+    expect(store().graph.nodes[0].pos).toEqual({ x: 0, y: 0 })
+  })
+
   it('updateNode delegates to the model', () => {
     store().replaceGraph(sample())
     const graph = expectReplaced(() =>

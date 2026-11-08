@@ -17,6 +17,7 @@ import {
   type Position,
 } from '@/model/graph'
 import { autoLayout } from '@/model/layout'
+import { nodeDiameter } from '@/model/nodeSize'
 import type { Result } from '@/model/result'
 
 /** The app's single store (spec 4.6). Every action delegates to the pure model and replaces `graph`. */
@@ -27,7 +28,10 @@ export interface GraphState {
   focusNameOf: string | null
   /** Adds a node with `defaultNodeName`, selects it and sets `focusNameOf`; returns its id. */
   addNodeAt(pos: Position): string
-  /** Applies the rename on success and returns the model result. */
+  /**
+   * Applies the rename on success and returns the model result. The circle keeps its centre: `pos`
+   * shifts by half the change in `nodeDiameter`, so `result.value` is the graph as stored.
+   */
   renameNode(nodeId: string, name: string): Result<Graph>
   updateNode(nodeId: string, patch: Partial<Omit<GNode, 'id' | 'name'>>): void
   moveNode(nodeId: string, pos: Position): void
@@ -65,9 +69,24 @@ export const useGraphStore = create<GraphState>()((set, get) => ({
   },
 
   renameNode(nodeId, name) {
-    const result = renameNode(get().graph, nodeId, name)
-    if (result.ok) set({ graph: result.value })
-    return result
+    const before = get().graph
+    const result = renameNode(before, nodeId, name)
+    if (!result.ok) return result
+    const oldNode = before.nodes.find((n) => n.id === nodeId)
+    let graph = result.value
+    if (oldNode) {
+      const shift = Math.round(
+        (nodeDiameter(oldNode.name) - nodeDiameter(name)) / 2,
+      )
+      if (shift !== 0) {
+        graph = moveNode(graph, nodeId, {
+          x: oldNode.pos.x + shift,
+          y: oldNode.pos.y + shift,
+        })
+      }
+    }
+    set({ graph })
+    return { ...result, value: graph }
   },
 
   updateNode(nodeId, patch) {
