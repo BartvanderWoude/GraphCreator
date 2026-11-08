@@ -1,32 +1,20 @@
-# React + TypeScript + Vite
+# GraphCreator
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A browser-based editor for causal DAGs (directed acyclic graphs), made for epidemiologists. A DAG in GraphCreator is a documented model: variables carry a type, ordered levels, a description and a unit, and edges carry evidence and a note. Graphs are saved as versioned YAML files and can be imported from and exported to the [dagitty](https://www.dagitty.net) text format.
 
-Currently, two official plugins are available:
+Everything runs in the browser. There is no backend, and graphs never leave your machine.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Development
 
-## React Compiler
+Requires Node 26 (see `.nvmrc`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+The design and the implementation plan are in [docs/SPEC.md](docs/SPEC.md).
+
+## Licence
+
+[MIT](LICENSE)
