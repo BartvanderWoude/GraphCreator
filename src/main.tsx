@@ -1,22 +1,21 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { ThemeProvider } from 'next-themes'
 import './index.css'
 import App from './App.tsx'
+import { hasBeenWelcomed, safeLocalStorage } from './lib/welcome'
 import { startAutosave } from './store/autosave'
+import { useUiStore } from './store/uiStore'
 
-/** `window.localStorage`, or null when the browser blocks access to it. */
-function localStorageOrNull(): Storage | null {
-  try {
-    return window.localStorage
-  } catch {
-    return null
-  }
-}
+startAutosave(safeLocalStorage())
 
-startAutosave(localStorageOrNull())
+// First visit: show the welcome slides (spec 5.7.9).
+if (!hasBeenWelcomed(safeLocalStorage())) useUiStore.getState().openWelcome()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <App />
+    </ThemeProvider>
   </StrictMode>,
 )

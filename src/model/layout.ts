@@ -2,11 +2,6 @@ import { Graph as DagreGraph, layout } from '@dagrejs/dagre'
 import type { Graph } from './graph'
 import { nodeDiameter } from './nodeSize'
 
-/** Width of a v1 node box on the canvas, in px. Removed in phase 16; `autoLayout` no longer uses it. */
-export const NODE_WIDTH = 160
-/** Height of a v1 node box on the canvas, in px. Removed in phase 16; `autoLayout` no longer uses it. */
-export const NODE_HEIGHT = 48
-
 /**
  * Lays out the whole graph left to right with dagre and returns a new graph with every node's
  * `pos` (top-left of its box) replaced by integer coordinates. Each node is a `d × d` square with

@@ -235,42 +235,30 @@
   }
 }
 /*
- * v1 role colours (spec 5.6), used by the live v1 DagNode until phase 16 removes them. Each is used for the node border and as the background of the role
- * badge, whose letter is white: every colour has at least 4.5:1 contrast with white (WCAG AA;
- * exposure 5.0, outcome 6.7, latent 7.6, adjusted 5.0, selected 7.0, other 4.8). The node box is
- * a 12% tint of the colour on the background, so the name in --foreground stays above 12:1.
- * Colour is never the only cue: the badge letter and the latent dashed border carry the role too.
+ * React Flow on the Calm teal tokens (spec 5.1, 5.7.2). Circles, edges and the connection line
+ * are styled in src/components/canvas/canvas.css. The canvas is teal-tinted, with no dot grid;
+ * the box selection is teal like every other selection.
  */
-:root {
-  --role-exposure: #15803d;
-  --role-outcome: #1d4ed8;
-  --role-latent: #4b5563;
-  --role-adjusted: #b45309;
-  --role-selected: #7e22ce;
-  --role-other: #64748b;
-}
-
-/* React Flow: darker edges than the default grey, highlighted when selected. */
 .react-flow {
-  --xy-edge-stroke: #737373;
-  --xy-edge-stroke-selected: #2563eb;
-  --xy-edge-stroke-width: 1.5;
+  --xy-background-color: var(--canvas);
+  --xy-selection-background-color: color-mix(
+    in srgb,
+    var(--primary) 8%,
+    transparent
+  );
+  --xy-selection-border: 1px dashed var(--primary);
+  --xy-attribution-background-color: transparent;
 }
-.react-flow .react-flow__edge.selected .react-flow__edge-path {
-  stroke-width: 3;
+.react-flow .react-flow__attribution a {
+  color: var(--muted-foreground);
 }
-.react-flow .react-flow__handle {
-  width: 10px;
-  height: 10px;
+/* The add and connect tools (spec 5.2) show a crosshair over the empty canvas. */
+.gc-tool-add .react-flow__pane,
+.gc-tool-connect .react-flow__pane {
+  cursor: crosshair;
 }
-/* While dragging a connection, the handle under the pointer is red if the edge is not allowed. */
-.react-flow__handle.connectingto:not(.valid) {
-  background-color: var(--destructive);
-  border-color: var(--destructive);
-}
-.react-flow__handle.connectingto.valid {
-  background-color: var(--role-exposure);
-  border-color: var(--role-exposure);
+.gc-tool-connect .react-flow__node {
+  cursor: pointer;
 }
 
 html,

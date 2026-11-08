@@ -1,47 +1,51 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import {
-  Background,
-  Controls,
-  MarkerType,
   ReactFlow,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
+  type ColorMode,
   type Connection,
-  type Edge,
   type EdgeChange,
   type FinalConnectionState,
   type NodeChange,
+  type NodeMouseHandler,
   type OnDelete,
   type OnNodeDrag,
   type OnSelectionChangeFunc,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
+import './canvas/canvas.css'
+import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { DagNode, type DagFlowNode } from '@/components/DagNode'
-import { canAddEdge, type Graph } from '@/model/graph'
-import { NODE_HEIGHT, NODE_WIDTH } from '@/model/layout'
+import {
+  CircleConnectionLine,
+  edgeTypes,
+  nodeTypes,
+  type CircleFlowNode,
+  type FloatingFlowEdge,
+} from '@/components/canvas/types'
+import { cn } from '@/lib/utils'
+import { canAddEdge, defaultNodeName, type Graph } from '@/model/graph'
+import { nodeDiameter } from '@/model/nodeSize'
 import { useGraphStore, type GraphState } from '@/store/graphStore'
-
-const nodeTypes = { dag: DagNode }
-
-const EDGE_COLOUR = '#737373'
-const EDGE_SELECTED_COLOUR = '#2563eb'
+import { useUiStore } from '@/store/uiStore'
 
 type Selection = GraphState['selection']
 
 /**
- * React Flow's view of the graph. It is rebuilt from the store's `graph` and `selection`, but kept
- * in local state so React Flow can apply its own transient changes (in-drag positions, measured
- * sizes, multi-selection flags) between store commits.
+ * React Flow's view of the graph. It is rebuilt from the store's `graph` and `selection` (and the
+ * connect-mode source), but kept in local state so React Flow can apply its own transient changes
+ * (in-drag positions, measured sizes, multi-selection flags) between store commits.
  */
 interface Flow {
-  nodes: DagFlowNode[]
-  edges: Edge[]
+  nodes: CircleFlowNode[]
+  edges: FloatingFlowEdge[]
   /** The store values this flow was last synced from. */
   graph: Graph | null
   selection: Selection
+  connectFrom: string | null
 }
 
 function sameSelection(a: Selection, b: Selection): boolean {
@@ -63,42 +67,63 @@ function impliedSelection(
     : { kind: 'edge', id: e[0].id }
 }
 
-/** Rebuilds the flow from the store, keeping React Flow's transient state where it still applies. */
-function syncFlow(prev: Flow, graph: Graph, selection: Selection): Flow {
+/** Rebuilds the flow from the stores, keeping React Flow's transient state where it still applies. */
+function syncFlow(
+  prev: Flow,
+  graph: Graph,
+  selection: Selection,
+  connectFrom: string | null,
+): Flow {
   const oldNodes = new Map(prev.nodes.map((n) => [n.id, n]))
   const oldEdges = new Map(prev.edges.map((e) => [e.id, e]))
 
-  let nodes: DagFlowNode[] = graph.nodes.map((g) => {
+  let nodes: CircleFlowNode[] = graph.nodes.map((g) => {
     const old = oldNodes.get(g.id)
     const position = old?.dragging ? old.position : g.pos
     const untyped = g.varType === undefined
+    const connectSource = connectFrom === g.id
     if (
       old &&
       old.position.x === position.x &&
       old.position.y === position.y &&
       old.data.name === g.name &&
       old.data.role === g.role &&
-      old.data.untyped === untyped
+      old.data.untyped === untyped &&
+      old.data.connectSource === connectSource
+    ) {
+      return old
+    }
+    const d = nodeDiameter(g.name)
+    return {
+      id: g.id,
+      type: 'circle',
+      position,
+      width: d,
+      height: d,
+      data: { name: g.name, role: g.role, untyped, connectSource },
+      // A renamed circle changes size; React Flow measures it again.
+      measured: old && old.width === d ? old.measured : undefined,
+      dragging: old?.dragging,
+      selected: old?.selected ?? false,
+    }
+  })
+  let edges: FloatingFlowEdge[] = graph.edges.map((g) => {
+    const old = oldEdges.get(g.id)
+    const evidenceCount = g.evidence.length
+    if (
+      old &&
+      old.source === g.source &&
+      old.target === g.target &&
+      old.data?.evidenceCount === evidenceCount
     ) {
       return old
     }
     return {
       id: g.id,
-      type: 'dag',
-      position,
-      data: { name: g.name, role: g.role, untyped },
-      measured: old?.measured,
-      dragging: old?.dragging,
-      selected: old?.selected ?? false,
-    }
-  })
-  let edges: Edge[] = graph.edges.map((g) => {
-    const old = oldEdges.get(g.id)
-    if (old && old.source === g.source && old.target === g.target) return old
-    return {
-      id: g.id,
+      type: 'floating',
       source: g.source,
       target: g.target,
+      data: { evidenceCount },
       selected: old?.selected ?? false,
     }
   })
@@ -118,51 +143,81 @@ function syncFlow(prev: Flow, graph: Graph, selection: Selection): Flow {
         : { ...e, selected: isSel('edge', e.id) },
     )
   }
-  return { nodes, edges, graph, selection }
+  return { nodes, edges, graph, selection, connectFrom }
 }
 
 function hasNodes(graph: Graph, ...ids: string[]): boolean {
   return ids.every((id) => graph.nodes.some((n) => n.id === id))
 }
 
+/** Calls the store's `connect` and toasts the reason when the edge is not allowed. */
+function connectOrExplain(source: string, target: string) {
+  const check = useGraphStore.getState().connect(source, target)
+  if (!check.ok) toast(check.message)
+}
+
+/** React Flow's colour mode for next-themes' resolved theme (spec 7, "Dark theme mechanism"). */
+function colorModeOf(resolvedTheme: string | undefined): ColorMode {
+  if (resolvedTheme === 'dark') return 'dark'
+  if (resolvedTheme === 'light') return 'light'
+  return 'system'
+}
+
 /** The React Flow canvas (spec 5.2). Must be rendered inside a `<ReactFlowProvider>`. */
 export function Canvas() {
   const graph = useGraphStore((s) => s.graph)
   const selection = useGraphStore((s) => s.selection)
+  const tool = useUiStore((s) => s.tool)
+  const connectFrom = useUiStore((s) => s.connectFrom)
+  const { resolvedTheme } = useTheme()
   const { screenToFlowPosition } = useReactFlow()
   const [flow, setFlow] = useState<Flow>(() =>
     syncFlow(
-      { nodes: [], edges: [], graph: null, selection: null },
+      {
+        nodes: [],
+        edges: [],
+        graph: null,
+        selection: null,
+        connectFrom: null,
+      },
       graph,
       selection,
+      connectFrom,
     ),
   )
-  // Re-derive during render when the store changed (React's "adjust state on prop change" pattern).
-  if (flow.graph !== graph || flow.selection !== selection) {
-    setFlow(syncFlow(flow, graph, selection))
+  // Re-derive during render when a store changed (React's "adjust state on prop change" pattern).
+  if (
+    flow.graph !== graph ||
+    flow.selection !== selection ||
+    flow.connectFrom !== connectFrom
+  ) {
+    setFlow(syncFlow(flow, graph, selection, connectFrom))
   }
 
-  const onNodesChange = useCallback((changes: NodeChange<DagFlowNode>[]) => {
+  const onNodesChange = useCallback((changes: NodeChange<CircleFlowNode>[]) => {
     // Removals go through onDelete → store; the next sync drops the nodes.
     const local = changes.filter((c) => c.type !== 'remove')
     setFlow((f) => ({ ...f, nodes: applyNodeChanges(local, f.nodes) }))
   }, [])
 
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    const local = changes.filter((c) => c.type !== 'remove')
-    setFlow((f) => ({ ...f, edges: applyEdgeChanges(local, f.edges) }))
-  }, [])
-
-  const onSelectionChange: OnSelectionChangeFunc<DagFlowNode> = useCallback(
-    ({ nodes, edges }) => {
-      const next = impliedSelection(nodes, edges)
-      const { selection: current, select } = useGraphStore.getState()
-      if (!sameSelection(next, current)) select(next)
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange<FloatingFlowEdge>[]) => {
+      const local = changes.filter((c) => c.type !== 'remove')
+      setFlow((f) => ({ ...f, edges: applyEdgeChanges(local, f.edges) }))
     },
     [],
   )
 
-  const onNodeDragStop: OnNodeDrag<DagFlowNode> = useCallback(
+  const onSelectionChange: OnSelectionChangeFunc<
+    CircleFlowNode,
+    FloatingFlowEdge
+  > = useCallback(({ nodes, edges }) => {
+    const next = impliedSelection(nodes, edges)
+    const { selection: current, select } = useGraphStore.getState()
+    if (!sameSelection(next, current)) select(next)
+  }, [])
+
+  const onNodeDragStop: OnNodeDrag<CircleFlowNode> = useCallback(
     (_event, _node, dragged) => {
       const { moveNode } = useGraphStore.getState()
       for (const n of dragged) moveNode(n.id, n.position)
@@ -170,14 +225,17 @@ export function Canvas() {
     [],
   )
 
-  const onDelete: OnDelete<DagFlowNode> = useCallback(({ nodes, edges }) => {
-    useGraphStore.getState().removeSelection(
-      nodes.map((n) => n.id),
-      edges.map((e) => e.id),
-    )
-  }, [])
+  const onDelete: OnDelete<CircleFlowNode, FloatingFlowEdge> = useCallback(
+    ({ nodes, edges }) => {
+      useGraphStore.getState().removeSelection(
+        nodes.map((n) => n.id),
+        edges.map((e) => e.id),
+      )
+    },
+    [],
+  )
 
-  const isValidConnection = useCallback((c: Connection | Edge) => {
+  const isValidConnection = useCallback((c: Connection | FloatingFlowEdge) => {
     const { graph } = useGraphStore.getState()
     if (!c.source || !c.target || !hasNodes(graph, c.source, c.target)) {
       return false
@@ -186,8 +244,7 @@ export function Canvas() {
   }, [])
 
   const onConnect = useCallback((c: Connection) => {
-    const check = useGraphStore.getState().connect(c.source, c.target)
-    if (!check.ok) toast(check.message)
+    connectOrExplain(c.source, c.target)
   }, [])
 
   const onConnectEnd = useCallback(
@@ -206,42 +263,70 @@ export function Canvas() {
     [],
   )
 
-  const onDoubleClick = useCallback(
-    (event: ReactMouseEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement
-      if (!target.classList.contains('react-flow__pane')) return
+  /** Adds a node centred on the given screen point (spec 5.2 "Add node"). */
+  const addNodeAtPointer = useCallback(
+    (event: ReactMouseEvent) => {
       const p = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-      useGraphStore.getState().addNodeAt({
-        x: Math.round(p.x - NODE_WIDTH / 2),
-        y: Math.round(p.y - NODE_HEIGHT / 2),
-      })
+      const { graph, addNodeAt } = useGraphStore.getState()
+      const half = nodeDiameter(defaultNodeName(graph)) / 2
+      addNodeAt({ x: Math.round(p.x - half), y: Math.round(p.y - half) })
     },
     [screenToFlowPosition],
   )
 
-  const edges = useMemo(
-    () =>
-      flow.edges.map((e) => {
-        const color = e.selected ? EDGE_SELECTED_COLOUR : EDGE_COLOUR
-        return {
-          ...e,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color,
-            width: 18,
-            height: 18,
-          },
-        }
-      }),
-    [flow.edges],
+  const onDoubleClick = useCallback(
+    (event: ReactMouseEvent<HTMLDivElement>) => {
+      const target = event.target as HTMLElement
+      if (!target.classList.contains('react-flow__pane')) return
+      addNodeAtPointer(event)
+    },
+    [addNodeAtPointer],
+  )
+
+  const onPaneClick = useCallback(
+    (event: ReactMouseEvent) => {
+      const ui = useUiStore.getState()
+      if (ui.tool === 'add') {
+        addNodeAtPointer(event)
+        ui.setTool('select')
+      } else if (ui.tool === 'connect') {
+        ui.pickConnectSource(null)
+      }
+    },
+    [addNodeAtPointer],
+  )
+
+  const onNodeClick: NodeMouseHandler<CircleFlowNode> = useCallback(
+    (_event, node) => {
+      const ui = useUiStore.getState()
+      if (ui.tool !== 'connect') return
+      const source = ui.connectFrom
+      if (source === null) {
+        ui.pickConnectSource(node.id)
+        return
+      }
+      // A second click on the picked circle puts it down again.
+      ui.pickConnectSource(null)
+      if (source !== node.id) connectOrExplain(source, node.id)
+    },
+    [],
   )
 
   return (
-    <div className="h-full min-h-0 w-full min-w-0 flex-1">
-      <ReactFlow<DagFlowNode>
+    <div
+      className={cn(
+        'h-full min-h-0 w-full min-w-0 flex-1',
+        tool === 'add' && 'gc-tool-add',
+        tool === 'connect' && 'gc-tool-connect',
+      )}
+    >
+      <ReactFlow<CircleFlowNode, FloatingFlowEdge>
         nodes={flow.nodes}
-        edges={edges}
+        edges={flow.edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        connectionLineComponent={CircleConnectionLine}
+        colorMode={colorModeOf(resolvedTheme)}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onSelectionChange={onSelectionChange}
@@ -251,13 +336,14 @@ export function Canvas() {
         onConnect={onConnect}
         onConnectEnd={onConnectEnd}
         onDoubleClick={onDoubleClick}
+        onPaneClick={onPaneClick}
+        onNodeClick={onNodeClick}
+        connectOnClick={false}
         zoomOnDoubleClick={false}
         deleteKeyCode={['Delete', 'Backspace']}
         multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
+        attributionPosition="bottom-left"
+      />
     </div>
   )
 }

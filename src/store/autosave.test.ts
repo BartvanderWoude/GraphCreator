@@ -3,6 +3,8 @@ import smoking from '@/model/__fixtures__/smoking.dag.yaml?raw'
 import { emptyGraph } from '@/model/graph'
 import { toYaml } from '@/model/yaml'
 import { useGraphStore } from './graphStore'
+import { useLessonStore } from './lessonStore'
+import { useUiStore } from './uiStore'
 import { AUTOSAVE_KEY, RESTORE_FAILED_MESSAGE, startAutosave } from './autosave'
 
 const toastMock = vi.hoisted(() => vi.fn())
@@ -21,6 +23,8 @@ function fakeStorage(initial: Record<string, string> = {}) {
 }
 
 const store = () => useGraphStore.getState()
+const lesson = () => useLessonStore.getState()
+const status = () => useUiStore.getState().autosave
 
 let stop: (() => void) | null = null
 
@@ -28,11 +32,13 @@ beforeEach(() => {
   vi.useFakeTimers()
   toastMock.mockClear()
   store().replaceGraph(emptyGraph())
+  useUiStore.getState().setAutosave('on')
 })
 
 afterEach(() => {
   stop?.()
   stop = null
+  lesson().exit()
   vi.useRealTimers()
 })
 
@@ -169,6 +175,117 @@ describe('startAutosave: writing', () => {
     vi.advanceTimersByTime(1000)
     store().addNodeAt({ x: 200, y: 0 })
     vi.advanceTimersByTime(1000)
+    expect(storage.setItem).not.toHaveBeenCalled()
+  })
+})
+
+describe('startAutosave: lessons and status', () => {
+  /** A user graph with one node named "Age", written to storage. */
+  function userGraphStored(storage: ReturnType<typeof fakeStorage>) {
+    const id = store().addNodeAt({ x: 0, y: 0 })
+    store().renameNode(id, 'Age')
+    vi.advanceTimersByTime(500)
+    expect(storage.data.get(AUTOSAVE_KEY)).toContain('name: Age')
+    storage.setItem.mockClear()
+  }
+
+  it('never writes while a lesson is active', () => {
+    const storage = fakeStorage()
+    stop = startAutosave(storage)
+    userGraphStored(storage)
+
+    lesson().start('tour')
+    const id = store().addNodeAt({ x: 0, y: 0 })
+    store().renameNode(id, 'Smoking')
+    vi.advanceTimersByTime(5000)
+    expect(storage.setItem).not.toHaveBeenCalled()
+    expect(storage.data.get(AUTOSAVE_KEY)).toContain('name: Age')
+    expect(storage.data.get(AUTOSAVE_KEY)).not.toContain('Smoking')
+  })
+
+  it('flushes a pending write of the user graph when a lesson starts', () => {
+    const storage = fakeStorage()
+    stop = startAutosave(storage)
+    const id = store().addNodeAt({ x: 0, y: 0 })
+    store().renameNode(id, 'Age')
+    vi.advanceTimersByTime(100)
+    expect(storage.setItem).not.toHaveBeenCalled()
+
+    lesson().start('tour')
+    expect(storage.setItem).toHaveBeenCalledTimes(1)
+    expect(storage.data.get(AUTOSAVE_KEY)).toContain('name: Age')
+    // The practice graph (empty) replaced it in the store, but is not written.
+    expect(store().graph.nodes).toHaveLength(0)
+    vi.advanceTimersByTime(5000)
+    expect(storage.setItem).toHaveBeenCalledTimes(1)
+  })
+
+  it('writes the user graph again after the lesson ends', () => {
+    const storage = fakeStorage()
+    stop = startAutosave(storage)
+    userGraphStored(storage)
+    const userYaml = toYaml(store().graph)
+
+    lesson().start('tour')
+    store().addNodeAt({ x: 0, y: 0 })
+    // Something else overwrote the stored text in the meantime.
+    storage.data.set(AUTOSAVE_KEY, 'stale')
+    lesson().exit()
+    expect(toYaml(store().graph)).toBe(userYaml)
+    vi.advanceTimersByTime(500)
+    expect(storage.setItem).toHaveBeenCalledExactlyOnceWith(
+      AUTOSAVE_KEY,
+      userYaml,
+    )
+  })
+
+  it('does not write when a lesson starts with nothing pending', () => {
+    const storage = fakeStorage()
+    stop = startAutosave(storage)
+    userGraphStored(storage)
+    lesson().start('tour')
+    expect(storage.setItem).not.toHaveBeenCalled()
+  })
+
+  it('is on with storage and paused during a lesson', () => {
+    stop = startAutosave(fakeStorage())
+    expect(status()).toBe('on')
+    lesson().start('tour')
+    expect(status()).toBe('paused')
+    lesson().exit()
+    expect(status()).toBe('on')
+  })
+
+  it('is blocked without storage, and paused during a lesson', () => {
+    stop = startAutosave(null)
+    expect(status()).toBe('blocked')
+    lesson().start('tour')
+    expect(status()).toBe('paused')
+    lesson().exit()
+    expect(status()).toBe('blocked')
+  })
+
+  it('is blocked after a write throws and on again after a write succeeds', () => {
+    const storage = fakeStorage()
+    storage.setItem.mockImplementationOnce(() => {
+      throw new Error('QuotaExceededError')
+    })
+    stop = startAutosave(storage)
+    store().addNodeAt({ x: 0, y: 0 })
+    vi.advanceTimersByTime(500)
+    expect(status()).toBe('blocked')
+    store().addNodeAt({ x: 200, y: 0 })
+    vi.advanceTimersByTime(500)
+    expect(status()).toBe('on')
+  })
+
+  it('takes a lesson that is already running into account at start', () => {
+    lesson().start('tour')
+    const storage = fakeStorage()
+    stop = startAutosave(storage)
+    expect(status()).toBe('paused')
+    store().addNodeAt({ x: 0, y: 0 })
+    vi.advanceTimersByTime(500)
     expect(storage.setItem).not.toHaveBeenCalled()
   })
 })

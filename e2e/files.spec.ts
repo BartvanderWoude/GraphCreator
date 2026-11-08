@@ -1,12 +1,20 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
+import type { Download, Page } from '@playwright/test'
 import {
+  addNodeAt,
+  centre,
+  circle,
+  connect,
+  edges,
   expect,
+  node,
+  nodes,
+  pane,
+  rail,
   test,
-  type Download,
-  type Locator,
-  type Page,
-} from '@playwright/test'
+  topBar,
+} from './fixtures.ts'
 
 const FIXTURES = path.join(import.meta.dirname, '../src/model/__fixtures__')
 const fixture = (name: string) => path.join(FIXTURES, name)
@@ -25,26 +33,14 @@ Genetic_factors -> Birth_weight
 }
 `
 
-const nodes = (page: Page) => page.locator('.react-flow__node')
-const edges = (page: Page) => page.locator('.react-flow__edge')
-const toolbar = (page: Page) => page.getByRole('toolbar', { name: 'Toolbar' })
+const toolbar = topBar
 const button = (page: Page, name: string) =>
   toolbar(page).getByRole('button', { name, exact: true })
-
-function node(page: Page, name: string) {
-  return nodes(page).filter({ has: page.getByText(name, { exact: true }) })
-}
-
-async function centre(locator: Locator) {
-  const box = await locator.boundingBox()
-  if (!box) throw new Error('Element has no bounding box.')
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-}
 
 /** Clicks Open and picks `file` in the file chooser. */
 async function openFile(page: Page, file: string) {
   const chooser = page.waitForEvent('filechooser')
-  await button(page, 'Open').click()
+  await button(page, 'Open…').click()
   await (await chooser).setFiles(file)
 }
 
@@ -64,7 +60,7 @@ async function dagittyMenu(page: Page, item: 'Import…' | 'Export…') {
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('.react-flow__pane')).toBeVisible()
+  await expect(pane(page)).toBeVisible()
 })
 
 test('Open loads a YAML file and Save writes the same text back', async ({
@@ -97,26 +93,13 @@ test('a graph made in the app survives Save, New and Open', async ({
   const name = toolbar(page).getByRole('textbox', { name: 'Graph name' })
   await name.fill('My DAG!')
   await name.press('Enter')
-  await page
-    .locator('.react-flow__pane')
-    .dblclick({ position: { x: 150, y: 200 } })
+  await addNodeAt(page, 150, 200)
   await page.keyboard.type('Age')
   await page.keyboard.press('Enter')
-  await page
-    .locator('.react-flow__pane')
-    .dblclick({ position: { x: 500, y: 200 } })
+  await addNodeAt(page, 500, 200)
   await page.keyboard.type('BMI')
   await page.keyboard.press('Enter')
-  const s = await centre(
-    node(page, 'Age').locator('.react-flow__handle.source'),
-  )
-  const t = await centre(
-    node(page, 'BMI').locator('.react-flow__handle.target'),
-  )
-  await page.mouse.move(s.x, s.y)
-  await page.mouse.down()
-  await page.mouse.move(t.x, t.y, { steps: 10 })
-  await page.mouse.up()
+  await connect(page, 'Age', 'BMI')
   await expect(edges(page)).toHaveCount(1)
 
   const first = await download(page, () => button(page, 'Save').click())
@@ -147,9 +130,7 @@ test('a graph made in the app survives Save, New and Open', async ({
 test('Open of an invalid file lists the errors and keeps the graph', async ({
   page,
 }) => {
-  await page
-    .locator('.react-flow__pane')
-    .dblclick({ position: { x: 200, y: 200 } })
+  await addNodeAt(page, 200, 200)
   await expect(nodes(page)).toHaveCount(1)
 
   await openFile(page, fixture('cycle.dag.yaml'))
@@ -161,7 +142,7 @@ test('Open of an invalid file lists the errors and keeps the graph', async ({
   await dialog.getByRole('button', { name: 'Close' }).first().click()
   await expect(dialog).toHaveCount(0)
   await expect(nodes(page)).toHaveCount(1)
-  await expect(node(page, 'Node 1')).toBeVisible()
+  await expect(circle(page, 'Node 1')).toBeVisible()
 })
 
 test('dagitty import from a file creates its nodes and edges', async ({
@@ -179,19 +160,18 @@ test('dagitty import from a file creates its nodes and edges', async ({
 
   await expect(dialog).toHaveCount(0)
   for (const n of ['A', 'B', 'D', 'E', 'Z']) {
-    await expect(node(page, n)).toBeVisible()
+    await expect(circle(page, n)).toBeVisible()
   }
   await expect(nodes(page)).toHaveCount(5)
   await expect(edges(page)).toHaveCount(7)
-  await expect(node(page, 'E').getByLabel('Role: exposure')).toBeVisible()
-  await expect(node(page, 'D').getByLabel('Role: outcome')).toBeVisible()
+  await expect(circle(page, 'E')).toHaveAttribute('data-role', 'exposure')
+  await expect(circle(page, 'D')).toHaveAttribute('data-role', 'outcome')
+  await expect(circle(page, 'A')).toHaveAttribute('data-role', 'other')
   await expect(page.getByText('Imported with 5 warnings')).toBeVisible()
 })
 
 test('dagitty import over an existing graph asks first', async ({ page }) => {
-  await page
-    .locator('.react-flow__pane')
-    .dblclick({ position: { x: 200, y: 200 } })
+  await addNodeAt(page, 200, 200)
   await dagittyMenu(page, 'Import…')
   const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
   await dialog
@@ -201,7 +181,7 @@ test('dagitty import over an existing graph asks first', async ({ page }) => {
   const confirm = page.getByRole('dialog', { name: 'Start a new graph?' })
   await confirm.getByRole('button', { name: 'Import' }).click()
   await expect(nodes(page)).toHaveCount(2)
-  await expect(node(page, 'X')).toBeVisible()
+  await expect(circle(page, 'X')).toBeVisible()
   await expect(node(page, 'Node 1')).toHaveCount(0)
 })
 
@@ -257,7 +237,7 @@ test('Auto-layout puts causes left of their effects', async ({ page }) => {
     (await centre(node(page, 'B'))).x,
   )
 
-  await button(page, 'Auto-layout').click()
+  await rail(page).getByRole('button', { name: 'Auto-layout' }).click()
   await expect
     .poll(
       async () =>

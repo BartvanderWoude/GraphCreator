@@ -1,35 +1,20 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
-
-function node(page: Page, name: string) {
-  return page
-    .locator('.react-flow__node')
-    .filter({ has: page.getByText(name, { exact: true }) })
-}
-
-const panel = (page: Page) =>
-  page.getByRole('complementary', { name: 'Side panel' })
-
-const nameField = (page: Page) =>
-  panel(page).getByRole('textbox', { name: 'Name', exact: true })
-
-async function addNodeAt(page: Page, x: number, y: number) {
-  await page.locator('.react-flow__pane').dblclick({ position: { x, y } })
-}
-
-async function centre(locator: Locator) {
-  const box = await locator.boundingBox()
-  if (!box) throw new Error('Element has no bounding box.')
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
-}
-
-async function connect(page: Page, from: string, to: string) {
-  const s = await centre(node(page, from).locator('.react-flow__handle.source'))
-  const t = await centre(node(page, to).locator('.react-flow__handle.target'))
-  await page.mouse.move(s.x, s.y)
-  await page.mouse.down()
-  await page.mouse.move(t.x, t.y, { steps: 10 })
-  await page.mouse.up()
-}
+import type { Page } from '@playwright/test'
+import {
+  addNodeAt,
+  centre,
+  circle,
+  clickEdgeBetween,
+  connect,
+  expect,
+  nameField,
+  node,
+  nodes,
+  pane,
+  panel,
+  stored,
+  test,
+  topBar,
+} from './fixtures.ts'
 
 /** Picks `option` in the side panel select labelled `label` (Role or Type). */
 async function choose(page: Page, label: string, option: string) {
@@ -93,12 +78,9 @@ async function expectTip(
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 }
 
-const stored = (page: Page) =>
-  page.evaluate(() => localStorage.getItem('graphcreator:current'))
-
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('.react-flow__pane')).toBeVisible()
+  await expect(pane(page)).toBeVisible()
 })
 
 test('rename commits on Enter and refuses a duplicate name', async ({
@@ -114,10 +96,8 @@ test('rename commits on Enter and refuses a duplicate name', async ({
     'There is already a node called "Node 1".',
   )
   await expect(nameField(page)).toHaveAttribute('aria-invalid', 'true')
-  await expect(page.locator('.react-flow__node')).toHaveText([
-    /Node 1/,
-    /Node 2/,
-  ])
+  await expect(circle(page, 'Node 1')).toBeVisible()
+  await expect(circle(page, 'Node 2')).toBeVisible()
 
   // Escape reverts; a valid name commits.
   await nameField(page).press('Escape')
@@ -126,22 +106,26 @@ test('rename commits on Enter and refuses a duplicate name', async ({
   await nameField(page).fill('  Birth weight ')
   await nameField(page).press('Enter')
   await expect(nameField(page)).toHaveValue('Birth weight')
-  await expect(node(page, 'Birth weight')).toBeVisible()
+  await expect(circle(page, 'Birth weight')).toBeVisible()
 })
 
-test('role changes the node badge', async ({ page }) => {
+test('role sets the data-role and accessible name of the circle', async ({
+  page,
+}) => {
   await addNodeAt(page, 200, 200)
+  const c = circle(page, 'Node 1')
+  await expect(c).toHaveAttribute('data-role', 'other')
   await choose(page, 'Role', 'Exposure')
-  await expect(node(page, 'Node 1').getByLabel('Role: exposure')).toHaveText(
-    'E',
-  )
+  await expect(c).toHaveAttribute('data-role', 'exposure')
+  await expect(c).toHaveAccessibleName('Node 1, Exposure')
   await choose(page, 'Role', 'Latent')
-  await expect(node(page, 'Node 1').getByLabel('Role: latent')).toHaveText('L')
+  await expect(c).toHaveAttribute('data-role', 'latent')
+  await expect(c).toHaveAccessibleName('Node 1, Latent')
   await expect(panel(page).getByRole('combobox', { name: 'Role' })).toHaveText(
     'Latent',
   )
   await choose(page, 'Role', 'Other')
-  await expect(node(page, 'Node 1').getByLabel(/Role:/)).toHaveCount(0)
+  await expect(c).toHaveAttribute('data-role', 'other')
 })
 
 test('role and type options show labels; role options carry their description', async ({
@@ -250,19 +234,17 @@ test('description is saved on blur', async ({ page }) => {
 test('warning badge count drops when a node gets a type', async ({ page }) => {
   await addNodeAt(page, 150, 200)
   await addNodeAt(page, 500, 200)
-  const badge = page
-    .getByRole('toolbar', { name: 'Toolbar' })
-    .getByRole('button', { name: /warning/ })
-  await expect(badge).toHaveText('⚠ 2')
-  await expect(
-    node(page, 'Node 2').getByTitle('No variable type'),
-  ).toBeVisible()
+  const badge = topBar(page).getByRole('button', { name: /warning/ })
+  await expect(badge).toHaveText('2 warnings')
+  const dot = node(page, 'Node 2').getByRole('img', {
+    name: 'No variable type',
+  })
+  await expect(dot).toBeVisible()
+  await expect(dot).toHaveAttribute('title', 'No variable type')
 
   await choose(page, 'Type', 'Continuous')
-  await expect(badge).toHaveText('⚠ 1')
-  await expect(node(page, 'Node 2').getByTitle('No variable type')).toHaveCount(
-    0,
-  )
+  await expect(badge).toHaveText('1 warning')
+  await expect(dot).toHaveCount(0)
 })
 
 test('issues dialog lists warnings and selects the clicked node', async ({
@@ -286,13 +268,7 @@ test('edge evidence and note can be added', async ({ page }) => {
   await addNodeAt(page, 150, 200)
   await addNodeAt(page, 500, 200)
   await connect(page, 'Node 1', 'Node 2')
-  const s = await centre(
-    node(page, 'Node 1').locator('.react-flow__handle.source'),
-  )
-  const t = await centre(
-    node(page, 'Node 2').locator('.react-flow__handle.target'),
-  )
-  await page.mouse.click((s.x + t.x) / 2, (s.y + t.y) / 2)
+  await clickEdgeBetween(page, 'Node 1', 'Node 2')
   await expect(
     panel(page).getByRole('heading', { name: 'Node 1 → Node 2' }),
   ).toBeVisible()
@@ -328,4 +304,5 @@ test('edge evidence and note can be added', async ({ page }) => {
 
   await panel(page).getByRole('button', { name: 'Delete edge' }).click()
   await expect(page.locator('.react-flow__edge')).toHaveCount(0)
+  await expect(nodes(page)).toHaveCount(2)
 })
