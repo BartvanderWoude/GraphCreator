@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; waves 1–4 of 5 done (phases 1–8 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (all 5 waves, phases 1–9 done). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -394,6 +394,8 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 
 `src/store/autosave.ts` persists the store's current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave.
 
+Details fixed in phase 9: writes are a trailing debounce (each graph change restarts the 500 ms timer), so a burst of changes is written once, 500 ms after the last one. Only changes to `graph` trigger a write; selection changes and the restore itself do not. After a failed restore the bad text stays in storage until the next change overwrites it. `main.tsx` starts autosave before the first render; the restore toast still shows because sonner replays toasts raised before `<Toaster />` mounts.
+
 ### 5.6 UI details fixed in wave 4
 
 - **Canvas (phase 6):** React Flow nodes/edges live in local state, rebuilt from the store's `graph` and `selection` when they change, keeping in-drag positions and `measured` sizes; `onNodeDragStop` commits `moveNode`. `onSelectionChange` sets the store selection to the single selected item, or `null` for zero or several. A double-clicked node is centred on the pointer. Shift, Meta or Control multi-select. The invalid-drop toast comes from `onConnectEnd`. Default bezier edges with a closed arrowhead (grey `#737373`; selected blue `#2563eb`, 3 px); valid hovered handle green, invalid red. `<Background />` and `<Controls />`, no minimap. Role colours: exposure `#15803d`, outcome `#1d4ed8`, latent `#4b5563`, adjusted `#b45309`, selected `#7e22ce`, other `#64748b` (each ≥ 4.5:1 with the white badge letter); the box has a role-colour border and a 12 % tint background. `Canvas` fills its parent (`h-full flex-1`).
@@ -453,6 +455,7 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 | Wave 4 implementation details | As recorded in 4.1, 4.2 and 5.6 ("Details fixed in phase …") | — | Not specified before; chosen by the wave 4 implementations and accepted when the wave landed. |
 | dagitty y axis | Grows downward; ×100, no flip | Flip y on import/export | Confirmed in phase 5; closes the former open issue. |
 | dagitty-derived fixtures | `confounding.dagitty.txt` and `bidirected.dagitty.txt` are dagitty example models used verbatim as test data | Hand-written equivalents | The spec allowed dagitty examples as data; they are model text, not code. Flagged to the user when wave 4 landed. |
+| Autosave timing (phase 9) | Trailing debounce: write 500 ms after the last change | Throttle: write at most every 500 ms during a burst | Both fit "at most every 500 ms"; the debounce writes less often and was accepted when wave 5 landed. |
 | Store details (phase 3) | As listed under 4.6 ("Details fixed in phase 3") | — | Not specified before; chosen by the phase 3 implementation and accepted when the wave landed. |
 | Validation error messages (phase 2) | Exact texts listed in 4.4 | — | The spec named only some messages; the rest were fixed during phase 2 so later phases and tests can rely on them. |
 | Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
@@ -613,11 +616,11 @@ Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integra
 - **Done when:** all checks pass; `Toolbar` follows the component contracts.
 - **Out of scope:** mounting in `App`, canvas, side panel.
 
-### Wave 5: Integration [ ]
+### Wave 5: Integration [x]
 
 Phases: 9. Parallel: single phase. Integration check after the wave: all checks and a manual run-through of every 5.x behaviour in the browser.
 
-#### Phase 9: Integration, autosave and end-to-end tests [ ]
+#### Phase 9: Integration, autosave and end-to-end tests [x] (8daf610)
 
 - **Goal:** v1 is feature-complete: the parts from wave 4 are mounted, the graph autosaves, and the end-to-end tests cover the main flows.
 - **Depends on:** phases 4, 5, 6, 7, 8.
@@ -650,5 +653,6 @@ Phases: 9. Parallel: single phase. Integration check after the wave: all checks 
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
-- **Tokens/colours:** role colours are chosen in phase 6; a later design pass may refine the visual style.
+- **Tokens/colours:** role colours were chosen in phase 6 (5.6); a later design pass may refine the visual style.
+- **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
 - Everything in [IDEAS.md](IDEAS.md).
