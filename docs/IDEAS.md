@@ -31,6 +31,17 @@ Features deliberately left out of v1. Nothing here is designed yet. When one is 
 - Share links: the graph compressed into the URL `#fragment` (never sent to a server).
 - Optional LLM-suggested edges: opt-in, labelled by provenance, citations verified.
 
+## Lessons
+
+The lesson engine and the tour ("Drawing your first DAG") are specified in SPEC.md 5.7.10. Still to design and write, each as an interactive lesson on a practice graph (running example: smoking and birth weight):
+
+- Roles explained: exposure, outcome, latent, adjusted, selected, other, and what each means for the analysis.
+- Variable types and levels: categorical, ordinal, continuous, discrete; ordered levels; units.
+- Documenting evidence: references and notes on edges, and why they matter for reporting.
+- Confounders, mediators and colliders: back-door paths, what to adjust for and what not to (highlighting paths on the canvas).
+- Reporting your DAG in a paper: what to show, following Tennant et al. (2021).
+- Lesson features: progress kept across visits, a lessons list on the last welcome slide, "Lesson: …" links at the end of info tooltips, citations inside lessons.
+
 ## Import and export
 
 - Image export: SVG, PNG, TikZ.
