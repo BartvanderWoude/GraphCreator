@@ -1,0 +1,221 @@
+/*
+ * Circle nodes, floating edges and the connection line (spec 5.2, 5.7.7). Plain CSS on the
+ * tokens of src/index.css; imported by Canvas.tsx. Selectors start with .react-flow so they win
+ * over React Flow's own stylesheet whatever the import order.
+ */
+
+/* ---- Circle node ------------------------------------------------------------------------- */
+
+.react-flow .gc-node {
+  position: relative;
+}
+
+.react-flow .gc-circle {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--gc-line);
+  background: var(--gc-fill);
+  color: var(--gc-text);
+  /* Node text style (5.7.3): 13 / 500 / 1.25. */
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+  /* wrapLabel has already broken the name into lines. */
+  white-space: pre;
+  /* Keyboard focus ring, hover rim, elevation 1 (5.7.4), drawn in that order from the top. */
+  box-shadow:
+    var(--gc-focus-ring, 0 0 #0000),
+    var(--gc-rim-ring, 0 0 #0000),
+    0 1px 2px rgb(15 23 42 / 0.08);
+  transition:
+    box-shadow 120ms,
+    border-color 120ms;
+}
+
+.react-flow .gc-line {
+  display: block;
+}
+
+/* Role colours (5.7.2): fill, outline and text. */
+.react-flow .gc-circle[data-role='exposure'] {
+  --gc-fill: var(--role-exposure-fill);
+  --gc-line: var(--role-exposure-line);
+  --gc-text: var(--role-exposure-text);
+}
+.react-flow .gc-circle[data-role='outcome'] {
+  --gc-fill: var(--role-outcome-fill);
+  --gc-line: var(--role-outcome-line);
+  --gc-text: var(--role-outcome-text);
+}
+.react-flow .gc-circle[data-role='latent'] {
+  --gc-fill: var(--role-latent-fill);
+  --gc-line: var(--role-latent-line);
+  --gc-text: var(--role-latent-text);
+}
+.react-flow .gc-circle[data-role='adjusted'] {
+  --gc-fill: var(--role-adjusted-fill);
+  --gc-line: var(--role-adjusted-line);
+  --gc-text: var(--role-adjusted-text);
+}
+.react-flow .gc-circle[data-role='selected'] {
+  --gc-fill: var(--role-selected-fill);
+  --gc-line: var(--role-selected-line);
+  --gc-text: var(--role-selected-text);
+}
+.react-flow .gc-circle[data-role='other'] {
+  --gc-fill: var(--role-other-fill);
+  --gc-line: var(--role-other-line);
+  --gc-text: var(--role-other-text);
+}
+
+/* Hover: a 7 px rim outside the outline, the drag-to-connect area. Kept on for the connect-mode
+   source and for the circle a connection is being dragged from; off on other circles while
+   connecting, where the drop ring shows instead. */
+.react-flow .gc-node:hover:not(.gc-connecting) .gc-circle,
+.react-flow .gc-node.gc-rim-on .gc-circle {
+  --gc-rim-ring: 0 0 0 7px var(--rim);
+}
+
+/* Selected: the outline becomes a 3.5 px teal border. */
+.react-flow .gc-node.gc-selected .gc-circle {
+  border-width: 3.5px;
+  border-color: var(--primary);
+}
+
+/* Keyboard focus on React Flow's node wrapper. */
+.react-flow .react-flow__node-circle:focus-visible {
+  outline: none;
+}
+.react-flow .react-flow__node-circle:focus-visible .gc-circle {
+  --gc-focus-ring: 0 0 0 2px var(--canvas), 0 0 0 4px var(--ring);
+}
+
+/* Untyped: a warning dot on the rim at the top right (position set inline). */
+.react-flow .gc-untyped {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid var(--background);
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+}
+
+/* ---- Handles (easy connect) -------------------------------------------------------------- */
+
+.react-flow .react-flow__node-circle .react-flow__handle.gc-handle {
+  min-width: 0;
+  min-height: 0;
+  transform: none;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+}
+
+/* Source: a disc 7 px larger than the circle on every side, behind it, so only the rim is
+   exposed to the pointer. */
+.react-flow .react-flow__node-circle .react-flow__handle.gc-source {
+  top: -7px;
+  left: -7px;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+  z-index: 0;
+  pointer-events: all;
+  cursor: crosshair;
+}
+.react-flow
+  .react-flow__node-circle
+  .gc-connecting
+  .react-flow__handle.gc-source {
+  pointer-events: none;
+}
+
+/* Target: covers the whole circle, but only takes the pointer while a connection is dragged. */
+.react-flow .react-flow__node-circle .react-flow__handle.gc-target {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+  transition: box-shadow 120ms;
+}
+.react-flow
+  .react-flow__node-circle
+  .gc-connecting
+  .react-flow__handle.gc-target {
+  pointer-events: all;
+}
+
+/* Drop target while connecting: 4 px ring, teal if the edge is allowed, red if not. */
+.react-flow
+  .react-flow__node-circle
+  .react-flow__handle.gc-target.connectingto {
+  box-shadow: 0 0 0 4px var(--destructive);
+}
+.react-flow
+  .react-flow__node-circle
+  .react-flow__handle.gc-target.connectingto.valid {
+  box-shadow: 0 0 0 4px var(--primary);
+}
+
+/* ---- Floating edge ----------------------------------------------------------------------- */
+
+.react-flow .react-flow__edge-floating .react-flow__edge-path.gc-edge-path {
+  stroke: var(--edge);
+  stroke-width: 1.5;
+  transition:
+    stroke 120ms,
+    stroke-width 120ms;
+}
+.react-flow .react-flow__edge-floating .gc-edge-arrow {
+  fill: var(--edge);
+  transition: fill 120ms;
+}
+
+.react-flow
+  .react-flow__edge-floating:hover
+  .react-flow__edge-path.gc-edge-path {
+  stroke: var(--edge-hover);
+  stroke-width: 2;
+}
+.react-flow .react-flow__edge-floating:hover .gc-edge-arrow {
+  fill: var(--edge-hover);
+}
+
+/* Selected (and keyboard focus, which React Flow also shows in the selection colour). */
+.react-flow
+  .react-flow__edge-floating.selected
+  .react-flow__edge-path.gc-edge-path,
+.react-flow
+  .react-flow__edge-floating:focus-visible
+  .react-flow__edge-path.gc-edge-path {
+  stroke: var(--primary);
+  stroke-width: 2.5;
+}
+.react-flow .react-flow__edge-floating.selected .gc-edge-arrow,
+.react-flow .react-flow__edge-floating:focus-visible .gc-edge-arrow {
+  fill: var(--primary);
+}
+
+/* ---- Connection line --------------------------------------------------------------------- */
+
+.react-flow .gc-connection-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.75;
+  stroke-dasharray: 6 4;
+}
