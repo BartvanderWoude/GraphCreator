@@ -5,6 +5,8 @@ export interface Issue {
   line?: number
   /** Dotted path into the file structure, e.g. `nodes.2.var_type`. */
   path?: string
+  /** Internal id of the node the issue is about (set on `validateGraph` node warnings), so the UI can select it. */
+  nodeId?: string
 }
 
 /** Outcome of every parser and every operation that can fail. */

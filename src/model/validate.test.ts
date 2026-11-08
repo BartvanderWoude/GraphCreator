@@ -117,4 +117,20 @@ describe('validateGraph', () => {
       'Node "Edu" has duplicate levels ("low", "high").',
     ])
   })
+
+  it('sets nodeId on node-specific warnings', () => {
+    const g: Graph = {
+      nodes: [
+        node('n1', { name: 'SES', varType: undefined }),
+        node('n2', { name: 'Smoking', varType: 'categorical' }),
+        node('n3', { name: 'Edu', varType: 'ordinal', levels: ['a', 'a'] }),
+      ],
+      edges: [],
+    }
+    expect(validateGraph(g).warnings.map((w) => w.nodeId)).toEqual([
+      'n1',
+      'n2',
+      'n3',
+    ])
+  })
 })

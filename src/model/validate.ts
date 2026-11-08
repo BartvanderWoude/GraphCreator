@@ -41,12 +41,16 @@ export function validateGraph(graph: Graph): {
     }
 
     if (node.varType === undefined) {
-      warnings.push({ message: `Node "${name}" has no variable type.` })
+      warnings.push({
+        message: `Node "${name}" has no variable type.`,
+        nodeId: node.id,
+      })
     } else if (isLeveledType(node.varType)) {
       const levels = node.levels ?? []
       if (levels.length < 2) {
         warnings.push({
           message: `Node "${name}" is ${node.varType} but has fewer than two levels.`,
+          nodeId: node.id,
         })
       }
       const dupes = [
@@ -55,6 +59,7 @@ export function validateGraph(graph: Graph): {
       if (dupes.length > 0) {
         warnings.push({
           message: `Node "${name}" has duplicate levels (${dupes.map((d) => `"${d}"`).join(', ')}).`,
+          nodeId: node.id,
         })
       }
     }
