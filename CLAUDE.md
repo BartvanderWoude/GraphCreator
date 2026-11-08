@@ -2,7 +2,7 @@
 
 ## Spec
 
-- [docs/SPEC.md](docs/SPEC.md) is the source of truth: data model, formats, behaviour and the implementation phases (one phase per session and per commit). To continue, implement the next `### Phase N: … [ ]` whose dependencies are done.
+- [docs/SPEC.md](docs/SPEC.md) is the source of truth: data model, formats, behaviour and the implementation plan. Phases are grouped into waves (section 8, task graph): "run the next wave" builds every phase of the next `### Wave N: … [ ]` with parallel sub agents (one squashed commit per phase); "execute the next phase" builds a single `#### Phase N: … [ ]` whose dependencies are done. Find status with `grep -n "^### Wave\|^#### Phase" docs/SPEC.md`.
 - [docs/IDEAS.md](docs/IDEAS.md) lists deferred features. Don't build them unless asked.
 - [docs/research.md](docs/research.md) is background research only.
 
@@ -26,6 +26,7 @@
 
 ## Git workflow
 
+- **Always ask the user before committing to `develop`**, every time, and wait for a clear yes. This includes commits made while landing a wave (squashed phase commits) or by sub agents' work being landed.
 - **Always commit with the `/anthropic-skills:commit` skill**, on branch `develop`. Do not commit by hand.
 - `develop` is the integration branch. All work lands here.
 - `production` is the branch for the live production website. Do not commit or push to it directly. `develop` is deployed into `production` by GitHub Actions (CI/CD).

@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; phases 1–2 of 6 done. This document is the brief for the implementation sessions: one phase per session and per commit. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; waves 1–2 of 5 done (phases 1–2 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -29,11 +29,13 @@ src/
     result.ts            Result / Issue types
     __fixtures__/        .dag.yaml and .dagitty.txt fixture files for tests
   store/
-    graphStore.ts        Zustand store wrapping the model operations; localStorage autosave
+    graphStore.ts        Zustand store wrapping the model operations (4.6)
+    autosave.ts          localStorage autosave (5.5)
   components/
     Toolbar.tsx, Canvas.tsx, DagNode.tsx, SidePanel.tsx, NodeEditor.tsx, EdgeEditor.tsx,
     ListEditor.tsx, DagittyImportDialog.tsx, DagittyExportDialog.tsx, IssuesDialog.tsx
     ui/                  shadcn/ui generated components
+  lib/download.ts        downloadText helper for Save and dagitty export
   App.tsx                layout: toolbar on top, canvas in the middle, side panel on the right
 e2e/                     Playwright tests
 ```
@@ -97,13 +99,13 @@ Rules:
 ### 3.3 Results and issues (`src/model/result.ts`)
 
 ```ts
-export interface Issue { message: string; line?: number; path?: string }
+export interface Issue { message: string; line?: number; path?: string; nodeId?: string }  // nodeId: added in phase 3
 export type Result<T> =
   | { ok: true; value: T; warnings: Issue[] }
   | { ok: false; errors: Issue[] }
 ```
 
-Every parser and every operation that can fail returns a `Result`. Messages are complete sentences shown to the user verbatim (e.g. `Node name "Age" is used more than once.`).
+Every parser and every operation that can fail returns a `Result`. `nodeId` is set on issues about one node (the `validateGraph` warnings), so the UI can select that node. Messages are complete sentences shown to the user verbatim (e.g. `Node name "Age" is used more than once.`).
 
 ## 4. Formats and interfaces
 
@@ -302,6 +304,31 @@ export function autoLayout(graph: Graph): Graph
 
 Uses `@dagrejs/dagre` with `rankdir: 'LR'`, `nodesep: 50`, `ranksep: 100`, every node `NODE_WIDTH × NODE_HEIGHT`. dagre returns centres; convert to top-left (`x - NODE_WIDTH / 2`, `y - NODE_HEIGHT / 2`) and round to integers. Deterministic for the same input.
 
+### 4.6 Store API (`src/store/graphStore.ts`, phase 3)
+
+```ts
+export interface GraphState {
+  graph: Graph
+  selection: { kind: 'node' | 'edge'; id: string } | null
+  focusNameOf: string | null                 // node whose name field should be focused next
+  addNodeAt(pos: Position): string            // adds a node with defaultNodeName, selects it, sets focusNameOf; returns its id
+  renameNode(nodeId: string, name: string): Result<Graph>  // applies on success, returns the model result
+  updateNode(nodeId: string, patch: Partial<Omit<GNode, 'id' | 'name'>>): void
+  moveNode(nodeId: string, pos: Position): void
+  connect(source: string, target: string): EdgeCheck      // adds the edge when ok
+  updateEdge(edgeId: string, patch: Partial<Pick<GEdge, 'evidence' | 'note'>>): void
+  removeSelection(nodeIds: string[], edgeIds: string[]): void  // clears selection if it was removed
+  select(selection: GraphState['selection']): void
+  clearFocusName(): void
+  replaceGraph(graph: Graph): void            // also clears selection and focusNameOf
+  setGraphName(name: string): void            // blank → undefined
+  layout(): void                              // graph = autoLayout(graph)
+}
+export const useGraphStore: UseBoundStore<StoreApi<GraphState>>  // zustand `create<GraphState>()(…)`
+```
+
+Initial state: `emptyGraph()`, no selection. Every action delegates to the pure functions of section 4 and replaces `graph`; none mutates. Autosave is not part of the store; phase 9 subscribes to it.
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -351,7 +378,7 @@ Uses `@dagrejs/dagre` with `rankdir: 'LR'`, `nodesep: 50`, `ranksep: 100`, every
 
 ### 5.5 Autosave
 
-The store persists the current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave.
+`src/store/autosave.ts` persists the store's current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave.
 
 ## 6. Project setup and conventions
 
@@ -400,84 +427,184 @@ The store persists the current graph to `localStorage` key `graphcreator:current
 | Document location | `docs/SPEC.md`, `docs/IDEAS.md`, research moved to `docs/research.md` | Root files; delete research | User's choice. |
 | Product stance | GraphCreator is its own tool; dagitty is an exchange format | DAGitty clone | User's direction. |
 | shadcn base and preset (phase 1) | Radix base, `radix-nova` preset | Base UI or React Aria base; other presets | Radix is the base most shadcn docs and examples use; Nova is the CLI's default preset. Settled during phase 1, not in the interview. |
+| Implementation order (2026-11-08) | Task graph with waves: contracts (phase 3), five parallel phases (wave 4), integration (phase 9) | Formats first, then UI in narrower waves without stubs | User's choice when the /design skill gained waves. Only the cut into phases changed; the design did not. |
+| `Issue.nodeId` (phase 3) | Optional `nodeId` on `Issue`, set on node warnings | Match warnings to nodes by parsing the message | Needed for 5.1 "clicking a warning selects its node"; fixed in the contracts phase so wave 4 can rely on it. |
+| Store API location | Section 4.6, implemented in phase 3; autosave in its own module (phase 9) | Store and autosave together with the canvas | Wave 4's UI phases all code against the store, so it is a contract. |
 | Validation error messages (phase 2) | Exact texts listed in 4.4 | — | The spec named only some messages; the rest were fixed during phase 2 so later phases and tests can rely on them. |
 | Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
 
 ## 8. Implementation phases
 
-One phase per session and per commit. Each phase leaves the full test suite passing. Status: `[ ]` to do, `[x]` done (with the commit hash).
+Phases form a dependency graph and are grouped into waves. Every phase in a wave depends only on phases in earlier waves and owns a disjoint set of files, so a wave can run in parallel (one sub agent per phase, "run wave N") or phase by phase. Each phase is one commit and leaves the full test suite passing. Status: `[ ]` to do, `[x]` done (with the commit hash).
 
-### Phase 1: Tooling, CI and app shell [x] (e46eb88)
+General rules for every phase:
+
+- Read the whole spec first; sections 3–7 and the decisions table are binding.
+- Only create or change the files the phase owns. All other files are read-only for it. Code against the contracts of earlier phases; don't change them.
+- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`). If another is needed, stop and report it.
+- Don't add npm dependencies; everything needed is installed (section 6).
+- "All checks" means `npm run typecheck`, `npm run lint`, `npm test` and `npm run test:e2e`.
+
+### Task graph
+
+| Phase | Title | Depends on | Wave | Owns files |
+|---|---|---|---|---|
+| 1 | Tooling, CI and app shell | none | 1 | project config, CI, `src/App.tsx`, `src/index.css`, `src/model/result.ts`, `e2e/smoke.spec.ts` (see the phase) |
+| 2 | Model core | 1 | 2 | `src/model/{schema,graph,cycle,validate}.ts` and their tests |
+| 3 | Layout, store and contracts | 2 | 3 | `src/model/layout.ts`, `layout.test.ts`, `yaml.ts` (stub), `dagitty.ts` (stub), `result.ts`, `validate.ts`, `validate.test.ts`, `src/store/graphStore.ts`, `graphStore.test.ts`, `src/components/ui/{label,badge}.tsx` |
+| 4 | YAML format | 3 | 4 | `src/model/schema.ts`, `yaml.ts`, `yaml.test.ts`, `src/model/__fixtures__/*.dag.yaml` |
+| 5 | dagitty import and export | 3 | 4 | `src/model/dagitty.ts`, `dagitty.test.ts`, `src/model/__fixtures__/*.dagitty.txt` |
+| 6 | Canvas and node look | 3 | 4 | `src/components/Canvas.tsx`, `DagNode.tsx`, `src/index.css` |
+| 7 | Side panel editors | 3 | 4 | `src/components/SidePanel.tsx`, `NodeEditor.tsx`, `EdgeEditor.tsx`, `ListEditor.tsx` |
+| 8 | Toolbar and dialogs | 3 | 4 | `src/components/Toolbar.tsx`, `IssuesDialog.tsx`, `DagittyImportDialog.tsx`, `DagittyExportDialog.tsx`, `src/lib/download.ts` |
+| 9 | Integration, autosave and end-to-end tests | 4, 5, 6, 7, 8 | 5 | `src/App.tsx`, `src/main.tsx`, `src/store/autosave.ts`, `autosave.test.ts`, `e2e/*.spec.ts`, this spec's Status line |
+
+Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
+
+**Component contracts (fixed here, used by phases 6–9).** Each component is a named export with no props that reads and writes the store through `useGraphStore`:
+
+- `Canvas()` in `src/components/Canvas.tsx`, `SidePanel()` in `SidePanel.tsx`, `Toolbar()` in `Toolbar.tsx`.
+- `App` (phase 9) renders, inside one `<ReactFlowProvider>` from `@xyflow/react`: `<Toolbar />` on top, then `<Canvas />` and `<SidePanel />` side by side, plus `<Toaster />` from `@/components/ui/sonner`. Because of the shared provider, `Toolbar` may call `useReactFlow()` (for `screenToFlowPosition` and `fitView`), and `Canvas` keeps the `ReactFlow` element itself.
+- Toasts are raised with `toast()` from `sonner`.
+- Selecting from outside the canvas (e.g. IssuesDialog) goes through the store's `select` action; `Canvas` reflects `selection` in React Flow's `selected` flags.
+- Fitting the view after Open, Import and Auto-layout is done by `Toolbar` with `fitView()`.
+
+### Wave 1: Tooling [x]
+
+Phases: 1. Parallel: single phase. Integration check after the wave: all checks.
+
+#### Phase 1: Tooling, CI and app shell [x] (e46eb88)
 
 - **Goal:** all dependencies, scripts, tests and CI are in place, and the Vite demo is replaced by an empty GraphCreator shell (toolbar, canvas area, side panel placeholders).
 - **Depends on:** none.
-- **Files:**
+- **Owns files:**
   - `package.json`, `package-lock.json`: dependencies `@xyflow/react`, `zustand`, `zod`, `yaml`, `@dagrejs/dagre`, `tailwindcss`, `@tailwindcss/vite`, plus whatever `shadcn init` adds; dev dependencies `vitest`, `@playwright/test`, `prettier`; scripts from section 6.
   - `vite.config.ts`: Tailwind plugin, `@` alias, Vitest `test` block.
   - `tsconfig.json`, `tsconfig.app.json`: `@/*` path alias.
   - `components.json`, `src/lib/utils.ts`, `src/components/ui/*`: from `npx shadcn@latest init` (Vite path), plus `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`.
-  - `src/index.css`: Tailwind import and shadcn tokens; role colour variables (placeholders are fine, finalised in phase 5).
+  - `src/index.css`: Tailwind import and shadcn tokens; role colour variables (placeholders are fine, finalised in phase 6).
   - `src/App.tsx`: layout skeleton per 5.1 with placeholder text; delete `src/App.css`, `src/assets/*`, `public/icons.svg`.
   - `src/model/result.ts`: the `Issue` and `Result` types (3.3) and a trivial `src/model/result.test.ts`, so Vitest has a test.
   - `playwright.config.ts`, `e2e/smoke.spec.ts`.
   - `.github/workflows/ci.yml`, `.nvmrc`, `.prettierrc` (`{ "singleQuote": true, "semi": false }`, matching the scaffold), `.prettierignore` (`dist`, `node_modules`, `package-lock.json`).
   - `.claude/settings.json`: Stop hook (section 6).
   - `LICENSE`, `README.md` (short: what it is, `npm install`, `npm run dev`, link to docs/SPEC.md), `CLAUDE.md` (Commands section with every script).
+- **Contracts used:** none.
 - **Work:** follow section 6. Install Tailwind v4 and shadcn/ui per the shadcn Vite guide; look up current docs (shadcn, Tailwind v4, React Flow 12, Zod 4) rather than relying on memory, since their APIs changed recently.
 - **Tests:** `e2e/smoke.spec.ts` (page title is `GraphCreator`, toolbar and side panel render, no console errors); `src/model/result.test.ts`.
-- **Done when:** `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e` and `npm run build` pass locally; CI is green on the pushed commit; the app shows the empty shell.
+- **Done when:** all checks and `npm run build` pass locally; CI is green on the pushed commit; the app shows the empty shell.
 - **Out of scope:** any model logic, canvas behaviour, deployment.
 
-### Phase 2: Model core [x] (hash added with the next phase's commit)
+### Wave 2: Model core [x]
+
+Phases: 2. Parallel: single phase. Integration check after the wave: all checks.
+
+#### Phase 2: Model core [x] (3b115a1)
 
 - **Goal:** the in-memory graph, its operations, cycle detection and validation exist as pure, tested TypeScript.
 - **Depends on:** phase 1.
-- **Files:** `src/model/schema.ts` (constants from 3.1 only; the Zod schema comes in phase 3), `src/model/graph.ts`, `src/model/cycle.ts`, `src/model/validate.ts`, with `graph.test.ts`, `cycle.test.ts`, `validate.test.ts`.
+- **Owns files:** `src/model/schema.ts` (constants from 3.1 only; the Zod schema comes in phase 4), `src/model/graph.ts`, `src/model/cycle.ts`, `src/model/validate.ts`, with `graph.test.ts`, `cycle.test.ts`, `validate.test.ts`.
+- **Contracts used:** `Issue`, `Result` (3.3).
 - **Work:** implement 3.1, 3.2, 4.3 and 4.4 exactly as specified, including the user-facing messages.
 - **Tests:** see section 9.
 - **Done when:** `npm test` passes; `src/model` has no imports from `react`, `zustand` or `@xyflow/react` (`grep -rE "from '(react|zustand|@xyflow)" src/model` is empty).
 - **Out of scope:** file formats, layout, UI.
 
-### Phase 3: YAML format [ ]
+### Wave 3: Layout, store and contracts [ ]
+
+Phases: 3. Parallel: single phase. Integration check after the wave: all checks.
+
+#### Phase 3: Layout, store and contracts [ ]
+
+- **Goal:** auto-layout works, the Zustand store with all actions exists, and every interface wave 4 codes against is fixed: the final `yaml.ts` and `dagitty.ts` signatures as stubs, `Issue.nodeId`, and the extra shadcn components.
+- **Depends on:** phase 2.
+- **Owns files:** `src/model/layout.ts`, `src/model/layout.test.ts`, `src/model/yaml.ts` (stub), `src/model/dagitty.ts` (stub), `src/model/result.ts`, `src/model/validate.ts`, `src/model/validate.test.ts`, `src/store/graphStore.ts`, `src/store/graphStore.test.ts`, `src/components/ui/label.tsx`, `src/components/ui/badge.tsx` (via `npx shadcn@latest add label badge`).
+- **Contracts used:** sections 3.1–3.3, 4.3, 4.4 (phase 2).
+- **Work:**
+  - `layout.ts`: implement 4.5 fully.
+  - `yaml.ts`: export `parseYaml(text: string): Result<Graph>`, `toYaml(graph: Graph): string` and `fileSlug(name?: string): string` with JSDoc from 4.1; bodies `throw new Error('Not implemented yet (spec phase 4).')`.
+  - `dagitty.ts`: export `DAGITTY_SCALE = 100`, `parseDagitty(text: string): Result<Graph>`, `toDagitty(graph: Graph): string`, `toDagittyIds(nodes: GNode[]): Map<string, string>` with JSDoc from 4.2; bodies throw `Not implemented yet (spec phase 5).`
+  - `result.ts`: add `nodeId?: string` to `Issue` (3.3). `validate.ts`: set `nodeId` on every node-specific warning (no type, too few levels, duplicate levels); extend `validate.test.ts` to check it.
+  - `graphStore.ts`: implement 4.6.
+- **Tests:** `layout.test.ts` and `graphStore.test.ts` (section 9); the `nodeId` checks in `validate.test.ts`.
+- **Done when:** all checks pass; `src/model` still has no React/Zustand/React Flow imports; importing `yaml.ts` and `dagitty.ts` works and their functions throw the stated message.
+- **Out of scope:** YAML and dagitty logic (phases 4, 5), UI components (6–8), autosave and App wiring (9).
+
+### Wave 4: Formats and UI parts [ ]
+
+Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integration check after the wave: all checks (the app still shows the phase 1 shell; nothing is mounted until phase 9).
+
+#### Phase 4: YAML format [ ]
 
 - **Goal:** GraphCreator files can be read and written with full validation.
-- **Depends on:** phase 2.
-- **Files:** `src/model/schema.ts` (add `GraphFileSchema`, `GraphFile`), `src/model/yaml.ts`, `src/model/yaml.test.ts`, `src/model/layout.ts` (needed by step 6 of `parseYaml`; implement 4.5 here), `src/model/layout.test.ts`, fixtures `src/model/__fixtures__/smoking.dag.yaml` (the example in 4.1), `minimal.dag.yaml`, and invalid fixtures (`bad-schema.dag.yaml`, `cycle.dag.yaml`, `bad-refs.dag.yaml`, `unknown-key.dag.yaml`, `levels-on-continuous.dag.yaml`).
-- **Work:** implement 4.1 (`parseYaml`, `toYaml`, slug helper `fileSlug(name?: string): string`) and 4.5.
-- **Tests:** see section 9.
-- **Done when:** `npm test` passes, including the canonical round-trip `toYaml(parseYaml(smoking)) === smoking`.
-- **Out of scope:** dagitty, UI.
+- **Depends on:** phase 3.
+- **Owns files:** `src/model/schema.ts` (add `GraphFileSchema`, `GraphFile`), `src/model/yaml.ts` (replace the stub), `src/model/yaml.test.ts`, fixtures `src/model/__fixtures__/smoking.dag.yaml` (the example in 4.1), `minimal.dag.yaml`, and invalid fixtures `bad-schema.dag.yaml`, `cycle.dag.yaml`, `bad-refs.dag.yaml`, `unknown-key.dag.yaml`, `levels-on-continuous.dag.yaml`.
+- **Contracts used:** `Graph`, graph operations (4.3), `validateGraph` (4.4), `autoLayout` (4.5), the `yaml.ts` signatures from phase 3.
+- **Work:** implement 4.1 (`parseYaml`, `toYaml`, `fileSlug`) with the signatures fixed in phase 3.
+- **Tests:** `yaml.test.ts` (section 9).
+- **Done when:** all checks pass, including the canonical round trip `toYaml(parseYaml(smoking)) === smoking`.
+- **Out of scope:** dagitty, UI, autosave.
 
-### Phase 4: dagitty import and export [ ]
+#### Phase 5: dagitty import and export [ ]
 
 - **Goal:** dagitty text can be imported and exported per 4.2.
 - **Depends on:** phase 3.
-- **Files:** `src/model/dagitty.ts`, `src/model/dagitty.test.ts`, fixtures `src/model/__fixtures__/*.dagitty.txt`: `confounding.dagitty.txt`, `m-bias.dagitty.txt`, `quoted-names.dagitty.txt` (quoted ids and `label`), `groups-and-chains.dagitty.txt`, `no-positions.dagitty.txt`, `bidirected.dagitty.txt` (must be rejected), `pdag.dagitty.txt` (rejected), `two-roles.dagitty.txt` (rejected).
-- **Work:** implement the tokenizer, parser, `toDagitty` and `toDagittyIds` from 4.2. Fixtures should be real dagitty output where possible (copy from dagitty.net examples, which are freely usable as data); check the direction of dagitty's y axis against one of them and record the result in this spec (Open issues).
-- **Tests:** see section 9.
-- **Done when:** `npm test` passes; every rejected construct produces the specified line-numbered message.
-- **Out of scope:** UI dialogs (phase 6), bidirected support.
+- **Owns files:** `src/model/dagitty.ts` (replace the stub), `src/model/dagitty.test.ts`, fixtures `src/model/__fixtures__/*.dagitty.txt`: `confounding.dagitty.txt`, `m-bias.dagitty.txt`, `quoted-names.dagitty.txt` (quoted ids and `label`), `groups-and-chains.dagitty.txt`, `no-positions.dagitty.txt`, `bidirected.dagitty.txt` (must be rejected), `pdag.dagitty.txt` (rejected), `two-roles.dagitty.txt` (rejected).
+- **Contracts used:** `Graph`, graph operations (4.3), `findCycle`, `validateGraph`, `autoLayout`, the `dagitty.ts` signatures from phase 3.
+- **Work:** implement the tokenizer, parser, `toDagitty` and `toDagittyIds` from 4.2. Fixtures should be real dagitty output where possible (copy from dagitty.net examples, which are freely usable as data). Check the direction of dagitty's y axis against one of them and report it (the spec's Open issues entry is updated when the wave lands).
+- **Tests:** `dagitty.test.ts` (section 9).
+- **Done when:** all checks pass; every rejected construct produces the specified line-numbered message.
+- **Out of scope:** UI dialogs (phase 8), bidirected support.
 
-### Phase 5: Store and canvas [ ]
+#### Phase 6: Canvas and node look [ ]
 
-- **Goal:** users can add, connect, select, move and delete nodes on the canvas, invalid edges are refused with a toast, and the graph autosaves.
-- **Depends on:** phase 4.
-- **Files:** `src/store/graphStore.ts` (+ `graphStore.test.ts`), `src/components/Canvas.tsx`, `src/components/DagNode.tsx`, `src/App.tsx` (mount canvas, `Toaster`), `src/index.css` (final role colours), `e2e/canvas.spec.ts`.
+- **Goal:** the `Canvas` component shows the store's graph with React Flow and supports adding, connecting, selecting, moving and deleting nodes and edges, with invalid connections refused and explained.
+- **Depends on:** phase 3.
+- **Owns files:** `src/components/Canvas.tsx`, `src/components/DagNode.tsx`, `src/index.css` (final role colour variables).
+- **Contracts used:** the store API (4.6), `canAddEdge` (4.3), `NODE_WIDTH`/`NODE_HEIGHT` (4.5), the component contracts above.
+- **Work:** implement 5.2: derive React Flow nodes and edges from `graph` and `selection`; register `DagNode` as the node type; double-click on the pane calls `addNodeAt` with `screenToFlowPosition` (zoom-on-double-click off); `isValidConnection` uses `canAddEdge`; on connect call `connect`; when a drag is released over an invalid target, `toast()` the `EdgeCheck` message; Delete/Backspace (outside text fields) calls `removeSelection`; drag stop calls `moveNode`; selection changes call `select`. Role colours as CSS variables with AA contrast, badge letters, dashed latent border, `⚠` for untyped nodes.
+- **Tests:** none of its own (no component test setup); covered by `e2e/canvas.spec.ts` in phase 9.
+- **Done when:** all checks pass; `Canvas` and `DagNode` follow the component contracts.
+- **Out of scope:** mounting in `App` (phase 9), side panel, toolbar.
+
+#### Phase 7: Side panel editors [ ]
+
+- **Goal:** the `SidePanel` component edits the selected node or edge per 5.3.
+- **Depends on:** phase 3.
+- **Owns files:** `src/components/SidePanel.tsx`, `NodeEditor.tsx`, `EdgeEditor.tsx`, `ListEditor.tsx`.
+- **Contracts used:** the store API (4.6), `renameNode` errors (4.3), `ROLES`, `VAR_TYPES`, `isLeveledType`, `isNumericType` (3.1), the component contracts above.
+- **Work:** implement 5.3 and the side-panel part of 5.1 (help text when nothing is selected). NodeEditor focuses and selects its name field when the store's `focusNameOf` equals the node's id, then calls `clearFocusName()`. Rename errors from `renameNode` are shown under the field.
+- **Tests:** none of its own; covered by `e2e/editing.spec.ts` in phase 9.
+- **Done when:** all checks pass; `SidePanel` follows the component contracts.
+- **Out of scope:** mounting in `App`, canvas, toolbar.
+
+#### Phase 8: Toolbar and dialogs [ ]
+
+- **Goal:** the `Toolbar` component with graph name, New, Open, Save, the dagitty menu, Add node, Auto-layout and the warning badge, plus its dialogs.
+- **Depends on:** phase 3.
+- **Owns files:** `src/components/Toolbar.tsx`, `IssuesDialog.tsx`, `DagittyImportDialog.tsx`, `DagittyExportDialog.tsx`, `src/lib/download.ts` (`downloadText(filename: string, text: string, mime: string): void`).
+- **Contracts used:** the store API (4.6), `parseYaml`, `toYaml`, `fileSlug` (4.1), `parseDagitty`, `toDagitty` (4.2), `validateGraph` and `Issue.nodeId` (3.3, 4.4), the component contracts above. Until wave 4 lands, the yaml/dagitty functions are stubs: code against their signatures only.
+- **Work:** implement the toolbar part of 5.1 and all of 5.4. The warning badge counts `validateGraph(graph).warnings`; clicking a warning in IssuesDialog calls `select({ kind: 'node', id: issue.nodeId })` when `nodeId` is set. Add node places the node at the viewport centre via `screenToFlowPosition`. Open, Import and Auto-layout end with `fitView()`.
+- **Tests:** none of its own; covered by `e2e/files.spec.ts` and `e2e/editing.spec.ts` in phase 9.
+- **Done when:** all checks pass; `Toolbar` follows the component contracts.
+- **Out of scope:** mounting in `App`, canvas, side panel.
+
+### Wave 5: Integration [ ]
+
+Phases: 9. Parallel: single phase. Integration check after the wave: all checks and a manual run-through of every 5.x behaviour in the browser.
+
+#### Phase 9: Integration, autosave and end-to-end tests [ ]
+
+- **Goal:** v1 is feature-complete: the parts from wave 4 are mounted, the graph autosaves, and the end-to-end tests cover the main flows.
+- **Depends on:** phases 4, 5, 6, 7, 8.
+- **Owns files:** `src/App.tsx`, `src/main.tsx`, `src/store/autosave.ts`, `src/store/autosave.test.ts`, `e2e/smoke.spec.ts`, `e2e/canvas.spec.ts`, `e2e/editing.spec.ts`, `e2e/files.spec.ts`, the Status line and Open issues of this spec.
+- **Contracts used:** everything above.
 - **Work:**
-  - Store state: `graph: Graph`, `selection: { kind: 'node' | 'edge'; id: string } | null`, `focusNameOf: string | null` (node whose name field should be focused). Actions: `addNodeAt(pos)`, `renameNode`, `updateNode`, `moveNode`, `connect(source, target)` (returns the `EdgeCheck`), `updateEdge`, `removeSelection(nodeIds, edgeIds)`, `select`, `replaceGraph(graph)`, `setGraphName`, `layout()`. Autosave per 5.5 (a store subscriber, not Zustand `persist`, since the stored value is YAML text).
-  - Canvas and node look per 5.2.
-- **Tests:** `graphStore.test.ts` (actions delegate correctly; autosave writes YAML and restores it; corrupt storage falls back to empty); `e2e/canvas.spec.ts` (double-click adds "Node 1"; connecting two nodes adds an edge; closing a cycle shows the cycle toast; Delete removes a node and its edges; reload restores the graph).
-- **Done when:** all scripts pass; the flows above work in the browser.
-- **Out of scope:** side-panel editors, toolbar file actions (phase 6).
-
-### Phase 6: Side panel, toolbar and files [ ]
-
-- **Goal:** v1 is feature-complete: node and edge editing, warnings, YAML open/save, dagitty import/export and auto-layout.
-- **Depends on:** phase 5.
-- **Files:** `src/components/Toolbar.tsx`, `SidePanel.tsx`, `NodeEditor.tsx`, `EdgeEditor.tsx`, `ListEditor.tsx`, `IssuesDialog.tsx`, `DagittyImportDialog.tsx`, `DagittyExportDialog.tsx`, `src/lib/download.ts` (`downloadText(filename, text, mime)`), `e2e/editing.spec.ts`, `e2e/files.spec.ts`.
-- **Work:** implement 5.1, 5.3 and 5.4.
-- **Tests:** `e2e/editing.spec.ts` (rename refuses a duplicate name; setting type to ordinal shows the levels editor and the hint; switching to continuous hides levels and shows unit; warning badge count drops when a node gets a type; edge evidence can be added); `e2e/files.spec.ts` (Save downloads a `.dag.yaml` whose text parses back to the same graph; Open of `cycle.dag.yaml` shows the error dialog and leaves the graph unchanged; dagitty import of `confounding.dagitty.txt` creates its nodes and edges; importing `bidirected.dagitty.txt` shows the error; dagitty export text matches `toDagitty`).
-- **Done when:** all scripts pass and CI is green; a manual run-through of every 5.x behaviour in the browser works; the Status line of this spec says v1 is implemented.
+  - `App.tsx`: replace the shell with the layout of the component contracts.
+  - `autosave.ts`: `startAutosave(storage: Pick<Storage, 'getItem' | 'setItem'> | null): () => void` implements 5.5 (restore on start, debounced 500 ms writes via a store subscription, try/catch everywhere, the restore-failure toast); returns an unsubscribe function. `main.tsx` calls it with `window.localStorage` (guarded by try/catch, `null` if unavailable).
+  - Fix integration breakages between the wave 4 parts here.
+- **Tests:** `autosave.test.ts` and the e2e specs (section 9).
+- **Done when:** all checks pass and CI is green; a manual run-through of every 5.x behaviour in the browser works; the Status line says v1 is implemented.
 - **Out of scope:** everything in IDEAS.md.
 
 ## 9. Tests
@@ -488,11 +615,17 @@ One phase per session and per commit. Each phase leaves the full test suite pass
 - `src/model/yaml.test.ts`: canonical round trip of `smoking.dag.yaml`; defaults (missing role → `other`, missing nodes/edges → empty); each invalid fixture gives the expected messages and **all** problems are listed at once; YAML syntax errors carry a line number; unknown schema and missing schema messages; missing positions trigger layout and the warning; `fileSlug` cases (`"Smoking & BW"` → `smoking-bw`, empty → `graph`).
 - `src/model/layout.test.ts`: every node gets integer positions; parents are left of children; same input gives the same output.
 - `src/model/dagitty.test.ts`: each fixture parses to the expected names, roles, edges and positions; quoted ids and `label` become names; chains, `<-` and groups expand correctly; rejected fixtures give the specified line-numbered errors; unknown attributes give warnings; `toDagittyIds` handles spaces, punctuation, non-ASCII, empty names and collisions (`a b`, `a_b` → `a_b`, `a_b_2`); `toDagitty` output for the 4.1 graph equals the example in 4.2; round trip `parseDagitty(toDagitty(g))` preserves names, roles, edges and positions within 0.1 px.
-- `src/store/graphStore.test.ts`, `e2e/*.spec.ts`: as listed in phases 1, 5 and 6.
+- `src/model/validate.test.ts` (phase 3 addition): node-specific warnings carry the node's `nodeId`.
+- `src/store/graphStore.test.ts`: every action in 4.6 delegates to the model and replaces `graph` without mutating it; `addNodeAt` selects the new node and sets `focusNameOf`; `connect` returns the `EdgeCheck` and only adds valid edges; `removeSelection` clears a removed selection; `replaceGraph` clears selection and `focusNameOf`; `setGraphName('  ')` clears the name.
+- `src/store/autosave.test.ts` (with a fake storage): changes are written as `toYaml` text at most every 500 ms; a stored graph is restored on start; corrupt text falls back to an empty graph; a storage that throws only disables autosave.
+- `e2e/smoke.spec.ts`: the app loads with title `GraphCreator` and no console errors.
+- `e2e/canvas.spec.ts`: double-click adds "Node 1"; connecting two nodes adds an edge; closing a cycle shows the cycle toast; Delete removes a node and its edges; reload restores the graph.
+- `e2e/editing.spec.ts`: rename refuses a duplicate name; setting type to ordinal shows the levels editor and the hint; switching to continuous hides levels and shows unit; the warning badge count drops when a node gets a type; edge evidence can be added.
+- `e2e/files.spec.ts`: Save downloads a `.dag.yaml` whose text parses back to the same graph; Open of `cycle.dag.yaml` shows the error dialog and leaves the graph unchanged; dagitty import of `confounding.dagitty.txt` creates its nodes and edges; importing `bidirected.dagitty.txt` shows the error; dagitty export text matches `toDagitty`.
 
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
-- **dagitty y axis:** this spec assumes dagitty's `pos` y grows downward, like screen coordinates. Phase 4 checks this against a real dagitty file and updates 4.2 if not.
-- **Tokens/colours:** role colours are chosen in phase 5; a later design pass may refine the visual style.
+- **dagitty y axis:** this spec assumes dagitty's `pos` y grows downward, like screen coordinates. Phase 5 checks this against a real dagitty file; 4.2 is updated when wave 4 lands if it is not.
+- **Tokens/colours:** role colours are chosen in phase 6; a later design pass may refine the visual style.
 - Everything in [IDEAS.md](IDEAS.md).
