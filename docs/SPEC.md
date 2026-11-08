@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7) was agreed on 2026-11-08; waves 6–7 (phases 10–15: groundwork and the new parts) are done, wave 8 (phase 16, integration) is open and next. Where sections 4.5–5.3 describe the redesign, they describe the app as it will be after wave 8; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -43,7 +43,7 @@ src/
     WelcomeDialog.tsx                                                     (phase 14)
     LessonPanel.tsx                                                       (phase 15)
     canvas/CircleNode.tsx, canvas/FloatingEdge.tsx, canvas/canvas.css     (phase 11)
-    Toolbar.tsx, DagNode.tsx   v1 parts, deleted in phase 16
+    (Toolbar.tsx, DagNode.tsx: v1 parts, deleted in phase 16)
     ui/                  shadcn/ui generated components
   lib/download.ts        downloadText helper for Save and dagitty export
   lib/copy.ts            tooltip and role texts (5.7.8, phase 10)
@@ -322,14 +322,12 @@ export function validateGraph(graph: Graph): { errors: Issue[]; warnings: Issue[
 ### 4.5 Layout (`src/model/layout.ts`)
 
 ```ts
-export const NODE_WIDTH = 160
-export const NODE_HEIGHT = 48
 export function autoLayout(graph: Graph): Graph
 ```
 
-Uses `@dagrejs/dagre` with `rankdir: 'LR'`, `nodesep: 50`, `ranksep: 100`, every node `NODE_WIDTH × NODE_HEIGHT`. dagre returns centres; convert to top-left (`x - NODE_WIDTH / 2`, `y - NODE_HEIGHT / 2`) and round to integers. Deterministic for the same input.
+v1 (until phase 16): uses `@dagrejs/dagre` with `rankdir: 'LR'`, `nodesep: 50`, `ranksep: 100`, every node `NODE_WIDTH × NODE_HEIGHT`. dagre returns centres; convert to top-left (`x - NODE_WIDTH / 2`, `y - NODE_HEIGHT / 2`) and round to integers. Deterministic for the same input.
 
-**Redesign (phase 10):** nodes become circles whose size depends on the name (5.7.6). `autoLayout` gives each node a `d × d` box with `d = nodeDiameter(node.name)` and converts dagre's centre to the top-left of that box (`x - d / 2`, `y - d / 2`), rounded. `GNode.pos` keeps meaning "top-left of the node's box", so files and dagitty positions are unchanged. `NODE_WIDTH` and `NODE_HEIGHT` stay exported until phase 16 removes their last users (`Canvas.tsx`, `Toolbar.tsx`, `DagNode.tsx`).
+**Redesign (phase 10):** nodes become circles whose size depends on the name (5.7.6). `autoLayout` gives each node a `d × d` box with `d = nodeDiameter(node.name)` and converts dagre's centre to the top-left of that box (`x - d / 2`, `y - d / 2`), rounded. `GNode.pos` keeps meaning "top-left of the node's box", so files and dagitty positions are unchanged. `NODE_WIDTH` and `NODE_HEIGHT` were removed in phase 16 together with their last users.
 
 ### 4.6 Store API (`src/store/graphStore.ts`, phase 3)
 
@@ -774,6 +772,11 @@ export function findLesson(id: string): Lesson | undefined
 | Welcome closing | Escape, Skip, "Get started", "Take the tour" and a click on the dimmed overlay all close the slides and set the welcomed flag; no close (X) button; dots on all four slides | An X button; overlay clicks ignored | Phase 14 judgement call; the spec lists no X button. |
 | Lesson panel details | Header text "LESSON · STEP n OF m" written literally; no callout on a step without a task; Back disabled on step 1; the callout is `role="status"`; the lesson's own title is not shown | Lesson title in the header | Phase 15 judgement calls within 5.7.10. |
 | Role menu placement | The role picker opens below its field at the field's width (`position="popper"`); the type menu keeps the default | Default Radix placement | The default scrolled and was wider than the panel (phase 13). |
+| Connect mode clicks | Every second click ends the pick, valid or not; clicking the picked circle again puts it down without the self-loop toast | Keep the source picked after a failed edge | Phase 16 judgement call: each edge is exactly two clicks. |
+| Handle click-to-connect | `connectOnClick={false}` | React Flow's default (on) | It would compete with the rim drag and with connect mode (phase 16). |
+| React Flow attribution | Bottom left, transparent background | Bottom right (default) | The saved indicator owns the bottom right (phase 16). |
+| Autosave status | `paused` while a lesson runs; otherwise `blocked` when storage is missing or the last write threw, back to `on` after a successful write; the user's graph is rewritten by the normal 500 ms debounce after a lesson ends | Re-check storage on a timer | Phase 16 judgement call within 4.7 and 5.5. |
+| e2e fixture | `e2e/fixtures.ts` sets `graphcreator:welcomed` via `addInitScript`; its fixture callback is named `provide` (oxlint mistakes `use` for the React hook); `welcome.spec.ts` uses the plain Playwright `test` | Clicking through the slides in every spec | Keeps the existing specs independent of the welcome flow (phase 16). |
 | Rail Add node | Pressing Add node while the add tool is active places a node at the view centre and returns to Select, like an add-tool click on the canvas | Stay in the add tool | Phase 12 judgement call, consistent with 5.2. |
 | Tooltip look | Phase 10 restyles the generated shadcn `tooltip.tsx` to `rounded-lg`, elevation 2 and 180 ms ease-out (5.7.4, 5.7.5), keeping the foreground-coloured background | Leave the generated `rounded-md` look | Only phase 10 owns `tooltip.tsx`, so wave 7 cannot fix it. |
 | `renameNode` keeps the centre | The store shifts `pos` when the diameter changes | Grow from the top-left corner | Circles stay where the user put them; `pos` keeps its file meaning. |
@@ -1084,11 +1087,11 @@ Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). In
 - **Done when:** all checks pass; nothing mounts the panel yet.
 - **Out of scope:** pausing autosave (phase 16).
 
-### Wave 8: Redesign integration [ ]
+### Wave 8: Redesign integration [x]
 
 Phases: 16. Parallel: single phase. Integration check after the wave: all checks, plus a manual run-through in the browser of 5.1–5.4 and 5.7 in both light and dark.
 
-#### Phase 16: Redesign integration and end-to-end tests [ ]
+#### Phase 16: Redesign integration and end-to-end tests [x] (7ce75fe)
 
 - **Goal:** the app runs the Calm teal design: the new layout, circles and floating edges, tools, welcome slides, lessons and dark theme. The v1 parts are gone and the e2e suite covers the new flows.
 - **Depends on:** phases 11, 12, 13, 14, 15.
@@ -1156,5 +1159,7 @@ Redesign (phases 10–16):
 - **Raw exception text in messages:** `Could not save the graph: …`, `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
 - **Lessons:** only the tour exists (5.7.10). The real lessons and lesson features are listed under "Lessons" in [IDEAS.md](IDEAS.md).
 - **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.
+- **Lesson viewport:** starting or ending a lesson keeps the current viewport instead of fitting the view, so the practice graph can open zoomed in (up to React Flow's 2×) after a fit on a small graph.
+- **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.
 - **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
 - Everything in [IDEAS.md](IDEAS.md).
