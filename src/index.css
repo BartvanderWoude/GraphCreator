@@ -128,14 +128,43 @@
     @apply font-sans;
   }
 }
-/* Role colours (placeholders; final values with WCAG AA contrast come in phase 5). */
+/*
+ * Role colours (spec 5.2). Each is used for the node border and as the background of the role
+ * badge, whose letter is white: every colour has at least 4.5:1 contrast with white (WCAG AA;
+ * exposure 5.0, outcome 6.7, latent 7.6, adjusted 5.0, selected 7.0, other 4.8). The node box is
+ * a 12% tint of the colour on the background, so the name in --foreground stays above 12:1.
+ * Colour is never the only cue: the badge letter and the latent dashed border carry the role too.
+ */
 :root {
-  --role-exposure: oklch(0.55 0.15 150);
-  --role-outcome: oklch(0.55 0.15 250);
-  --role-latent: oklch(0.55 0 0);
-  --role-adjusted: oklch(0.55 0.12 60);
-  --role-selected: oklch(0.55 0.15 320);
-  --role-other: oklch(0.45 0 0);
+  --role-exposure: #15803d;
+  --role-outcome: #1d4ed8;
+  --role-latent: #4b5563;
+  --role-adjusted: #b45309;
+  --role-selected: #7e22ce;
+  --role-other: #64748b;
+}
+
+/* React Flow: darker edges than the default grey, highlighted when selected. */
+.react-flow {
+  --xy-edge-stroke: #737373;
+  --xy-edge-stroke-selected: #2563eb;
+  --xy-edge-stroke-width: 1.5;
+}
+.react-flow .react-flow__edge.selected .react-flow__edge-path {
+  stroke-width: 3;
+}
+.react-flow .react-flow__handle {
+  width: 10px;
+  height: 10px;
+}
+/* While dragging a connection, the handle under the pointer is red if the edge is not allowed. */
+.react-flow__handle.connectingto:not(.valid) {
+  background-color: var(--destructive);
+  border-color: var(--destructive);
+}
+.react-flow__handle.connectingto.valid {
+  background-color: var(--role-exposure);
+  border-color: var(--role-exposure);
 }
 
 html,
