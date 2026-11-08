@@ -10,26 +10,50 @@ import {
 } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
 import { downloadText } from '@/lib/download'
+import type { GraphFormat } from '@/model/fileFormat'
+
+const COPY: Record<
+  GraphFormat,
+  { title: string; code: string; note: string; mime: string }
+> = {
+  yaml: {
+    title: 'Save as GraphCreator',
+    code: 'GraphCreator code',
+    note: 'The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.',
+    mime: 'application/yaml',
+  },
+  dagitty: {
+    title: 'Save as dagitty',
+    code: 'dagitty code',
+    note: 'Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.',
+    mime: 'text/plain',
+  },
+}
 
 /**
- * Shows the dagitty text of the graph with Copy and Download buttons (spec 5.4). The caller
- * computes `text` (with `toDagitty`) and `filename` (`<slug>.dagitty.txt`) when opening it.
+ * Shows the graph as GraphCreator YAML or dagitty text, with Copy and Download buttons (spec
+ * 5.4, Save's "Save as…" menu). The caller computes `text` (`toYaml` or `toDagitty`) and
+ * `filename` (`<slug>.dag.yaml` or `<slug>.dagitty.txt`) when opening it.
  */
-export function DagittyExportDialog({
+export function CodeDialog({
   open,
   onOpenChange,
+  format,
   text,
   filename,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  format: GraphFormat
   text: string
   filename: string
 }) {
-  async function copy() {
+  const copy = COPY[format]
+
+  async function copyText() {
     try {
       await navigator.clipboard.writeText(text)
-      toast('Copied dagitty code to the clipboard.')
+      toast(`Copied ${copy.code} to the clipboard.`)
     } catch {
       toast.error(
         'Could not copy to the clipboard. Select the text and copy it instead.',
@@ -39,7 +63,7 @@ export function DagittyExportDialog({
 
   function download() {
     try {
-      downloadText(filename, text, 'text/plain')
+      downloadText(filename, text, copy.mime)
     } catch (e) {
       toast.error(
         `Could not download the file: ${e instanceof Error ? e.message : String(e)}`,
@@ -51,14 +75,11 @@ export function DagittyExportDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Export to dagitty</DialogTitle>
-          <DialogDescription>
-            Variable types, levels, descriptions, units and evidence are not
-            included in dagitty files. Save as YAML to keep them.
-          </DialogDescription>
+          <DialogTitle>{copy.title}</DialogTitle>
+          <DialogDescription>{copy.note}</DialogDescription>
         </DialogHeader>
         <Textarea
-          aria-label="dagitty code"
+          aria-label={copy.code}
           readOnly
           value={text}
           spellCheck={false}
@@ -66,7 +87,7 @@ export function DagittyExportDialog({
           onFocus={(e) => e.currentTarget.select()}
         />
         <DialogFooter showCloseButton>
-          <Button variant="outline" onClick={() => void copy()}>
+          <Button variant="outline" onClick={() => void copyText()}>
             Copy
           </Button>
           <Button onClick={download}>Download</Button>

@@ -23,7 +23,14 @@ test('app loads with top bar, tool rail, canvas and side panel and no console er
   await expect(
     toolbar.getByRole('textbox', { name: 'Graph name' }),
   ).toBeVisible()
-  for (const name of ['New', 'Open…', 'Save', 'dagitty', 'Lessons']) {
+  for (const name of [
+    'New',
+    'Open…',
+    'Save',
+    'Save as…',
+    'Help',
+    'Dark mode',
+  ]) {
     await expect(
       toolbar.getByRole('button', { name, exact: true }),
     ).toBeVisible()

@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -37,7 +37,7 @@ src/
   lessons/               lesson types and the tour lesson (5.7.10, phase 10)
   components/
     Canvas.tsx, SidePanel.tsx, NodeEditor.tsx, EdgeEditor.tsx, ListEditor.tsx,
-    DagittyImportDialog.tsx, DagittyExportDialog.tsx, IssuesDialog.tsx
+    OpenDialog.tsx, CodeDialog.tsx, IssuesDialog.tsx                     (phase 18; were DagittyImportDialog/DagittyExportDialog)
     TopBar.tsx, ToolRail.tsx, useToolShortcuts.ts, SavedIndicator.tsx    (phase 12)
     InfoTip.tsx, RolePicker.tsx                                          (phase 13)
     WelcomeDialog.tsx                                                     (phase 14)
@@ -269,6 +269,10 @@ Maps node id → dagitty id: replace whitespace runs with `_`, then every charac
 
 Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design.
 
+#### `detectFormat(text, fileName?)` and `parseGraphText(text, fileName?)` (`src/model/fileFormat.ts`, phase 18)
+
+Open (5.4) takes either format. `detectFormat` returns `'yaml'` when the file name ends in `.yaml`/`.yml`, or when a line starts with one of the file's top-level keys (`schema:`, `name:`, `nodes:`, `edges:`); otherwise `'dagitty'` (dagitty's `dag { … }` header is optional, so it cannot be required). `parseGraphText` calls `parseYaml` or `parseDagitty` accordingly and returns its `Result<Graph>` unchanged.
+
 ### 4.3 Graph operations (`src/model/graph.ts`, `src/model/cycle.ts`)
 
 All pure; they return new objects and never mutate their input.
@@ -344,6 +348,7 @@ export interface GraphState {
   updateEdge(edgeId: string, patch: Partial<Pick<GEdge, 'evidence' | 'note'>>): void
   removeSelection(nodeIds: string[], edgeIds: string[]): void  // clears selection if it was removed
   select(selection: GraphState['selection']): void
+  focusName(nodeId: string): void            // selects the node and sets focusNameOf (phase 18: double-click to rename)
   clearFocusName(): void
   replaceGraph(graph: Graph): void            // also clears selection and focusNameOf
   setGraphName(name: string): void            // blank → undefined
@@ -403,7 +408,7 @@ The set-aside graph is held in module scope next to the store (not in the store'
 
 ```
 +--------------------------------------------------------------------------------+
-| (o->o) [Graph name____] | New  Open…  Save  dagitty ▾ |    [⚠ 1 warning] [Lessons] |  top bar, 48 px
+| (o->o) [Graph name____] | New  Open…  Save|▾ |       [⚠ 1 warning] [Help] [☾] |  top bar, 48 px
 +----+---------------+-------------------------------------------+---------------+
 | ▶  | Lesson panel  |                                           | NODE          |
 | ⊕  | (only during  |        ( SES )                            | Name [______] |
@@ -415,10 +420,10 @@ The set-aside graph is held in module scope next to the store (not in the store'
  rail 56 px                   canvas (teal tint)                    side panel 320 px
 ```
 
-- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save; a `dagitty` menu with Import… and Export…; on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node) **Lessons** (opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word.
+- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save as a split button: **Save**, a 1 px vertical divider (16 px tall) and a narrow icon-only ▾ button, grouped with no gap between them, (`aria-label="Save as…"`) whose menu has **GraphCreator…** and **dagitty…** (5.4); on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node), **Help** (`CircleHelp` icon; opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word. There is no separate dagitty menu (phase 18).
 - **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−). The active tool is solid teal.
 - **Lesson panel:** only while a lesson runs (5.7.10); 300 px, between the rail and the canvas.
-- **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
+- **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow attribution, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
 - **Side panel:** fixed width (320 px). Shows NodeEditor or EdgeEditor for the single selected item. With nothing selected it shows a cheat sheet (exact text in 5.7.8): add a node, connect, delete, select several.
 
 ### 5.2 Canvas interactions
@@ -427,6 +432,7 @@ The set-aside graph is held in module scope next to the store (not in the store'
 - **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true.
 - **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source.
 - **Shortcuts:** V, N, C set the tool; L runs auto-layout and fits the view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source. Shortcuts are ignored while focus is in a text field, select or textarea, and while a dialog is open.
+- **Rename by double-click:** double-clicking a circle while the Select tool is active calls `focusName`: the node is selected and the side panel's name field is focused with its text selected, as after adding a node. It never adds a node (the pane double-click handler only reacts to the pane itself).
 - **Select:** click a node or edge. Multi-select with Shift-click or box-select is React Flow default and is only used for deletion and moving.
 - **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`.
 - **Move:** dragging updates positions; the store commits with `moveNode` on drag stop.
@@ -446,12 +452,11 @@ The set-aside graph is held in module scope next to the store (not in the store'
 ### 5.4 Files and dialogs
 
 - **New:** if the graph has nodes, confirm `Start a new graph? Unsaved changes to the current graph will be lost.` Then `emptyGraph()`.
-- **Open:** file picker (`.yaml,.yml`) → `parseYaml`. On errors open IssuesDialog with title `Could not open <file>` listing all errors (with line numbers when known); the current graph is unchanged. On success replace the graph, fit the view, and show warnings as one toast (`Opened with 3 warnings`, click opens IssuesDialog).
+- **Open… (`OpenDialog`, phase 18):** a dialog titled "Open a graph" with the description "Paste GraphCreator or dagitty code, or open a file. Opening replaces the current graph.", a textarea (`aria-label="Graph code"`) and the buttons **Open file…** (any text file), Cancel and **Open** (disabled while the textarea is blank). Both paths use `parseGraphText` (4.2), so the format is recognised automatically; a file's name helps (`.yaml`/`.yml`). Open file… parses the chosen file at once. Errors are listed inside the dialog under `Could not open <file>:` (file) or `Could not open:` (pasted text), with line numbers when known, and nothing changes. On success the graph is replaced, after the same confirmation as New if the graph has nodes (its button reads "Open"); then the dialog closes, the view fits and warnings show as one toast (`Opened with 3 warnings`, its Show button opens IssuesDialog).
 - **Save:** downloads `toYaml(graph)` as `<slug>.dag.yaml` (4.1). No server involved.
-- **dagitty Import…:** dialog with a textarea to paste dagitty code and a `Choose file…` button (any text file). Import button runs `parseDagitty`; errors are listed inside the dialog and nothing changes; on success the graph is replaced (after the same confirmation as New if the graph has nodes) and warnings are toasted.
-- **dagitty Export…:** dialog with a read-only textarea containing `toDagitty(graph)`, a Copy button and a Download button (`<slug>.dagitty.txt`), plus the note "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as YAML to keep them."
+- **Save as… menu (`CodeDialog`, phase 18):** **GraphCreator…** opens "Save as GraphCreator": a read-only textarea (`aria-label="GraphCreator code"`) with `toYaml(graph)`, the note "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.", Copy and Download (`<slug>.dag.yaml`). **dagitty…** opens "Save as dagitty": textarea `dagitty code` with `toDagitty(graph)`, the note "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.", Copy and Download (`<slug>.dagitty.txt`). Copy toasts `Copied <GraphCreator|dagitty> code to the clipboard.`
 - **Auto-layout:** `autoLayout(graph)`, then fit the view.
-- **During a lesson** (5.7.10): New, Open… and dagitty Import… are disabled, with the tooltip "Not available during a lesson." Save and dagitty Export… work on the practice graph.
+- **During a lesson** (5.7.10): New and Open… are disabled, with the tooltip "Not available during a lesson." Save and the Save as… menu work on the practice graph.
 
 ### 5.5 Autosave
 
@@ -496,7 +501,7 @@ All colours are CSS variables in `src/index.css`. Light values sit in `:root`, d
 | `--secondary`, `--muted` | `#F1F5F9` | `#1C2A27` | hover fills, chips |
 | `--secondary-foreground` | `#0F172A` | `#E6EEEC` | |
 | `--muted-foreground` | `#5A6779` | `#9FB2AD` | hints, captions (5.4:1 on canvas / 8.0:1) |
-| `--accent` | `#E6F6F3` | `#123B36` | teal tint: Lessons button, active list row |
+| `--accent` | `#E6F6F3` | `#123B36` | teal tint: Help button, active list row |
 | `--accent-foreground` | `#115E59` | `#99E2D6` | text on accent (6.8:1 / 8.3:1) |
 | `--destructive` | `#B42318` | `#F97066` | errors, destructive buttons |
 | `--border` | `#E2E8F0` | `#24332F` | hairlines |
@@ -638,7 +643,7 @@ GraphCreator speaks like a careful colleague reviewing your DAG: precise, neutra
 
 A centred dialog, 480 px wide, `rounded-xl`, elevation 2, over a dimmed page. It is open while `useUiStore().welcomeOpen` is true and shows slide `welcomeSlide`.
 
-- **When it opens:** on the first visit (`hasBeenWelcomed()` from `src/lib/welcome.ts` returns false; `main.tsx` then calls `openWelcome()`), and from the **Lessons** button in the top bar (always at slide 1).
+- **When it opens:** on the first visit (`hasBeenWelcomed()` from `src/lib/welcome.ts` returns false; `main.tsx` then calls `openWelcome()`), and from the **Help** button in the top bar (always at slide 1; called Lessons until phase 18).
 - **Closing:** any way of closing (Escape, Skip, "Get started", "Take the tour") calls `markWelcomed()`. That writes `localStorage['graphcreator:welcomed'] = '1'`; all storage access is in try/catch, and a blocked storage means the slides show again on the next visit.
 - **Navigation:** a row of four dots (the current one is a 16 px teal pill) and "Skip" at the bottom of slides 1–3. Arrow keys and "Next" move between slides.
 
@@ -761,7 +766,7 @@ export function findLesson(id: string): Lesson | undefined
 | Buttons | Solid teal primary, outline secondary, plain cancel | Soft tinted; ink primary with teal links | User's choice. |
 | Voice | Careful colleague: precise, neutral, no contractions, American spelling | Friendly guide; terse; teacher; British spelling | User's choice. The v1 messages already fit and stay unchanged. |
 | Explanations | Short info-icon tooltips with exact texts in 5.7.8 | None; tooltips plus help pages; dotted underlines | User's choice; written into the spec so they can be edited before building. |
-| First run | Welcome slides on the first visit; the Lessons button reopens them; the last slide starts the tour | Start card; guided tour only; example graph | User's choice. |
+| First run | Welcome slides on the first visit; the Help button (Lessons until phase 18) reopens them; the last slide starts the tour | Start card; guided tour only; example graph | User's choice. |
 | Lessons | Docked panel on the real canvas; engine plus one tour lesson now; the six real lessons in IDEAS.md | Separate lesson window; full lesson copy now | User's choice ("empty, very simple lessons now"). |
 | Spec placement | Rewrite 5.1–5.3 in place, new 5.7, v1 look kept in 5.6 | A separate section 11 overriding section 5 | User's choice. |
 | Rollout | New parts built unmounted in wave 7, switched on in phase 16; CI green on every commit | Edit live parts and accept red e2e until the end | User's choice. |
@@ -769,13 +774,18 @@ export function findLesson(id: string): Lesson | undefined
 | Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle at first; added in phase 17 (see "Theme toggle"). |
 | Dark theme mechanism | `next-themes` (`attribute="class"`; `defaultTheme="system"` until phase 17, then `"light"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
 | Theme toggle (2026-11-08, phase 17) | Two-state Dark mode button at the right end of the top bar; light by default even when the system is dark; stored in `graphcreator:theme` | Follow the system only; three-way light/dark/system switch | User's choice. Closes the former open issue. |
+| Help button (phase 18) | The top bar's Lessons button is called Help | Keep "Lessons" | User's choice. It still opens the welcome slides. |
+| Open (phase 18) | One Open dialog: paste GraphCreator or dagitty code, or Open file…; the format is recognised by `detectFormat` | Separate YAML Open and dagitty Import… | User's choice; removes the dagitty menu. Errors stay inside the dialog instead of a separate IssuesDialog. |
+| Confirm before Open (phase 18) | Open asks before replacing a graph that has nodes, like New and the old dagitty import | Replace without asking (v1 YAML Open) | One rule for every way of replacing the graph now that Open and import are one action. |
+| Save (phase 18) | Split button: Save downloads `.dag.yaml` as before; the ▾ menu offers GraphCreator… and dagitty…, each a code dialog with Copy and Download | dagitty menu; a direct dagitty download | User's choice. The YAML code dialog is new and mirrors the dagitty one. |
+| Rename by double-click (phase 18) | Double-clicking a circle focuses the side panel's name field (`focusName`) | Inline text box on the canvas | User's choice; the same path as after adding a node. |
 | Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. Phase 10: every 5.7.2 value passed unchanged. The test loads `node:fs` with a dynamic `import()` and types `readFileSync` by hand, because `tsconfig.app.json` has no Node types and Vite's `?raw` returns an empty string for CSS in Vitest. |
 | Welcome closing | Escape, Skip, "Get started", "Take the tour" and a click on the dimmed overlay all close the slides and set the welcomed flag; no close (X) button; dots on all four slides | An X button; overlay clicks ignored | Phase 14 judgement call; the spec lists no X button. |
 | Lesson panel details | Header text "LESSON · STEP n OF m" written literally; no callout on a step without a task; Back disabled on step 1; the callout is `role="status"`; the lesson's own title is not shown | Lesson title in the header | Phase 15 judgement calls within 5.7.10. |
 | Role menu placement | The role picker opens below its field at the field's width (`position="popper"`); the type menu keeps the default | Default Radix placement | The default scrolled and was wider than the panel (phase 13). |
 | Connect mode clicks | Every second click ends the pick, valid or not; clicking the picked circle again puts it down without the self-loop toast | Keep the source picked after a failed edge | Phase 16 judgement call: each edge is exactly two clicks. |
 | Handle click-to-connect | `connectOnClick={false}` | React Flow's default (on) | It would compete with the rim drag and with connect mode (phase 16). |
-| React Flow attribution | Bottom left, transparent background | Bottom right (default) | The saved indicator owns the bottom right (phase 16). |
+| React Flow attribution | Hidden (`proOptions={{ hideAttribution: true }}`, phase 18) | Bottom left, transparent background (phases 16–17); bottom right (default) | User's choice. React Flow is MIT-licensed, so hiding the link is allowed. |
 | Autosave status | `paused` while a lesson runs; otherwise `blocked` when storage is missing or the last write threw, back to `on` after a successful write; the user's graph is rewritten by the normal 500 ms debounce after a lesson ends | Re-check storage on a timer | Phase 16 judgement call within 4.7 and 5.5. |
 | e2e fixture | `e2e/fixtures.ts` sets `graphcreator:welcomed` via `addInitScript`; its fixture callback is named `provide` (oxlint mistakes `use` for the React hook); `welcome.spec.ts` uses the plain Playwright `test` | Clicking through the slides in every spec | Keeps the existing specs independent of the welcome flow (phase 16). |
 | Rail Add node | Pressing Add node while the add tool is active places a node at the view centre and returns to Select, like an add-tool click on the canvas | Stay in the add tool | Phase 12 judgement call, consistent with 5.2. |
@@ -815,6 +825,7 @@ General rules for every phase:
 | 15 | Lesson panel | 10 | 7 | `src/components/LessonPanel.tsx` |
 | 16 | Redesign integration and end-to-end tests | 11, 12, 13, 14, 15 | 8 | `src/App.tsx`, `src/main.tsx`, `src/components/Canvas.tsx`, deletes `DagNode.tsx` and `Toolbar.tsx`, `src/model/layout.ts` (+ test), `src/index.css`, `src/store/autosave.ts` (+ test), `e2e/*`, this spec's Status line and Open issues |
 | 17 | Light/dark toggle | 16 | 9 | `src/main.tsx`, `src/components/TopBar.tsx`, `e2e/smoke.spec.ts` |
+| 18 | Top bar rework and double-click rename | 17 | 10 | `src/model/fileFormat.ts` (+ test), `src/store/graphStore.ts` (+ test), `src/components/TopBar.tsx`, `OpenDialog.tsx`, `CodeDialog.tsx` (replace the two dagitty dialogs), `Canvas.tsx`, `src/index.css`, `IssuesDialog.tsx` (comment), `e2e/*.spec.ts` |
 
 Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
 
@@ -1120,11 +1131,11 @@ Phases: 16. Parallel: single phase. Integration check after the wave: all checks
 - **Done when:** all checks pass and CI is green; the manual run-through works in light and dark; `DagNode.tsx`, `Toolbar.tsx`, `NODE_WIDTH` and `NODE_HEIGHT` no longer exist; the Status line says the redesign is implemented.
 - **Out of scope:** the six real lessons and the other lesson features in IDEAS.md, a theme toggle, rewording the raw-exception messages (Open issues).
 
-### Wave 9: Theme toggle [ ]
+### Wave 9: Theme toggle [x]
 
 Phases: 17. Parallel: single phase. Check after the wave: all checks, and a manual run in the browser with the system set to dark (the app starts light, the toggle switches and the choice survives a reload).
 
-#### Phase 17: Light/dark toggle [ ]
+#### Phase 17: Light/dark toggle [x] (8643c84)
 
 - **Goal:** the user switches between the light and dark theme from the top bar; light is the default.
 - **Depends on:** phase 16.
@@ -1136,6 +1147,26 @@ Phases: 17. Parallel: single phase. Check after the wave: all checks, and a manu
 - **Tests:** `e2e/smoke.spec.ts` (section 9).
 - **Done when:** all checks pass; with the system set to dark the app starts light; the toggle switches the canvas, panels, dialogs and toasts; the choice survives a reload.
 - **Out of scope:** a "follow the system" option.
+
+### Wave 10: Top bar and renaming [ ]
+
+Phases: 18. Parallel: single phase. Check after the wave: all checks, and a manual run in the browser of Help, Open (paste and file, both formats, an error), Save and both Save as… dialogs, and double-click renaming.
+
+#### Phase 18: Top bar rework and double-click rename [ ]
+
+- **Goal:** Lessons is called Help; the dagitty menu is gone: Open… takes pasted text or a file in either format, and Save gets a Save as… menu with GraphCreator and dagitty code dialogs; double-clicking a node opens its name for renaming.
+- **Depends on:** phase 17.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **`fileFormat.ts`:** `detectFormat` and `parseGraphText` (4.2).
+  - **`graphStore.ts`:** `focusName` (4.6).
+  - **`OpenDialog.tsx`, `CodeDialog.tsx`:** replace `DagittyImportDialog.tsx` and `DagittyExportDialog.tsx` (renamed with git), as in 5.4.
+  - **`TopBar.tsx`:** 5.1 and 5.4: the Open dialog with `confirmReplace('Open', …)`, the Save split button, Help; remove the dagitty menu and the hidden file input.
+  - **`Canvas.tsx`:** `onNodeDoubleClick` → `focusName` when the tool is Select (5.2); hide the React Flow attribution (decisions table). `index.css`: drop the attribution styles.
+  - **e2e:** update selectors (Help, Save as…, Open dialog) and add the tests in section 9.
+- **Tests:** `fileFormat.test.ts`, the `graphStore.test.ts` addition and the e2e changes (section 9).
+- **Done when:** all checks pass; the manual run above works.
+- **Out of scope:** drag-and-drop of files onto the canvas; remembering the last Save format.
 
 ## 9. Tests
 
@@ -1171,6 +1202,9 @@ Redesign (phases 10–16):
 - `e2e/lesson.spec.ts` (phase 16): the tour's Next button enables only after each action; Finish restores the user's earlier graph; the practice graph is never written to `graphcreator:current`; New and Open are disabled during the lesson.
 - `e2e/smoke.spec.ts` (phase 16 update): the top bar and the "Canvas tools" rail render; with `colorScheme: 'dark'` emulated, `<html>` has the class `dark` and there are no console errors.
 - `e2e/smoke.spec.ts` (phase 17 update, replaces the dark test above): with `colorScheme: 'dark'` emulated the app starts light; the Dark mode button (`aria-pressed`) adds `dark` to `<html>` and React Flow and gives the canvas the dark `--canvas` colour; the choice survives a reload; clicking again returns to light; no console errors.
+- `src/model/fileFormat.test.ts` (phase 18): every YAML and dagitty fixture is recognised from its text alone; headerless dagitty is dagitty; `.yaml`/`.yml` names force YAML; YAML keys are found after comments; `parseGraphText` returns the right parser's result and errors.
+- `src/store/graphStore.test.ts` (phase 18 addition): `focusName` selects the node and sets `focusNameOf` without changing `graph`.
+- e2e (phase 18): the top bar shows New, Open…, Save, Save as…, Help and Dark mode (`smoke`); Help reopens the slides (`welcome`, `lesson`); during a lesson New and Open… are disabled and both Save as… items work (`lesson`); `files`: Open file… with `smoking.dag.yaml` (warning toast) and with `confounding.dagitty.txt` (5 nodes, 7 edges, roles, `Opened with 5 warnings`), a cycle file lists its error in the dialog and keeps the graph, pasted YAML opens, pasted dagitty over a graph asks first, pasted bidirected dagitty shows the line-numbered error, both Save as… dialogs show the exact text and download the right file; `canvas`: double-clicking a circle focuses its name with the text selected, adds no node, and typing plus Enter renames it.
 
 ## 10. Open issues
 

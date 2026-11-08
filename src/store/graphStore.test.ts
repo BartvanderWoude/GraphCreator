@@ -214,6 +214,15 @@ describe('graphStore', () => {
     expect(store().focusNameOf).toBeNull()
   })
 
+  it('focusName selects the node and sets focusNameOf without changing the graph', () => {
+    store().replaceGraph(sample())
+    const before = store().graph
+    store().focusName('n3')
+    expect(store().selection).toEqual({ kind: 'node', id: 'n3' })
+    expect(store().focusNameOf).toBe('n3')
+    expect(store().graph).toBe(before)
+  })
+
   it('replaceGraph clears selection and focusNameOf', () => {
     store().addNodeAt({ x: 0, y: 0 })
     const next = sample()

@@ -19,7 +19,7 @@ function issueText(issue: Issue): string {
 
 /**
  * A list of errors or warnings. Issues with a `nodeId` are buttons that call `onSelectNode`.
- * Used by IssuesDialog and DagittyImportDialog.
+ * Used by IssuesDialog and OpenDialog.
  */
 export function IssueList({
   issues,

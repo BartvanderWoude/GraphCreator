@@ -28,9 +28,9 @@ const autosaveWrites = (page: Page) =>
     () => (globalThis as unknown as { __writes: string[] }).__writes,
   )
 
-/** Opens the welcome slides with Lessons and takes the tour. */
+/** Opens the welcome slides with Help and takes the tour. */
 async function startTour(page: Page) {
-  await topBar(page).getByRole('button', { name: 'Lessons' }).click()
+  await topBar(page).getByRole('button', { name: 'Help' }).click()
   const slides = page.getByRole('dialog')
   for (let i = 0; i < 3; i++) {
     await slides.getByRole('button', { name: 'Next' }).click()
@@ -170,7 +170,7 @@ test('closing the lesson restores the earlier graph and nothing practised is sto
   expect(await stored(page)).toContain('name: Age')
 })
 
-test('New, Open… and dagitty Import… are disabled during the lesson; Save and Export work', async ({
+test('New and Open… are disabled during the lesson; Save and Save as… work', async ({
   page,
 }) => {
   const button = (name: string) =>
@@ -187,14 +187,12 @@ test('New, Open… and dagitty Import… are disabled during the lesson; Save an
     page.getByRole('tooltip', { name: 'Not available during a lesson.' }),
   ).toBeVisible()
 
-  await button('dagitty').click()
-  await expect(page.getByRole('menuitem', { name: 'Import…' })).toHaveAttribute(
-    'aria-disabled',
-    'true',
-  )
-  await expect(
-    page.getByRole('menuitem', { name: 'Export…' }),
-  ).not.toHaveAttribute('aria-disabled', 'true')
+  await button('Save as…').click()
+  for (const item of ['GraphCreator…', 'dagitty…']) {
+    await expect(
+      page.getByRole('menuitem', { name: item }),
+    ).not.toHaveAttribute('aria-disabled', 'true')
+  }
   await page.keyboard.press('Escape')
 
   await lessonPanel(page).getByRole('button', { name: 'Close lesson' }).click()

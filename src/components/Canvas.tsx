@@ -312,6 +312,15 @@ export function Canvas() {
     [],
   )
 
+  /** Double-clicking a circle opens its name for renaming (spec 5.2). */
+  const onNodeDoubleClick: NodeMouseHandler<CircleFlowNode> = useCallback(
+    (_event, node) => {
+      if (useUiStore.getState().tool !== 'select') return
+      useGraphStore.getState().focusName(node.id)
+    },
+    [],
+  )
+
   return (
     <div
       className={cn(
@@ -338,11 +347,12 @@ export function Canvas() {
         onDoubleClick={onDoubleClick}
         onPaneClick={onPaneClick}
         onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
         connectOnClick={false}
         zoomOnDoubleClick={false}
         deleteKeyCode={['Delete', 'Backspace']}
         multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
-        attributionPosition="bottom-left"
+        proOptions={{ hideAttribution: true }}
       />
     </div>
   )

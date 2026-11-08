@@ -87,19 +87,19 @@ test('Skip and Escape close the slides too', async ({ page }) => {
   await expect(slides(page)).toHaveCount(0)
   expect(await welcomed(page)).toBe('1')
 
-  await topBar(page).getByRole('button', { name: 'Lessons' }).click()
+  await topBar(page).getByRole('button', { name: 'Help' }).click()
   await expect(slides(page)).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(slides(page)).toHaveCount(0)
 })
 
-test('Lessons reopens the slides at slide 1', async ({ page }) => {
+test('Help reopens the slides at slide 1', async ({ page }) => {
   await slides(page).getByRole('button', { name: 'Next' }).click()
   await expect(slides(page)).toHaveAccessibleName(SLIDE_TITLES[1])
   await slides(page).getByRole('button', { name: 'Skip' }).click()
   await expect(slides(page)).toHaveCount(0)
 
-  await topBar(page).getByRole('button', { name: 'Lessons' }).click()
+  await topBar(page).getByRole('button', { name: 'Help' }).click()
   await expect(slides(page)).toHaveAccessibleName(SLIDE_TITLES[0])
 })
 

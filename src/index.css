@@ -247,10 +247,6 @@
     transparent
   );
   --xy-selection-border: 1px dashed var(--primary);
-  --xy-attribution-background-color: transparent;
-}
-.react-flow .react-flow__attribution a {
-  color: var(--muted-foreground);
 }
 /* The add and connect tools (spec 5.2) show a crosshair over the empty canvas. */
 .gc-tool-add .react-flow__pane,

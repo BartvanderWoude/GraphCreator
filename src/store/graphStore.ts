@@ -44,6 +44,8 @@ export interface GraphState {
   /** Removes nodes (with their incident edges) and edges; clears the selection if it was removed. */
   removeSelection(nodeIds: string[], edgeIds: string[]): void
   select(selection: GraphState['selection']): void
+  /** Selects the node and sets `focusNameOf`, so its name field is focused for renaming. */
+  focusName(nodeId: string): void
   clearFocusName(): void
   /** Replaces the whole graph and clears selection and `focusNameOf`. */
   replaceGraph(graph: Graph): void
@@ -124,6 +126,10 @@ export const useGraphStore = create<GraphState>()((set, get) => ({
 
   select(selection) {
     set({ selection })
+  },
+
+  focusName(nodeId) {
+    set({ selection: { kind: 'node', id: nodeId }, focusNameOf: nodeId })
   },
 
   clearFocusName() {

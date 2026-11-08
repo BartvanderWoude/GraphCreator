@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ReactElement } from 'react'
 import {
-  BookOpen,
   ChevronDown,
+  CircleHelp,
   Download,
   FilePlus,
   FolderOpen,
@@ -11,9 +11,9 @@ import {
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
-import { DagittyExportDialog } from '@/components/DagittyExportDialog'
-import { DagittyImportDialog } from '@/components/DagittyImportDialog'
+import { CodeDialog } from '@/components/CodeDialog'
 import { IssuesDialog } from '@/components/IssuesDialog'
+import { OpenDialog } from '@/components/OpenDialog'
 import { useCanvasActions } from '@/components/useToolShortcuts'
 import { Button } from '@/components/ui/button'
 import {
@@ -39,10 +39,11 @@ import {
 } from '@/components/ui/tooltip'
 import { downloadText } from '@/lib/download'
 import { toDagitty } from '@/model/dagitty'
+import type { GraphFormat } from '@/model/fileFormat'
 import { emptyGraph, type Graph } from '@/model/graph'
 import type { Issue } from '@/model/result'
 import { validateGraph } from '@/model/validate'
-import { fileSlug, parseYaml, toYaml } from '@/model/yaml'
+import { fileSlug, toYaml } from '@/model/yaml'
 import { useGraphStore } from '@/store/graphStore'
 import { useLessonStore } from '@/store/lessonStore'
 import { useUiStore } from '@/store/uiStore'
@@ -149,9 +150,9 @@ function ThemeToggle() {
 }
 
 /**
- * The top bar (spec 5.1, 5.4): logo, graph name, New, Open…, Save, the dagitty menu, the
- * warnings badge, Lessons and the Dark mode toggle, plus their dialogs and toasts. New, Open… and Import… are
- * disabled during a lesson. Must be rendered inside App's `<ReactFlowProvider>`.
+ * The top bar (spec 5.1, 5.4): logo, graph name, New, Open…, Save with its "Save as…" menu,
+ * the warnings badge, Help and the Dark mode toggle, plus their dialogs and toasts. New and
+ * Open… are disabled during a lesson. Must be rendered inside App's `<ReactFlowProvider>`.
  */
 export function TopBar() {
   const graph = useGraphStore((s) => s.graph)
@@ -165,16 +166,16 @@ export function TopBar() {
 
   const [nameDraft, setNameDraft] = useState<string | null>(null)
   const cancelNameEdit = useRef(false)
-  const openInput = useRef<HTMLInputElement>(null)
 
   const [issuesView, setIssuesView] = useState<IssuesView | null>(null)
   const [confirm, setConfirm] = useState<{
     action: string
     onConfirm: () => void
   } | null>(null)
-  const [importOpen, setImportOpen] = useState(false)
-  const [importKey, setImportKey] = useState(0)
-  const [exportView, setExportView] = useState<{
+  const [openOpen, setOpenOpen] = useState(false)
+  const [openKey, setOpenKey] = useState(0)
+  const [codeView, setCodeView] = useState<{
+    format: GraphFormat
     text: string
     filename: string
   } | null>(null)
@@ -207,29 +208,6 @@ export function TopBar() {
     confirmReplace('New graph', () => replaceGraph(emptyGraph()))
   }
 
-  async function openFile(file: File) {
-    let result
-    try {
-      result = parseYaml(await file.text())
-    } catch (e) {
-      result = {
-        ok: false as const,
-        errors: [{ message: `Something went wrong: ${errorMessage(e)}` }],
-      }
-    }
-    if (!result.ok) {
-      setIssuesView({
-        kind: 'fixed',
-        title: `Could not open ${file.name}`,
-        issues: result.errors,
-      })
-      return
-    }
-    replaceGraph(result.value)
-    view.fitView()
-    toastWarnings('Opened', result.warnings)
-  }
-
   function save() {
     try {
       const g = useGraphStore.getState().graph
@@ -243,25 +221,28 @@ export function TopBar() {
     }
   }
 
-  function openExport() {
+  /** Opens the "Save as…" code dialog for `format` (spec 5.4). */
+  function openCode(format: GraphFormat) {
     try {
       const g = useGraphStore.getState().graph
-      setExportView({
-        text: toDagitty(g),
-        filename: `${fileSlug(g.name)}.dagitty.txt`,
-      })
+      const slug = fileSlug(g.name)
+      setCodeView(
+        format === 'yaml'
+          ? { format, text: toYaml(g), filename: `${slug}.dag.yaml` }
+          : { format, text: toDagitty(g), filename: `${slug}.dagitty.txt` },
+      )
     } catch (e) {
       toast.error(`Could not export the graph: ${errorMessage(e)}`)
     }
   }
 
-  function importGraph(imported: Graph, importWarnings: Issue[]) {
-    confirmReplace('Import', () => {
-      replaceGraph(imported)
-      setImportOpen(false)
-      setImportKey((k) => k + 1)
+  function openGraph(opened: Graph, openWarnings: Issue[]) {
+    confirmReplace('Open', () => {
+      replaceGraph(opened)
+      setOpenOpen(false)
+      setOpenKey((k) => k + 1)
       view.fitView()
-      toastWarnings('Imported', importWarnings)
+      toastWarnings('Opened', openWarnings)
     })
   }
 
@@ -310,48 +291,48 @@ export function TopBar() {
             variant="ghost"
             className="rounded-md"
             disabled={inLesson}
-            onClick={() => openInput.current?.click()}
+            onClick={() => setOpenOpen(true)}
           >
             <FolderOpen {...ICON} />
             Open…
           </Button>
         </LessonLock>
-        <input
-          ref={openInput}
-          type="file"
-          accept=".yaml,.yml"
-          className="hidden"
-          aria-label="Open file"
-          disabled={inLesson}
-          onChange={(e) => {
-            const file = e.target.files?.[0]
-            e.target.value = ''
-            if (file) void openFile(file)
-          }}
-        />
-        <Button variant="ghost" className="rounded-md" onClick={save}>
-          <Download {...ICON} />
-          Save
-        </Button>
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="rounded-md">
-              dagitty
-              <ChevronDown data-icon="inline-end" {...ICON} />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <LessonLock locked={inLesson} focusable={false}>
-              <DropdownMenuItem
-                disabled={inLesson}
-                onSelect={() => setImportOpen(true)}
+        {/* Save as a split button: Save, a divider and the "Save as…" arrow, with no gaps. */}
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            className="rounded-md rounded-r-none pr-2"
+            onClick={save}
+          >
+            <Download {...ICON} />
+            Save
+          </Button>
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-4 w-px bg-border"
+          />
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-6 rounded-md rounded-l-none"
+                aria-label="Save as…"
               >
-                Import…
+                <ChevronDown {...ICON} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onSelect={() => openCode('yaml')}>
+                GraphCreator…
               </DropdownMenuItem>
-            </LessonLock>
-            <DropdownMenuItem onSelect={openExport}>Export…</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem onSelect={() => openCode('dagitty')}>
+                dagitty…
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <div className="ml-auto flex items-center gap-2">
           {warnings.length > 0 && (
@@ -369,8 +350,8 @@ export function TopBar() {
             className="rounded-md bg-accent text-accent-foreground hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)] hover:text-accent-foreground dark:hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_10%)]"
             onClick={openWelcome}
           >
-            <BookOpen {...ICON} />
-            Lessons
+            <CircleHelp {...ICON} />
+            Help
           </Button>
           <ThemeToggle />
         </div>
@@ -383,19 +364,20 @@ export function TopBar() {
           title={issuesView?.kind === 'fixed' ? issuesView.title : 'Warnings'}
           issues={issuesView?.kind === 'fixed' ? issuesView.issues : warnings}
         />
-        <DagittyImportDialog
-          key={importKey}
-          open={importOpen}
-          onOpenChange={setImportOpen}
-          onImport={importGraph}
+        <OpenDialog
+          key={openKey}
+          open={openOpen}
+          onOpenChange={setOpenOpen}
+          onOpen={openGraph}
         />
-        <DagittyExportDialog
-          open={exportView !== null}
+        <CodeDialog
+          open={codeView !== null}
           onOpenChange={(open) => {
-            if (!open) setExportView(null)
+            if (!open) setCodeView(null)
           }}
-          text={exportView?.text ?? ''}
-          filename={exportView?.filename ?? ''}
+          format={codeView?.format ?? 'yaml'}
+          text={codeView?.text ?? ''}
+          filename={codeView?.filename ?? ''}
         />
         <Dialog
           open={confirm !== null}

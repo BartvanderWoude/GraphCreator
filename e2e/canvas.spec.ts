@@ -54,6 +54,26 @@ test('double-click adds a "Node 1" circle centred on the pointer, selects it and
   await expect(circle(page, 'Age')).toBeVisible()
 })
 
+test('double-clicking a node focuses its name for renaming', async ({
+  page,
+}) => {
+  await addNodeAt(page, 200, 200)
+  await page.keyboard.type('Age')
+  await page.keyboard.press('Enter')
+  await clickEmptyCanvas(page)
+  await expect(nameField(page)).toHaveCount(0)
+
+  await node(page, 'Age').dblclick()
+  await expect(nameField(page)).toHaveValue('Age')
+  await expect(nameField(page)).toBeFocused()
+  // No second node was added, and the selected text is replaced by typing.
+  await expect(nodes(page)).toHaveCount(1)
+  await page.keyboard.type('Maternal age')
+  await page.keyboard.press('Enter')
+  await expect(circle(page, 'Maternal age')).toBeVisible()
+  await expect(circle(page, 'Age')).toHaveCount(0)
+})
+
 test('the add tool (N, then a click) adds a node and returns to Select', async ({
   page,
 }) => {
@@ -283,14 +303,13 @@ test('V, N and C pick the tool; the rail shows the active one', async ({
 test('L lays the graph out, F fits the view, + and − zoom', async ({
   page,
 }) => {
-  await topBar(page).getByRole('button', { name: 'dagitty' }).click()
-  await page.getByRole('menuitem', { name: 'Import…' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
+  await topBar(page).getByRole('button', { name: 'Open…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Open a graph' })
   // Positions put the effect left of its cause.
   await dialog
-    .getByRole('textbox', { name: 'dagitty code' })
+    .getByRole('textbox', { name: 'Graph code' })
     .fill('dag {\nA [pos="3,0"]\nB [pos="0,0"]\nA -> B\n}')
-  await dialog.getByRole('button', { name: 'Import' }).click()
+  await dialog.getByRole('button', { name: 'Open', exact: true }).click()
   await expect(nodes(page)).toHaveCount(2)
   await expect(dialog).toHaveCount(0)
   expect((await centre(node(page, 'A'))).x).toBeGreaterThan(

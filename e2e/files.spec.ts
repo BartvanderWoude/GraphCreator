@@ -37,11 +37,24 @@ const toolbar = topBar
 const button = (page: Page, name: string) =>
   toolbar(page).getByRole('button', { name, exact: true })
 
-/** Clicks Open and picks `file` in the file chooser. */
+const openDialog = (page: Page) =>
+  page.getByRole('dialog', { name: 'Open a graph' })
+
+/** Clicks Open…, then Open file… in the dialog, and picks `file` in the file chooser. */
 async function openFile(page: Page, file: string) {
-  const chooser = page.waitForEvent('filechooser')
   await button(page, 'Open…').click()
+  const chooser = page.waitForEvent('filechooser')
+  await openDialog(page).getByRole('button', { name: 'Open file…' }).click()
   await (await chooser).setFiles(file)
+}
+
+/** Clicks Open…, pastes `text` and presses Open. */
+async function pasteAndOpen(page: Page, text: string) {
+  await button(page, 'Open…').click()
+  await openDialog(page).getByRole('textbox', { name: 'Graph code' }).fill(text)
+  await openDialog(page)
+    .getByRole('button', { name: 'Open', exact: true })
+    .click()
 }
 
 /** Runs `action` and returns the download it starts, with its text. */
@@ -53,8 +66,9 @@ async function download(page: Page, action: () => Promise<void>) {
   return { name: d.suggestedFilename(), file, text: readFileSync(file, 'utf8') }
 }
 
-async function dagittyMenu(page: Page, item: 'Import…' | 'Export…') {
-  await button(page, 'dagitty').click()
+/** Opens Save's "Save as…" menu and picks `item`. */
+async function saveAs(page: Page, item: 'GraphCreator…' | 'dagitty…') {
+  await button(page, 'Save as…').click()
   await page.getByRole('menuitem', { name: item }).click()
 }
 
@@ -134,31 +148,18 @@ test('Open of an invalid file lists the errors and keeps the graph', async ({
   await expect(nodes(page)).toHaveCount(1)
 
   await openFile(page, fixture('cycle.dag.yaml'))
-  const dialog = page.getByRole('dialog', {
-    name: 'Could not open cycle.dag.yaml',
-  })
-  await expect(dialog).toBeVisible()
-  await expect(dialog).toContainText('The graph has a cycle: A → B → C → A.')
-  await dialog.getByRole('button', { name: 'Close' }).first().click()
-  await expect(dialog).toHaveCount(0)
+  const alert = openDialog(page).getByRole('alert')
+  await expect(alert).toContainText('Could not open cycle.dag.yaml:')
+  await expect(alert).toContainText('The graph has a cycle: A → B → C → A.')
+  await openDialog(page).getByRole('button', { name: 'Cancel' }).click()
+  await expect(openDialog(page)).toHaveCount(0)
   await expect(nodes(page)).toHaveCount(1)
   await expect(circle(page, 'Node 1')).toBeVisible()
 })
 
-test('dagitty import from a file creates its nodes and edges', async ({
-  page,
-}) => {
-  await dagittyMenu(page, 'Import…')
-  const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
-  const chooser = page.waitForEvent('filechooser')
-  await dialog.getByRole('button', { name: 'Choose file…' }).click()
-  await (await chooser).setFiles(fixture('confounding.dagitty.txt'))
-  await expect(
-    dialog.getByRole('textbox', { name: 'dagitty code' }),
-  ).toHaveValue(fixtureText('confounding.dagitty.txt'))
-  await dialog.getByRole('button', { name: 'Import' }).click()
-
-  await expect(dialog).toHaveCount(0)
+test('Open file… recognises a dagitty file', async ({ page }) => {
+  await openFile(page, fixture('confounding.dagitty.txt'))
+  await expect(openDialog(page)).toHaveCount(0)
   for (const n of ['A', 'B', 'D', 'E', 'Z']) {
     await expect(circle(page, n)).toBeVisible()
   }
@@ -167,49 +168,70 @@ test('dagitty import from a file creates its nodes and edges', async ({
   await expect(circle(page, 'E')).toHaveAttribute('data-role', 'exposure')
   await expect(circle(page, 'D')).toHaveAttribute('data-role', 'outcome')
   await expect(circle(page, 'A')).toHaveAttribute('data-role', 'other')
-  await expect(page.getByText('Imported with 5 warnings')).toBeVisible()
+  await expect(page.getByText('Opened with 5 warnings')).toBeVisible()
 })
 
-test('dagitty import over an existing graph asks first', async ({ page }) => {
+test('pasted GraphCreator code opens', async ({ page }) => {
+  await pasteAndOpen(page, fixtureText('smoking.dag.yaml'))
+  await expect(openDialog(page)).toHaveCount(0)
+  await expect(nodes(page)).toHaveCount(4)
+  await expect(
+    toolbar(page).getByRole('textbox', { name: 'Graph name' }),
+  ).toHaveValue('Smoking and birth weight')
+})
+
+test('pasted dagitty code over an existing graph asks first', async ({
+  page,
+}) => {
   await addNodeAt(page, 200, 200)
-  await dagittyMenu(page, 'Import…')
-  const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
-  await dialog
-    .getByRole('textbox', { name: 'dagitty code' })
-    .fill('dag {\n  X -> Y\n}')
-  await dialog.getByRole('button', { name: 'Import' }).click()
+  await pasteAndOpen(page, 'dag {\n  X -> Y\n}')
   const confirm = page.getByRole('dialog', { name: 'Start a new graph?' })
-  await confirm.getByRole('button', { name: 'Import' }).click()
+  await confirm.getByRole('button', { name: 'Open' }).click()
   await expect(nodes(page)).toHaveCount(2)
   await expect(circle(page, 'X')).toBeVisible()
   await expect(node(page, 'Node 1')).toHaveCount(0)
 })
 
-test('dagitty import of bidirected edges shows the error and changes nothing', async ({
+test('pasted dagitty with bidirected edges shows the error and changes nothing', async ({
   page,
 }) => {
-  await dagittyMenu(page, 'Import…')
-  const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
-  await dialog
-    .getByRole('textbox', { name: 'dagitty code' })
-    .fill(fixtureText('bidirected.dagitty.txt'))
-  await dialog.getByRole('button', { name: 'Import' }).click()
-  await expect(dialog.getByRole('alert')).toContainText(
+  await pasteAndOpen(page, fixtureText('bidirected.dagitty.txt'))
+  const alert = openDialog(page).getByRole('alert')
+  await expect(alert).toContainText('Could not open:')
+  await expect(alert).toContainText(
     'bidirected edges (<->) are not supported yet. GraphCreator v1 supports directed edges only.',
   )
-  await expect(dialog.getByRole('alert')).toContainText(/Line \d+:/)
-  await dialog.getByRole('button', { name: 'Cancel' }).click()
+  await expect(alert).toContainText(/Line \d+:/)
+  await openDialog(page).getByRole('button', { name: 'Cancel' }).click()
   await expect(nodes(page)).toHaveCount(0)
 })
 
-test('dagitty export shows toDagitty text and downloads it', async ({
+test('Save as… GraphCreator shows the YAML and downloads it', async ({
   page,
 }) => {
   await openFile(page, fixture('smoking.dag.yaml'))
   await expect(nodes(page)).toHaveCount(4)
 
-  await dagittyMenu(page, 'Export…')
-  const dialog = page.getByRole('dialog', { name: 'Export to dagitty' })
+  await saveAs(page, 'GraphCreator…')
+  const dialog = page.getByRole('dialog', { name: 'Save as GraphCreator' })
+  await expect(
+    dialog.getByRole('textbox', { name: 'GraphCreator code' }),
+  ).toHaveValue(fixtureText('smoking.dag.yaml'))
+  const file = await download(page, () =>
+    dialog.getByRole('button', { name: 'Download' }).click(),
+  )
+  expect(file.name).toBe('smoking-and-birth-weight.dag.yaml')
+  expect(file.text).toBe(fixtureText('smoking.dag.yaml'))
+})
+
+test('Save as… dagitty shows toDagitty text and downloads it', async ({
+  page,
+}) => {
+  await openFile(page, fixture('smoking.dag.yaml'))
+  await expect(nodes(page)).toHaveCount(4)
+
+  await saveAs(page, 'dagitty…')
+  const dialog = page.getByRole('dialog', { name: 'Save as dagitty' })
   await expect(dialog).toContainText(
     'Variable types, levels, descriptions, units and evidence are not included in dagitty files.',
   )
@@ -225,13 +247,8 @@ test('dagitty export shows toDagitty text and downloads it', async ({
 })
 
 test('Auto-layout puts causes left of their effects', async ({ page }) => {
-  await dagittyMenu(page, 'Import…')
-  const dialog = page.getByRole('dialog', { name: 'Import from dagitty' })
   // Positions put the effect left of its cause.
-  await dialog
-    .getByRole('textbox', { name: 'dagitty code' })
-    .fill('dag {\nA [pos="3,0"]\nB [pos="0,0"]\nA -> B\n}')
-  await dialog.getByRole('button', { name: 'Import' }).click()
+  await pasteAndOpen(page, 'dag {\nA [pos="3,0"]\nB [pos="0,0"]\nA -> B\n}')
   await expect(nodes(page)).toHaveCount(2)
   expect((await centre(node(page, 'A'))).x).toBeGreaterThan(
     (await centre(node(page, 'B'))).x,
