@@ -1,0 +1,5 @@
+dag {
+x [exposure,adjusted,pos="0.000,0.000"]
+y [outcome,pos="1.000,0.000"]
+x -> y
+}

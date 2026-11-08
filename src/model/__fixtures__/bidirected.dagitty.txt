@@ -1,0 +1,7 @@
+bb="-3,-0.5,2,1.2"
+D [outcome,pos="1,1"]
+E [exposure,pos="-2,1"]
+Z [pos="-0.5,0.5"]
+D <-> Z [pos="1,-1"]
+E -> D
+E <-> Z [pos="-2,-1"]
