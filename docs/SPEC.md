@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; waves 1–2 of 5 done (phases 1–2 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; waves 1–3 of 5 done (phases 1–3 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -329,6 +329,8 @@ export const useGraphStore: UseBoundStore<StoreApi<GraphState>>  // zustand `cre
 
 Initial state: `emptyGraph()`, no selection. Every action delegates to the pure functions of section 4 and replaces `graph`; none mutates. Autosave is not part of the store; phase 9 subscribes to it.
 
+Details fixed in phase 3: `setGraphName` with a blank name removes the `name` key; any other name is stored as given (not trimmed). `removeSelection` clears `selection` when the selected node or edge no longer exists afterwards (including an edge removed with its node) and leaves `focusNameOf` alone. `connect` leaves `graph` unchanged when the check fails. `autoLayout` ignores edges whose endpoints don't exist.
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -430,6 +432,7 @@ Initial state: `emptyGraph()`, no selection. Every action delegates to the pure 
 | Implementation order (2026-11-08) | Task graph with waves: contracts (phase 3), five parallel phases (wave 4), integration (phase 9) | Formats first, then UI in narrower waves without stubs | User's choice when the /design skill gained waves. Only the cut into phases changed; the design did not. |
 | `Issue.nodeId` (phase 3) | Optional `nodeId` on `Issue`, set on node warnings | Match warnings to nodes by parsing the message | Needed for 5.1 "clicking a warning selects its node"; fixed in the contracts phase so wave 4 can rely on it. |
 | Store API location | Section 4.6, implemented in phase 3; autosave in its own module (phase 9) | Store and autosave together with the canvas | Wave 4's UI phases all code against the store, so it is a contract. |
+| Store details (phase 3) | As listed under 4.6 ("Details fixed in phase 3") | — | Not specified before; chosen by the phase 3 implementation and accepted when the wave landed. |
 | Validation error messages (phase 2) | Exact texts listed in 4.4 | — | The spec named only some messages; the rest were fixed during phase 2 so later phases and tests can rely on them. |
 | Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
 
@@ -510,11 +513,11 @@ Phases: 2. Parallel: single phase. Integration check after the wave: all checks.
 - **Done when:** `npm test` passes; `src/model` has no imports from `react`, `zustand` or `@xyflow/react` (`grep -rE "from '(react|zustand|@xyflow)" src/model` is empty).
 - **Out of scope:** file formats, layout, UI.
 
-### Wave 3: Layout, store and contracts [ ]
+### Wave 3: Layout, store and contracts [x]
 
 Phases: 3. Parallel: single phase. Integration check after the wave: all checks.
 
-#### Phase 3: Layout, store and contracts [ ]
+#### Phase 3: Layout, store and contracts [x] (8f92ec0)
 
 - **Goal:** auto-layout works, the Zustand store with all actions exists, and every interface wave 4 codes against is fixed: the final `yaml.ts` and `dagitty.ts` signatures as stubs, `Issue.nodeId`, and the extra shadcn components.
 - **Depends on:** phase 2.
