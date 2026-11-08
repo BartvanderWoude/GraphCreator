@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7) was agreed on 2026-11-08; wave 6 (phase 10, groundwork) is done, waves 7–8 (phases 11–16) are open, next is wave 7. Where sections 4.5–5.3 describe the redesign, they describe the app as it will be after wave 8; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7) was agreed on 2026-11-08; waves 6–7 (phases 10–15: groundwork and the new parts) are done, wave 8 (phase 16, integration) is open and next. Where sections 4.5–5.3 describe the redesign, they describe the app as it will be after wave 8; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -771,6 +771,10 @@ export function findLesson(id: string): Lesson | undefined
 | Extras | Tool shortcuts and connect mode, evidence chip, saved indicator, dark theme following the system | Leave each for later | User's choice (all four). No theme toggle (open issue). |
 | Dark theme mechanism | `next-themes` (`attribute="class"`, `defaultTheme="system"`); React Flow `colorMode` follows `resolvedTheme` | CSS media query only | `next-themes` is already installed and used by the sonner wrapper. |
 | Contrast check | `src/lib/theme.test.ts` parses `src/index.css` and checks the token pairs | Manual check | Keeps both themes accessible as tokens change. Phase 10: every 5.7.2 value passed unchanged. The test loads `node:fs` with a dynamic `import()` and types `readFileSync` by hand, because `tsconfig.app.json` has no Node types and Vite's `?raw` returns an empty string for CSS in Vitest. |
+| Welcome closing | Escape, Skip, "Get started", "Take the tour" and a click on the dimmed overlay all close the slides and set the welcomed flag; no close (X) button; dots on all four slides | An X button; overlay clicks ignored | Phase 14 judgement call; the spec lists no X button. |
+| Lesson panel details | Header text "LESSON · STEP n OF m" written literally; no callout on a step without a task; Back disabled on step 1; the callout is `role="status"`; the lesson's own title is not shown | Lesson title in the header | Phase 15 judgement calls within 5.7.10. |
+| Role menu placement | The role picker opens below its field at the field's width (`position="popper"`); the type menu keeps the default | Default Radix placement | The default scrolled and was wider than the panel (phase 13). |
+| Rail Add node | Pressing Add node while the add tool is active places a node at the view centre and returns to Select, like an add-tool click on the canvas | Stay in the add tool | Phase 12 judgement call, consistent with 5.2. |
 | Tooltip look | Phase 10 restyles the generated shadcn `tooltip.tsx` to `rounded-lg`, elevation 2 and 180 ms ease-out (5.7.4, 5.7.5), keeping the foreground-coloured background | Leave the generated `rounded-md` look | Only phase 10 owns `tooltip.tsx`, so wave 7 cannot fix it. |
 | `renameNode` keeps the centre | The store shifts `pos` when the diameter changes | Grow from the top-left corner | Circles stay where the user put them; `pos` keeps its file meaning. |
 
@@ -822,6 +826,13 @@ Wave 4 is the wide one: its five phases share no files, and each codes against t
 - New components are named exports with no props that read and write the stores: `TopBar()`, `ToolRail()`, `SavedIndicator()`, `WelcomeDialog()`, `LessonPanel()`, plus the hook `useToolShortcuts(): void`. `CircleNode` and `FloatingEdge` are React Flow node and edge components; `src/components/canvas/types.ts` exports `nodeTypes = { circle: CircleNode }`, `edgeTypes = { floating: FloatingEdge }`, `CircleConnectionLine`, and the data types `CircleNodeData = { name: string; role: Role; untyped: boolean; connectSource: boolean }` and `FloatingEdgeData = { evidenceCount: number }`.
 - `App` (phase 16) renders, inside `<ReactFlowProvider>`: `<TopBar />` on top; below it, side by side, `<ToolRail />`, `<LessonPanel />` (renders nothing without a lesson), `<main aria-label="Canvas"><Canvas /><SavedIndicator /></main>` and `<SidePanel />`; plus `<WelcomeDialog />` and `<Toaster />`. `App` calls `useToolShortcuts()`. `main.tsx` wraps `App` in `next-themes`' `ThemeProvider` (`attribute="class"`, `defaultTheme="system"`, `enableSystem`).
 - Fitting the view after Open, Import, Auto-layout and the L and F shortcuts is done by the top bar and the rail with `fitView({ duration: 300 })` in `requestAnimationFrame`.
+- **As built in wave 7 (binding for phase 16):**
+  - `useToolShortcuts()` uses no React Flow hooks, because `App`'s own body sits outside `<ReactFlowProvider>`. `useToolShortcuts.ts` also exports `useCanvasActions()` (fit view, zoom in and out, auto-layout, add a node at the view centre), which must be called inside the provider. `TopBar` and `ToolRail` call it and register their actions in module scope; the L, F, + and − shortcuts run the registered actions, so they work once `TopBar` or `ToolRail` is mounted. V, N, C and Escape work regardless.
+  - `SavedIndicator` is positioned `absolute right-3 bottom-3`, so `<main aria-label="Canvas">` must be `relative`.
+  - `Canvas.tsx` imports `src/components/canvas/canvas.css` and gives each node `width = height = nodeDiameter(name)`; floating edges need measured nodes. `connectionMode` stays at React Flow's default (strict). `types.ts` also exports `CircleFlowNode` and `FloatingFlowEdge` for typing `<ReactFlow>`.
+  - A circle's accessible name `"<name>, <Role label>"` and its `data-role` sit on the inner circle element (`role="img"`), not on the React Flow node wrapper; the untyped dot is its own `role="img"` named "No variable type". The evidence chip selects its edge through the store's `select`.
+  - The top bar's open button is labelled "Open…" (v1: "Open"); the hidden file input keeps `aria-label="Open file"`.
+  - `TopBar`, `ToolRail` and `InfoTip` each bring their own `TooltipProvider`. A tooltip opened by keyboard focus stays open until focus moves away; e2e tests close it (blur, or move the pointer away in steps) before going on.
 
 ### Wave 1: Tooling [x]
 
@@ -989,11 +1000,11 @@ Phases: 10. Parallel: single phase. Integration check after the wave: all checks
 - **Done when:** all checks pass, including the existing e2e suite (the v1 UI is unchanged apart from fonts and colours); `src/model` still has no React, Zustand or React Flow imports.
 - **Out of scope:** any new component (wave 7), mounting anything, `Canvas.tsx`, removing `NODE_WIDTH`/`NODE_HEIGHT` (phase 16).
 
-### Wave 7: New parts [ ]
+### Wave 7: New parts [x]
 
 Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). Integration check after the wave: all checks. Phases 11, 12, 14 and 15 add unmounted files; phase 13 restyles the live side panel and keeps the e2e suite green.
 
-#### Phase 11: Circle nodes and floating edges [ ]
+#### Phase 11: Circle nodes and floating edges [x] (f1b8af2)
 
 - **Goal:** the circle node, the floating edge and the connection line exist as React Flow components, ready for `Canvas` to register.
 - **Depends on:** phase 10.
@@ -1013,7 +1024,7 @@ Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). In
 - **Done when:** all checks pass; the components type-check against `@xyflow/react` 12 and nothing mounts them yet.
 - **Out of scope:** `Canvas.tsx` (phase 16), tools and shortcuts (phase 12).
 
-#### Phase 12: Top bar, tool rail and shortcuts [ ]
+#### Phase 12: Top bar, tool rail and shortcuts [x] (286409e)
 
 - **Goal:** `TopBar`, `ToolRail`, `useToolShortcuts` and `SavedIndicator` exist per 5.1, 5.2 and 5.4, unmounted.
 - **Depends on:** phase 10.
@@ -1028,7 +1039,7 @@ Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). In
 - **Done when:** all checks pass; nothing mounts the new components yet.
 - **Out of scope:** `Canvas.tsx` click handling for the add and connect tools (phase 16), deleting `Toolbar.tsx`.
 
-#### Phase 13: Side panel restyle and tooltips [ ]
+#### Phase 13: Side panel restyle and tooltips [x] (215285e)
 
 - **Goal:** the live side panel has the new look, the role picker, labels instead of raw values, info tooltips and the cheat sheet.
 - **Depends on:** phase 10.
@@ -1045,7 +1056,7 @@ Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). In
 - **Done when:** all checks pass, including the whole e2e suite.
 - **Out of scope:** canvas, top bar, other e2e files.
 
-#### Phase 14: Welcome slides [ ]
+#### Phase 14: Welcome slides [x] (67588bb)
 
 - **Goal:** `WelcomeDialog` and the first-visit flag exist per 5.7.9, unmounted.
 - **Depends on:** phase 10.
@@ -1062,7 +1073,7 @@ Phases: 11, 12, 13, 14, 15. Parallel: yes (five sub agents; no shared files). In
 - **Done when:** all checks pass; nothing mounts the dialog yet.
 - **Out of scope:** opening the dialog on start-up (phase 16).
 
-#### Phase 15: Lesson panel [ ]
+#### Phase 15: Lesson panel [x] (a9865c8)
 
 - **Goal:** `LessonPanel` exists per 5.7.10, unmounted.
 - **Depends on:** phase 10.
