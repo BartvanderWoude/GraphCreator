@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; waves 1–3 of 5 done (phases 1–3 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; waves 1–4 of 5 done (phases 1–8 of 9). This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -179,9 +179,15 @@ Unknown keys at any level are errors (Zod `.strict()`), so typos are caught: `Un
 6. Build the `Graph` with fresh internal ids. If any node lacks `pos`, run `autoLayout` on the whole graph and add the warning `Some nodes had no position, so the graph was laid out automatically.`
 7. Add `validateGraph` warnings (4.4) and return.
 
+Details fixed in phase 4:
+- Step 4's semantic errors come from `validateGraph` (4.4 wording and order). The exception is an edge naming a missing node, which gets `The edge from "Age" to "Smokng" refers to "Smokng", but there is no node with that name.` with `path` (`edges.0.to`) and `line`, placed before the cycle error.
+- Syntax errors: `The file is not valid YAML: <parser message>.` with `line`; duplicate keys count as syntax errors. An empty file or a file that is not a map gets the missing-schema error.
+- Zod messages start with `Node "SES": ` (or `Node 2: ` when the name is unknown) or `Edge from "A" to "B": `; e.g. `Unknown field "nodse" at top level.`, `Node "SES": unknown field "colour".`, `Node 2: name is missing.`, `Node "A": item 2 of levels must be text.`, `pos must be a list of two numbers, like [0, 0].` Each has a dotted `path` and, when found, a `line`.
+- Empty or whitespace-only `description`, `unit`, `note` and graph `name` are read as absent (rule 3.2) before the levels/unit checks.
+
 #### `toYaml(graph: Graph): string`
 
-Writes keys in the order of the table (`schema`, `name`, `nodes`, `edges`; node keys `name, role, var_type, levels, description, unit, pos`; edge keys `from, to, evidence, note`), omits undefined, default and empty fields as stated, uses flow style for `levels`, `pos` and `evidence`, and ends with a newline. For a canonical file, `toYaml(parseYaml(text).value) === text`.
+Writes keys in the order of the table (`schema`, `name`, `nodes`, `edges`; node keys `name, role, var_type, levels, description, unit, pos`; edge keys `from, to, evidence, note`), omits undefined, default and empty fields as stated, uses flow style for `levels`, `pos` and `evidence`, and ends with a newline. For a canonical file, `toYaml(parseYaml(text).value) === text`. Evidence items are always double-quoted (as in the example); `levels` use plain style. `nodes:` and `edges:` are always written (`[]` when empty); `levels` are written whenever defined. Edges with missing endpoints are skipped, `-0` is written as `0`, long lines are not folded. Fixtures in `src/model/__fixtures__` are excluded from Prettier (`.prettierignore`), which would otherwise rewrite their quoting.
 
 ### 4.2 dagitty text format (exchange format)
 
@@ -207,7 +213,7 @@ Semantics:
 
 - A node is created the first time its id appears (in a vertex or edge statement). Repeated vertex statements merge their attributes.
 - Role attributes: `exposure`, `outcome`, `latent`, `adjusted`, `selected`. No role → `other`. **More than one role on a node is an error**: `Node "x" has more than one role (exposure, adjusted); GraphCreator allows one role per node.`
-- `pos="x,y"` → `pos = { x: x * 100, y: y * 100 }` (`DAGITTY_SCALE = 100`).
+- `pos="x,y"` → `pos = { x: x * 100, y: y * 100 }` (`DAGITTY_SCALE = 100`), rounded to 0.001 px. dagitty's y grows downward like screen coordinates (confirmed in phase 5 from dagitty's GUI coordinate mapping and its example models), so there is no flip.
 - `label="..."` → the node's name; without a label the name is the id.
 - Any other vertex attribute, and any edge attribute, is ignored with one warning per key: `Ignored dagitty attribute "beta" (not used by GraphCreator).`
 - `a -> b -> c` adds `a→b` and `b→c`. `a <- b` adds `b→a`. `{a b} -> c` adds `a→c` and `b→c`; groups work on either side.
@@ -216,6 +222,12 @@ Semantics:
 - If any node lacks `pos`, `autoLayout` the whole graph and add the same warning as for YAML.
 - Imported nodes have no type, so `validateGraph` warnings for untyped nodes follow.
 - On name collisions after applying labels (two ids with the same label), error: `Two dagitty nodes have the label "Age".`
+
+Details fixed in phase 5:
+- Further messages, following the `<->` template: `Line N: undirected edges (--) are not supported yet. GraphCreator v1 supports directed edges only.`; `Line N: edges with circle marks (@->) are not supported yet. GraphCreator v1 supports directed edges only.` (the operator as written); `Line N: graph type "pdag" is not supported. GraphCreator v1 supports dag graphs only.`; `Line N: "%" is not valid dagitty syntax.`; `Line N: "x" is not valid here.`; `Line N: the text ends too early.`; `Line N: a quoted name or value is not closed (missing ").`; `Line N: a group { … } must be part of an edge, as in { a b } -> c.`; `Line N: pos="…" is not a valid position; dagitty positions look like pos="1.5,-0.3".`; `Line N: label needs a value, as in label="Age".`
+- Syntax errors stop at the first one; meaning-level errors (two roles, label collisions, self-edges, cycles, empty names) are all collected. Self-edge, cycle and empty-name messages come from `validateGraph`; its duplicate-name message is replaced by the label-collision error. The two-roles error and ignored-attribute warnings carry `line`.
+- The parser unescapes `\"` and `\\` and keeps other backslashes; `toDagitty` escapes `\` as well as `"`.
+- The graph name in `dag Name {` is ignored. A graph-type word is a header only when `{` (or a name and `{`) follows, so `dag -> graph` is an edge. A newline or `;` separates statements; one statement may span lines. Negative attribute values and an empty `[]` are accepted. Without spaces, `o->b` is read as a circle-mark edge (so a node named `o` needs spaces, which `toDagitty` writes anyway).
 
 #### `toDagitty(graph: Graph): string`
 
@@ -235,12 +247,12 @@ Genetic_factors -> Birth_weight
 ```
 
 - One vertex line per node in `graph.nodes` order: `id [attrs]`, attrs in the order role (omitted for `other`), `label="..."` (only when the name differs from the id; `"` escaped as `\"`), `pos="x,y"` (px ÷ 100, 3 decimals).
-- One edge line per edge in `graph.edges` order.
+- One edge line per edge in `graph.edges` order (edges with missing endpoints are skipped). The output ends with a newline and never writes `-0.000`.
 - The graph name is not written.
 
 #### `toDagittyIds(nodes: GNode[]): Map<string, string>`
 
-Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Exported ids always match dagitty's bareword pattern, so no quoting is needed on export.
+Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Each Unicode code point becomes one `_`. Exported ids always match dagitty's bareword pattern, so no quoting is needed on export.
 
 Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design.
 
@@ -382,6 +394,12 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 
 `src/store/autosave.ts` persists the store's current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave.
 
+### 5.6 UI details fixed in wave 4
+
+- **Canvas (phase 6):** React Flow nodes/edges live in local state, rebuilt from the store's `graph` and `selection` when they change, keeping in-drag positions and `measured` sizes; `onNodeDragStop` commits `moveNode`. `onSelectionChange` sets the store selection to the single selected item, or `null` for zero or several. A double-clicked node is centred on the pointer. Shift, Meta or Control multi-select. The invalid-drop toast comes from `onConnectEnd`. Default bezier edges with a closed arrowhead (grey `#737373`; selected blue `#2563eb`, 3 px); valid hovered handle green, invalid red. `<Background />` and `<Controls />`, no minimap. Role colours: exposure `#15803d`, outcome `#1d4ed8`, latent `#4b5563`, adjusted `#b45309`, selected `#7e22ce`, other `#64748b` (each ≥ 4.5:1 with the white badge letter); the box has a role-colour border and a 12 % tint background. `Canvas` fills its parent (`h-full flex-1`).
+- **Side panel (phase 7):** `SidePanel` renders its own `<aside aria-label="Side panel">` (320 px). The untyped option uses the internal select value `untyped`. Empty list items are dropped from what is saved; Enter in the last list input adds an item only when it is not empty; remove/move commit immediately. A draft unit is discarded when the type changes. Role/type options show the raw values. Accessible names: list inputs "Level N" / "Evidence N", buttons "Move level N up", "Remove level N", etc. (end-to-end tests match them with `exact: true`).
+- **Toolbar (phase 8):** the warnings toast after Open/Import has a "Show" action that opens IssuesDialog. The confirmation dialog has title "Start a new graph?", description "Unsaved changes to the current graph will be lost." and a confirm button "New graph" or "Import"; Open does not confirm (per 5.4). After a successful dagitty parse the Toolbar confirms if needed, replaces the graph, closes and resets the dialog, fits the view and toasts warnings; cancelling the confirmation keeps the dialog open. IssueList prefixes "Line N: " only when `line` is set and the message doesn't already start with it. `fitView()` runs in `requestAnimationFrame`. Export text is computed when the dialog opens. MIME types: `application/yaml` and `text/plain`. The dagitty dropdown uses `modal={false}`. Add node centres the node box on the viewport centre. Toolbar order: name, New, Open, Save, dagitty ▾, Add node, Auto-layout, badge on the right.
+
 ## 6. Project setup and conventions
 
 - Scripts in `package.json`: `dev`, `build` (`tsc -b && vite build`), `preview`, `lint` (`oxlint`), `typecheck` (`tsc -b`; the tsconfigs set `noEmit`), `test` (`vitest run`), `test:watch` (`vitest`), `test:e2e` (`playwright test`), `format` (`prettier --write .`).
@@ -432,6 +450,9 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 | Implementation order (2026-11-08) | Task graph with waves: contracts (phase 3), five parallel phases (wave 4), integration (phase 9) | Formats first, then UI in narrower waves without stubs | User's choice when the /design skill gained waves. Only the cut into phases changed; the design did not. |
 | `Issue.nodeId` (phase 3) | Optional `nodeId` on `Issue`, set on node warnings | Match warnings to nodes by parsing the message | Needed for 5.1 "clicking a warning selects its node"; fixed in the contracts phase so wave 4 can rely on it. |
 | Store API location | Section 4.6, implemented in phase 3; autosave in its own module (phase 9) | Store and autosave together with the canvas | Wave 4's UI phases all code against the store, so it is a contract. |
+| Wave 4 implementation details | As recorded in 4.1, 4.2 and 5.6 ("Details fixed in phase …") | — | Not specified before; chosen by the wave 4 implementations and accepted when the wave landed. |
+| dagitty y axis | Grows downward; ×100, no flip | Flip y on import/export | Confirmed in phase 5; closes the former open issue. |
+| dagitty-derived fixtures | `confounding.dagitty.txt` and `bidirected.dagitty.txt` are dagitty example models used verbatim as test data | Hand-written equivalents | The spec allowed dagitty examples as data; they are model text, not code. Flagged to the user when wave 4 landed. |
 | Store details (phase 3) | As listed under 4.6 ("Details fixed in phase 3") | — | Not specified before; chosen by the phase 3 implementation and accepted when the wave landed. |
 | Validation error messages (phase 2) | Exact texts listed in 4.4 | — | The spec named only some messages; the rest were fixed during phase 2 so later phases and tests can rely on them. |
 | Prettier scope (phase 1) | `docs` added to `.prettierignore` | Format docs too | Formatting docs rewrote the spec's aligned code blocks; docs stay hand-formatted. |
@@ -533,11 +554,11 @@ Phases: 3. Parallel: single phase. Integration check after the wave: all checks.
 - **Done when:** all checks pass; `src/model` still has no React/Zustand/React Flow imports; importing `yaml.ts` and `dagitty.ts` works and their functions throw the stated message.
 - **Out of scope:** YAML and dagitty logic (phases 4, 5), UI components (6–8), autosave and App wiring (9).
 
-### Wave 4: Formats and UI parts [ ]
+### Wave 4: Formats and UI parts [x]
 
 Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integration check after the wave: all checks (the app still shows the phase 1 shell; nothing is mounted until phase 9).
 
-#### Phase 4: YAML format [ ]
+#### Phase 4: YAML format [x] (9e8e9e5)
 
 - **Goal:** GraphCreator files can be read and written with full validation.
 - **Depends on:** phase 3.
@@ -548,7 +569,7 @@ Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integra
 - **Done when:** all checks pass, including the canonical round trip `toYaml(parseYaml(smoking)) === smoking`.
 - **Out of scope:** dagitty, UI, autosave.
 
-#### Phase 5: dagitty import and export [ ]
+#### Phase 5: dagitty import and export [x] (057be80)
 
 - **Goal:** dagitty text can be imported and exported per 4.2.
 - **Depends on:** phase 3.
@@ -559,7 +580,7 @@ Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integra
 - **Done when:** all checks pass; every rejected construct produces the specified line-numbered message.
 - **Out of scope:** UI dialogs (phase 8), bidirected support.
 
-#### Phase 6: Canvas and node look [ ]
+#### Phase 6: Canvas and node look [x] (07d2207)
 
 - **Goal:** the `Canvas` component shows the store's graph with React Flow and supports adding, connecting, selecting, moving and deleting nodes and edges, with invalid connections refused and explained.
 - **Depends on:** phase 3.
@@ -570,7 +591,7 @@ Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integra
 - **Done when:** all checks pass; `Canvas` and `DagNode` follow the component contracts.
 - **Out of scope:** mounting in `App` (phase 9), side panel, toolbar.
 
-#### Phase 7: Side panel editors [ ]
+#### Phase 7: Side panel editors [x] (028e972)
 
 - **Goal:** the `SidePanel` component edits the selected node or edge per 5.3.
 - **Depends on:** phase 3.
@@ -581,7 +602,7 @@ Phases: 4, 5, 6, 7, 8. Parallel: yes (five sub agents; no shared files). Integra
 - **Done when:** all checks pass; `SidePanel` follows the component contracts.
 - **Out of scope:** mounting in `App`, canvas, toolbar.
 
-#### Phase 8: Toolbar and dialogs [ ]
+#### Phase 8: Toolbar and dialogs [x] (5bcd8dd)
 
 - **Goal:** the `Toolbar` component with graph name, New, Open, Save, the dagitty menu, Add node, Auto-layout and the warning badge, plus its dialogs.
 - **Depends on:** phase 3.
@@ -629,6 +650,5 @@ Phases: 9. Parallel: single phase. Integration check after the wave: all checks 
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
-- **dagitty y axis:** this spec assumes dagitty's `pos` y grows downward, like screen coordinates. Phase 5 checks this against a real dagitty file; 4.2 is updated when wave 4 lands if it is not.
 - **Tokens/colours:** role colours are chosen in phase 6; a later design pass may refine the visual style.
 - Everything in [IDEAS.md](IDEAS.md).
