@@ -5,12 +5,14 @@ import {
   Download,
   FilePlus,
   FolderOpen,
+  ImageDown,
   Moon,
   Sun,
   TriangleAlert,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CodeDialog } from '@/components/CodeDialog'
+import { ExportDialog } from '@/components/ExportDialog'
 import { IssuesDialog } from '@/components/IssuesDialog'
 import { OpenDialog } from '@/components/OpenDialog'
 import { useCanvasActions } from '@/components/useToolShortcuts'
@@ -178,6 +180,7 @@ export function TopBar() {
     text: string
     filename: string
   } | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   /** Runs `action` right away for an empty graph, otherwise after the New confirmation. */
   function confirmReplace(actionLabel: string, action: () => void) {
@@ -319,6 +322,14 @@ export function TopBar() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        <Button
+          variant="ghost"
+          className="rounded-md"
+          onClick={() => setExportOpen(true)}
+        >
+          <ImageDown {...ICON} />
+          Export…
+        </Button>
 
         <div className="ml-auto flex items-center gap-2">
           {warnings.length > 0 && (
@@ -365,6 +376,7 @@ export function TopBar() {
           text={codeView?.text ?? ''}
           filename={codeView?.filename ?? ''}
         />
+        <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
         <Dialog
           open={confirm !== null}
           onOpenChange={(open) => {
