@@ -5,7 +5,9 @@ import {
   MousePointer2,
   Network,
   Plus,
+  Redo2,
   Spline,
+  Undo2,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from 'cn'
@@ -16,11 +18,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useGraphStore } from '@/store/graphStore'
 import { useUiStore } from '@/store/uiStore'
+
+/** The modifier shown in the Undo and Redo tooltips: ⌘ on a Mac, else Ctrl (spec 5.1). */
+function modKey(): string {
+  try {
+    return /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl'
+  } catch {
+    return 'Ctrl'
+  }
+}
 
 /**
  * One 40 × 40 icon button of the rail, with an accessible name, `aria-keyshortcuts` and a
  * tooltip "Name  Key". `active` is only passed for tools; the active tool is solid teal.
+ * `disabled` greys the button out (Undo and Redo with nothing to undo or redo).
  */
 function RailButton({
   label,
@@ -28,6 +41,7 @@ function RailButton({
   keyLabel,
   icon: Icon,
   active,
+  disabled,
   onClick,
 }: {
   label: string
@@ -37,6 +51,7 @@ function RailButton({
   keyLabel: string
   icon: LucideIcon
   active?: boolean
+  disabled?: boolean
   onClick: () => void
 }) {
   return (
@@ -47,9 +62,10 @@ function RailButton({
           aria-label={label}
           aria-keyshortcuts={shortcut}
           aria-pressed={active}
+          disabled={disabled}
           onClick={onClick}
           className={cn(
-            'flex size-10 shrink-0 items-center justify-center rounded-md text-foreground transition-colors duration-120 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'flex size-10 shrink-0 items-center justify-center rounded-md text-foreground transition-colors duration-120 outline-none hover:bg-secondary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50',
             active &&
               'bg-primary text-primary-foreground hover:bg-primary-hover',
           )}
@@ -72,13 +88,18 @@ function RailButton({
 
 /**
  * The vertical tool rail left of the canvas (spec 5.1, 5.2): Select, Add node and Connect, then
- * Auto-layout, Fit view, Zoom in and Zoom out. Must be rendered inside App's
+ * Auto-layout, Fit view, Zoom in and Zoom out, then Undo and Redo. Must be rendered inside App's
  * `<ReactFlowProvider>`.
  */
 export function ToolRail() {
   const tool = useUiStore((s) => s.tool)
   const setTool = useUiStore((s) => s.setTool)
   const view = useCanvasActions()
+  const canUndo = useGraphStore((s) => s.past.length > 0)
+  const canRedo = useGraphStore((s) => s.future.length > 0)
+  const undo = useGraphStore((s) => s.undo)
+  const redo = useGraphStore((s) => s.redo)
+  const mod = modKey()
 
   function addNode() {
     if (tool !== 'add') {
@@ -154,6 +175,27 @@ export function ToolRail() {
           keyLabel="−"
           icon={Minus}
           onClick={view.zoomOut}
+        />
+        <div
+          role="separator"
+          aria-orientation="horizontal"
+          className="my-1 h-px w-8 bg-border"
+        />
+        <RailButton
+          label="Undo"
+          shortcut="Control+Z Meta+Z"
+          keyLabel={`${mod}+Z`}
+          icon={Undo2}
+          disabled={!canUndo}
+          onClick={undo}
+        />
+        <RailButton
+          label="Redo"
+          shortcut="Control+Shift+Z Meta+Shift+Z Control+Y"
+          keyLabel={`${mod}+Shift+Z`}
+          icon={Redo2}
+          disabled={!canRedo}
+          onClick={redo}
         />
       </div>
     </TooltipProvider>

@@ -18,6 +18,8 @@ export function SidePanel() {
       ? s.graph.edges.find((e) => e.id === s.selection?.id)
       : undefined,
   )
+  // An undo or redo remounts the editor, so its local fields show the restored values.
+  const revision = useGraphStore((s) => s.revision)
 
   return (
     <aside
@@ -25,9 +27,9 @@ export function SidePanel() {
       className="w-80 shrink-0 overflow-y-auto border-l border-border bg-background p-4 text-sm text-foreground"
     >
       {node ? (
-        <NodeEditor key={node.id} node={node} />
+        <NodeEditor key={`${node.id}:${revision}`} node={node} />
       ) : edge ? (
-        <EdgeEditor key={edge.id} edge={edge} />
+        <EdgeEditor key={`${edge.id}:${revision}`} edge={edge} />
       ) : (
         <PanelHelp />
       )}

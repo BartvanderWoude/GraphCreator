@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { emptyGraph, type Graph } from '@/model/graph'
 import { autoLayout } from '@/model/layout'
-import { useGraphStore } from './graphStore'
+import { HISTORY_LIMIT, useGraphStore } from './graphStore'
 
 const store = () => useGraphStore.getState()
 
@@ -34,6 +34,9 @@ beforeEach(() => {
     graph: emptyGraph(),
     selection: null,
     focusNameOf: null,
+    past: [],
+    future: [],
+    revision: 0,
   })
 })
 
@@ -245,5 +248,281 @@ describe('graphStore', () => {
     store().replaceGraph(sample())
     const graph = expectReplaced(() => store().layout())
     expect(graph).toEqual(autoLayout(sample()))
+  })
+})
+
+describe('graphStore undo history', () => {
+  /** Loads `sample()` with an empty history. */
+  function load(): Graph {
+    store().replaceGraph(sample())
+    return store().graph
+  }
+
+  it('starts with empty stacks and revision 0', () => {
+    expect(store().past).toEqual([])
+    expect(store().future).toEqual([])
+    expect(store().revision).toBe(0)
+  })
+
+  const recording: [string, () => void][] = [
+    ['addNodeAt', () => void store().addNodeAt({ x: 1, y: 2 })],
+    ['renameNode', () => void store().renameNode('n1', 'Smoking')],
+    ['updateNode', () => store().updateNode('n1', { varType: 'continuous' })],
+    ['moveNode', () => store().moveNode('n1', { x: 9, y: 9 })],
+    [
+      'moveNodes',
+      () =>
+        store().moveNodes([
+          { id: 'n1', pos: { x: 9, y: 9 } },
+          { id: 'n2', pos: { x: 8, y: 8 } },
+        ]),
+    ],
+    ['connect', () => void store().connect('n2', 'n3')],
+    ['updateEdge', () => store().updateEdge('e1', { note: 'Known' })],
+    ['removeSelection', () => store().removeSelection(['n3'], [])],
+    ['setGraphName', () => store().setGraphName('Other name')],
+    ['layout', () => store().layout()],
+  ]
+
+  it.each(recording)(
+    '%s pushes exactly one entry and clears future',
+    (_name, action) => {
+      const before = load()
+      // Give `future` an entry first, so clearing it shows.
+      store().setGraphName('Temporary')
+      store().undo()
+      expect(store().future).toHaveLength(1)
+      expect(store().graph).toBe(before)
+
+      action()
+      expect(store().graph).not.toBe(before)
+      expect(store().past).toEqual([before])
+      expect(store().past[0]).toBe(before)
+      expect(store().future).toEqual([])
+    },
+  )
+
+  const noOps: [string, () => void][] = [
+    ['a failed rename', () => void store().renameNode('n1', 'B')],
+    ['a blank rename', () => void store().renameNode('n1', '  ')],
+    ['a rename to the same name', () => void store().renameNode('n1', ' A ')],
+    ['a refused connect', () => void store().connect('n2', 'n1')],
+    [
+      'an equal node patch',
+      () => store().updateNode('n1', { role: 'exposure' }),
+    ],
+    [
+      'an equal patch after normalising',
+      () => store().updateNode('n3', { description: '  ', unit: 'g' }),
+    ],
+    [
+      'equal levels, item by item',
+      () => store().updateNode('n4', { levels: ['low', 'high'] }),
+    ],
+    ['an equal edge patch', () => store().updateEdge('e1', { evidence: [] })],
+    [
+      'moveNode to the same place',
+      () => store().moveNode('n2', { x: 300, y: 0 }),
+    ],
+    [
+      'moveNodes to the same places',
+      () =>
+        store().moveNodes([
+          { id: 'n1', pos: { x: 0, y: 0 } },
+          { id: 'n3', pos: { x: 150, y: 100 } },
+        ]),
+    ],
+    ['moveNodes with no moves', () => store().moveNodes([])],
+    ['removing nothing', () => store().removeSelection([], [])],
+    ['removing unknown ids', () => store().removeSelection(['n9'], ['e9'])],
+    [
+      'setGraphName with the current name',
+      () => store().setGraphName('Sample'),
+    ],
+  ]
+
+  it.each(noOps)(
+    '%s pushes nothing and keeps the same graph object',
+    (_name, action) => {
+      store().replaceGraph({
+        ...sample(),
+        nodes: [
+          ...sample().nodes,
+          {
+            id: 'n4',
+            name: 'D',
+            role: 'other',
+            varType: 'ordinal',
+            levels: ['low', 'high'],
+            pos: { x: 0, y: 200 },
+          },
+        ],
+      })
+      store().select({ kind: 'node', id: 'n1' })
+      const before = store().graph
+      action()
+      expect(store().graph).toBe(before)
+      expect(store().past).toEqual([])
+      expect(store().selection).toEqual({ kind: 'node', id: 'n1' })
+    },
+  )
+
+  it('setGraphName with a blank name on an unnamed graph pushes nothing', () => {
+    store().replaceGraph({ nodes: [], edges: [] })
+    const before = store().graph
+    store().setGraphName('  ')
+    expect(store().graph).toBe(before)
+    expect(store().past).toEqual([])
+  })
+
+  it('a no-op leaves future in place', () => {
+    load()
+    store().moveNode('n1', { x: 5, y: 5 })
+    store().undo()
+    const future = store().future
+    store().removeSelection([], [])
+    expect(store().future).toBe(future)
+  })
+
+  it('undo then redo returns the identical graph objects', () => {
+    const g0 = load()
+    store().renameNode('n1', 'Smoking')
+    const g1 = store().graph
+    store().connect('n2', 'n3')
+    const g2 = store().graph
+
+    store().undo()
+    expect(store().graph).toBe(g1)
+    expect(store().past).toEqual([g0])
+    expect(store().future).toEqual([g2])
+    store().undo()
+    expect(store().graph).toBe(g0)
+    expect(store().past).toEqual([])
+    expect(store().future[1]).toBe(g1)
+    expect(store().future[0]).toBe(g2)
+
+    store().redo()
+    expect(store().graph).toBe(g1)
+    store().redo()
+    expect(store().graph).toBe(g2)
+    expect(store().past[0]).toBe(g0)
+    expect(store().past[1]).toBe(g1)
+    expect(store().future).toEqual([])
+  })
+
+  it('a new edit after an undo discards the redo stack', () => {
+    load()
+    store().moveNode('n1', { x: 5, y: 5 })
+    store().undo()
+    store().moveNode('n2', { x: 7, y: 7 })
+    expect(store().future).toEqual([])
+    store().redo()
+    expect(store().graph.nodes[1].pos).toEqual({ x: 7, y: 7 })
+  })
+
+  it('past stops at HISTORY_LIMIT and drops the oldest entry', () => {
+    load()
+    const graphs: Graph[] = []
+    for (let i = 1; i <= HISTORY_LIMIT + 5; i++) {
+      graphs.push(store().graph)
+      store().moveNode('n1', { x: i, y: 0 })
+    }
+    expect(store().past).toHaveLength(HISTORY_LIMIT)
+    expect(store().past[0]).toBe(graphs[5])
+    expect(store().past[HISTORY_LIMIT - 1]).toBe(graphs[HISTORY_LIMIT + 4])
+
+    for (let i = 0; i < HISTORY_LIMIT + 5; i++) store().undo()
+    expect(store().graph).toBe(graphs[5])
+    expect(store().future).toHaveLength(HISTORY_LIMIT)
+  })
+
+  it('replaceGraph empties both stacks and leaves revision alone', () => {
+    load()
+    store().moveNode('n1', { x: 5, y: 5 })
+    store().moveNode('n1', { x: 6, y: 6 })
+    store().undo()
+    expect(store().past).toHaveLength(1)
+    expect(store().future).toHaveLength(1)
+    const revision = store().revision
+    store().replaceGraph(sample())
+    expect(store().past).toEqual([])
+    expect(store().future).toEqual([])
+    expect(store().revision).toBe(revision)
+  })
+
+  it('moveNodes with three moves is one step', () => {
+    const before = load()
+    store().moveNodes([
+      { id: 'n1', pos: { x: 10, y: 11 } },
+      { id: 'n2', pos: { x: 20, y: 21 } },
+      { id: 'n3', pos: { x: 30, y: 31 } },
+    ])
+    expect(store().graph.nodes.map((n) => n.pos)).toEqual([
+      { x: 10, y: 11 },
+      { x: 20, y: 21 },
+      { x: 30, y: 31 },
+    ])
+    expect(store().past).toEqual([before])
+    store().undo()
+    expect(store().graph).toBe(before)
+  })
+
+  it('moveNodes does not mutate the previous graph', () => {
+    load()
+    const graph = expectReplaced(() =>
+      store().moveNodes([{ id: 'n2', pos: { x: 1, y: 2 } }]),
+    )
+    expect(graph.nodes[1].pos).toEqual({ x: 1, y: 2 })
+  })
+
+  it('undo keeps a selection that still exists, clears focusNameOf and increments revision', () => {
+    load()
+    store().renameNode('n1', 'Smoking')
+    store().focusName('n1')
+    store().undo()
+    expect(store().graph.nodes[0].name).toBe('A')
+    expect(store().selection).toEqual({ kind: 'node', id: 'n1' })
+    expect(store().focusNameOf).toBeNull()
+    expect(store().revision).toBe(1)
+    store().redo()
+    expect(store().graph.nodes[0].name).toBe('Smoking')
+    expect(store().selection).toEqual({ kind: 'node', id: 'n1' })
+    expect(store().revision).toBe(2)
+  })
+
+  it('undo and redo clear a selection that no longer exists', () => {
+    load()
+    const id = store().addNodeAt({ x: 0, y: 0 })
+    expect(store().focusNameOf).toBe(id)
+    store().undo()
+    expect(store().graph.nodes.some((n) => n.id === id)).toBe(false)
+    expect(store().selection).toBeNull()
+    expect(store().focusNameOf).toBeNull()
+
+    store().connect('n2', 'n3')
+    const edge = store().graph.edges[1].id
+    store().select({ kind: 'edge', id: edge })
+    store().undo()
+    expect(store().selection).toBeNull()
+    store().select({ kind: 'node', id: 'n3' })
+    store().redo()
+    expect(store().selection).toEqual({ kind: 'node', id: 'n3' })
+    store().removeSelection(['n3'], [])
+    store().undo()
+    store().select({ kind: 'node', id: 'n3' })
+    store().redo()
+    expect(store().selection).toBeNull()
+  })
+
+  it('undo and redo on empty stacks change nothing', () => {
+    load()
+    store().select({ kind: 'node', id: 'n1' })
+    store().focusName('n1')
+    const before = store()
+    store().undo()
+    store().redo()
+    expect(store()).toBe(before)
+    expect(store().revision).toBe(0)
+    expect(store().focusNameOf).toBe('n1')
   })
 })

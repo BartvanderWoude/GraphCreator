@@ -213,8 +213,10 @@ export function Canvas() {
 
   const onNodeDragStop: OnNodeDrag<CircleFlowNode> = useCallback(
     (_event, _node, dragged) => {
-      const { moveNode } = useGraphStore.getState()
-      for (const n of dragged) moveNode(n.id, n.position)
+      // One store commit for all dragged nodes, so a multi-node drag is one undo step.
+      useGraphStore
+        .getState()
+        .moveNodes(dragged.map((n) => ({ id: n.id, pos: n.position })))
     },
     [],
   )

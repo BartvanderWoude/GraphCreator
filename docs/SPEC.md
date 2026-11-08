@@ -440,6 +440,8 @@ export const HISTORY_LIMIT = 100
 - **Canvas drag stop** commits all dragged nodes with one `moveNodes` call, so a multi-node drag is one undo step. `moveNode` stays for single moves.
 - History is editor state: it is not autosaved, not part of the file, and a reload starts with an empty history.
 
+Details fixed in phase 21: no-op detection compares the new graph with the current one structurally (arrays item by item, a missing key equal to `undefined`), so patches the model normalises away, a rename to the same name (which returns `ok: true` with the unchanged graph), `moveNodes([])`, unknown ids and a layout that moves nothing all record nothing. `future` is capped at `HISTORY_LIMIT` too. A kept selection keeps its object. The shortcut handler checks text fields and open dialogs before modifier keys; ⌘+Y is not a redo key and Alt with any of these keys is ignored. A disabled rail button shows no tooltip.
+
 ### 4.11 Image export (`src/lib/imageExport.ts`, phase 22)
 
 ```ts

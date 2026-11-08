@@ -56,5 +56,6 @@ export const PANEL_HELP: {
     { action: 'Connect', how: 'Drag from the rim of a circle, or press C' },
     { action: 'Delete', how: 'Select, then press Delete' },
     { action: 'Select several', how: 'Shift-click' },
+    { action: 'Undo', how: 'Press Ctrl+Z' },
   ],
 }

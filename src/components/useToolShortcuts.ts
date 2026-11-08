@@ -93,17 +93,39 @@ function ownsKeys(target: EventTarget | null): boolean {
 }
 
 /**
+ * The history action of an undo or redo key (spec 5.2): Ctrl+Z or ⌘+Z undoes; Ctrl+Shift+Z,
+ * ⌘+Shift+Z and Ctrl+Y redo. Null for any other key, or with Alt held.
+ */
+function historyKey(e: KeyboardEvent): 'undo' | 'redo' | null {
+  if (e.altKey || !(e.ctrlKey || e.metaKey)) return null
+  const key = e.key.toLowerCase()
+  if (key === 'z') return e.shiftKey ? 'redo' : 'undo'
+  if (key === 'y' && e.ctrlKey && !e.metaKey && !e.shiftKey) return 'redo'
+  return null
+}
+
+/**
  * Canvas tool shortcuts (spec 5.2): V, N and C set the tool; L runs auto-layout and fits the
- * view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source.
- * Ignored with Ctrl, Meta or Alt held, while focus is in a text field, select or contenteditable,
- * and while a dialog is open. One `keydown` listener on `window`.
+ * view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source;
+ * Ctrl/⌘+Z undoes, Ctrl/⌘+Shift+Z and Ctrl+Y redo. The tool keys are ignored with Ctrl, Meta or
+ * Alt held. All are ignored while focus is in a text field, select or contenteditable (so Ctrl+Z
+ * there is the browser's own text undo), and while a dialog is open. One `keydown` listener on
+ * `window`.
  */
 export function useToolShortcuts(): void {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return
+      if (e.isComposing) return
       if (ownsKeys(e.target)) return
       if (document.querySelector('[role="dialog"]')) return
+
+      const history = historyKey(e)
+      if (history) {
+        e.preventDefault()
+        useGraphStore.getState()[history]()
+        return
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return
 
       const { setTool } = useUiStore.getState()
       const view = registered
