@@ -878,6 +878,14 @@ graph [
   - Syntax errors stop at the first one, with `Line N:` messages in the dagitty style (4.2 "Details fixed in phase 5").
 - **Round trip:** `toYaml(parseGml(toGml(g)).value)` equals `toYaml(g)` up to positions within 0.1 px.
 
+Details fixed in phase 33:
+- Escaping turns every character outside printable ASCII into `&#<code point>;` (tabs, newlines and emoji too). An unknown named reference is left as written.
+- Tokens: a key is `[A-Za-z_][0-9A-Za-z_]*`; strings have no escapes and may span lines; `#` starts a comment anywhere outside strings. A number used as text or as a node key is `String(Number(text))`, so `1.0` and `1` are the same id.
+- Further messages, each with `line`: `Line N: "%" is not valid GML syntax.`, `Line N: a list [ … ] is not closed (missing ]).`, `Line N: this text has more than one GML graph; GraphCreator reads one.`, `Line N: a node has no id.`, `Line N: an edge has no source.` / `… no target.`, `Line N: <key> must be one number or text.`, `Line N: graphics x and y must be numbers.`, `Line N: node must be a list, as in node [ id 0 ].` and `Line N: edge must be a list, as in edge [ source 0 target 1 ].`
+- The missing-graph, second-graph, `directed` and `multigraph` checks each stop at once, in that order; a missing `directed` counts as not directed. Other GML errors are collected and come before `buildGraph`'s.
+- Only the first `graphics` block and its first `x` and `y` are used; a node with only one of them has no centre. Keys outside `graph [ … ]` (yEd's `Creator`, `Version`) are ignored silently.
+- A defined but empty `levels` list cannot be written as repeated keys, so it comes back absent (also in DOT and JSON, through `buildGraph`).
+
 #### DOT (`dot.ts`, phase 34)
 
 ```ts
@@ -2179,7 +2187,7 @@ Check after the wave: all checks, then in the browser:
 
 Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
-#### Phase 32: dagitty details [x]
+#### Phase 32: dagitty details [x] (0a83773)
 
 - **Goal:** dagitty code can carry the GraphCreator metadata as `gc.*` attributes, and Open always reads them back.
 - **Depends on:** phase 31.
@@ -2190,7 +2198,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the example in 4.2 is reproduced exactly for the 4.1 graph; the round trip with details equals `toYaml(g)`.
 - **Out of scope:** the checkbox (phase 39); the dagitty-R check (phase 40).
 
-#### Phase 33: GML [ ]
+#### Phase 33: GML [x]
 
 - **Goal:** `toGml` and `parseGml` as in 4.15.
 - **Depends on:** phase 31.

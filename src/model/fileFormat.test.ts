@@ -117,8 +117,9 @@ describe('parseGraphText', () => {
 
   it('sends GML, DOT and networkx JSON to their parsers', () => {
     expect(parseGraphText('graph [ directed 1 ]')).toEqual({
-      ok: false,
-      errors: [{ message: 'GML files cannot be opened yet.' }],
+      ok: true,
+      value: { nodes: [], edges: [] },
+      warnings: [],
     })
     const dot = parseGraphText('digraph { A -> B }')
     expect(!dot.ok && dot.errors[0].message).toBe(
