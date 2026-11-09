@@ -578,6 +578,8 @@ Phase 24 writes `types.ts`, `dsep.ts` and `index.ts` for real and the four other
 - **Instruments (`instrumentalVariables`):** only when |X| = |Y| = 1 (otherwise `'needs-single'`). Following van der Zander, Textor & Liśkiewicz (2015, "Efficiently finding conditional instruments for causal inference"): an observed node i ∉ {x, y} ∪ S is a conditional instrument given a set W of observed nodes when W ∩ `descendants_G(PCP({x}, {y}))` = ∅, i is d-connected to x given W ∪ S in G, and i is d-separated from y given W ∪ S in `G^pbd`. For each candidate i, W is the "nearest separator" of i and y in `G^pbd` relative to x as in the paper; if it yields a valid instrument, i is listed with that W (W = [] for an unconditional instrument). Sorted by graph order of i.
 - **`analyze`:** `rolesOf`, then `status`; with `'ok'` all four results, otherwise `adjustment`, `paths` and `instruments` are `null`, `null` and `'needs-single'`.
 
+Details fixed in phase 25: `findMinSep(graph, xs, ys, include, restrict)` returns the separator **including** `include` (as in the paper), in graph order, or null; callers that do not list S remove it themselves. Its candidates start from R ∩ An(X ∪ Y ∪ I), not the paper's R ∩ An(X ∪ Y): with X → W → I ← Y and I always included, {W, I} is the only separator and W is no ancestor of X or Y (confirmed by the brute-force tests with selected nodes). ListMinSep follows the paper's reduction and lists minimal separators by backtracking in the style of Takata (2010). When `truncated`, `sets` holds the first `MAX_SETS` sets the search finds, sorted; not necessarily the smallest ones.
+
 **Reference fixtures (phase 24).** `src/model/__fixtures__/analysis/` holds a gallery of dagitty files with roles: `confounding.dagitty.txt` (copied from the existing fixture), `m-bias.dagitty.txt` (copied), `mediation`, `collider`, `butterfly`, `confounding-by-indication`, `selection-bias` (with a `selected` node, written as dagitty's `[selected]`), `latent-confounder`, `two-exposures-two-outcomes`, `instrument` (Z → X → Y, U → X, U → Y, U latent) and `no-adjustment-possible`. The gallery also has `selection-confounder` (E → D, A → E, A → S, C → S, C → D, S selected; no set, `selectionBias`) and `selection-recoverable` (E → D, A → E, A → S, C → E, C → D, S selected; dagitty-R gives `{C}`). `scripts/dagitty-reference.R` reads each file with `dagitty::dagitty()` and writes `reference.json`: per file, `adjustmentSets(g0, type = "minimal", effect = "total")` where `g0` is `g` with the adjusted roles cleared (dagitty-R otherwise lists only sets containing every adjusted node, while GraphCreator lists them regardless of Z), `isAdjustmentSet(g, adjustedNodes(g))`, `impliedConditionalIndependencies(g, type = "missing.edge")` as pairs and sets (duplicates kept as dagitty gives them), `instrumentalVariables(g)` when there is one exposure and one outcome, and `paths(g, Z = c(adjustedNodes(g), selected nodes))` per (exposure, outcome) pair with open flags, keeping only paths whose inner nodes are neither exposures nor outcomes. A `random` section adds 100 seeded random DAGs (5–8 nodes, one exposure, one outcome, one selected node) with their minimal sets from `adjustmentSets`, for the selection criterion. Names, not ids, are written; tests map them through `parseDagitty`. The JSON is committed; CI never runs R. Install once with `Rscript -e 'install.packages("dagitty", lib = Sys.getenv("R_LIBS_USER"))'`; on a machine without libv8 or libnode, set `DOWNLOAD_STATIC_LIBV8=1` (V8's own suggestion), and the R package `curl` needs the `libcurl4-openssl-dev` headers.
 
 **Where GraphCreator differs from dagitty-R on purpose:** adjustment sets are listed regardless of the Adjusted nodes (above); implied independencies leave S out of the pairs and always condition on S, because all data have S = 1, whereas dagitty-R treats S as an ordinary node. So for gallery files with a selected node, the independency tests check validity and minimality themselves instead of comparing with `reference.json`.
@@ -1564,7 +1566,7 @@ Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree
 
 Phases: 24. Parallel: single phase. Check after the wave: all checks; the app runs unchanged (no tab yet; the stubs return empty results).
 
-#### Phase 24: Analysis contracts and core [x]
+#### Phase 24: Analysis contracts and core [x] (8720fd2)
 
 - **Goal:** the analysis types, d-separation, the reference answers, the store additions and the UI contracts exist, so wave 14 can build the four algorithms, the canvas marking and the tab in parallel.
 - **Depends on:** phase 23.
@@ -1585,7 +1587,7 @@ Phases: 24. Parallel: single phase. Check after the wave: all checks; the app ru
 
 Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own worktree); their files are disjoint. Land them in the order 25, 26, 27, 28, 29. Check after the wave: all checks; in the browser, `smoking.dag.yaml` shows the Analysis tab with real results. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
-#### Phase 25: Adjustment sets [ ]
+#### Phase 25: Adjustment sets [x]
 
 - **Goal:** `adjustment.ts` computes the adjustment criterion, the minimal sufficient sets and the report fields.
 - **Depends on:** phase 24.
