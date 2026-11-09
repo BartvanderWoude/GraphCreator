@@ -9,6 +9,7 @@ import {
   nodes,
   pane,
   panel,
+  stored,
   test,
   topBar,
 } from './fixtures.ts'
@@ -146,6 +147,8 @@ test.describe('with the smoking graph', () => {
       'This DAG implies no testable independencies.',
     )
 
+    // Autosave writes at most every 500 ms; wait for the graph before reloading.
+    await expect.poll(() => stored(page)).toContain('Maternal smoking')
     await page.reload()
     await expect(nodes(page)).toHaveCount(4)
     await openAnalysis(page)
