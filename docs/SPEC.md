@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; not implemented yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -33,9 +33,10 @@ src/
   store/
     graphStore.ts        Zustand store wrapping the model operations (4.6), with undo history (4.10, phase 21)
     uiStore.ts           canvas tool, connect source, welcome dialog, autosave status (4.7, phase 10)
-    lessonStore.ts       active lesson and the set-aside user graph (4.8, phase 10)
+    lessonStore.ts       active lesson and the set-aside user graph (4.8, phase 10); picks and progress (phase 41)
+    lessonEvents.ts      app events recorded while a lesson runs (4.8, phase 41)
     autosave.ts          localStorage autosave (5.5)
-  lessons/               lesson types and the tour lesson (5.7.10, phase 10)
+  lessons/               lesson types, helpers, the tour and the 13 other lessons (5.7.10, LESSONS.md; phases 10, 41–47)
   components/
     Canvas.tsx, SidePanel.tsx, NodeEditor.tsx, EdgeEditor.tsx, ListEditor.tsx,
     OpenDialog.tsx, CodeDialog.tsx, IssuesDialog.tsx                     (phase 18; were DagittyImportDialog/DagittyExportDialog)
@@ -47,6 +48,7 @@ src/
     ExportDialog.tsx                                                      (phase 22)
     SharedGraphDialog.tsx                                                 (phase 23)
     AnalysisPanel.tsx, useAnalysis.ts                                     (phases 24, 29)
+    LessonsDialog.tsx                                                     (phase 44)
     (Toolbar.tsx, DagNode.tsx: v1 parts, deleted in phase 16)
     ui/                  shadcn/ui generated components
   lib/download.ts        downloadText / downloadBlob helpers for Save and Export
@@ -55,6 +57,7 @@ src/
   lib/copy.ts            tooltip and role texts (5.7.8, phase 10)
   lib/geometry.ts        edge end points between circles (phase 11)
   lib/welcome.ts         first-visit flag for the welcome slides (phase 14)
+  lib/lessonProgress.ts  finished lessons in localStorage (5.7.11, phase 41)
   App.tsx                layout: top bar; tool rail, optional lesson panel, canvas, side panel (5.1)
 e2e/                     Playwright tests
 scripts/dagitty-reference.R   dev-time only: writes the analysis reference answers with dagitty-R (phase 24)
@@ -433,10 +436,63 @@ export interface LessonState {
   exit(): void                    // restores the set-aside graph via replaceGraph, then active = null
 }
 export const useLessonStore: UseBoundStore<StoreApi<LessonState>>
-export function isStepDone(): boolean   // current step's isDone(useGraphStore.getState().graph); true when no lesson
+export function isStepDone(): boolean   // current step's isDone(useGraphStore.getState().graph); true when no lesson  (phase 41: stepDone on lessonContext(), below)
 ```
 
 The set-aside graph is held in module scope next to the store (not in the store's state), so autosave never sees it. `start` while a lesson is active first exits the old one. `start` with an unknown id throws `Unknown lesson "<id>".` before anything changes, so a running lesson keeps running. `next` on the last step calls `exit`, but like every step only once `isStepDone()` is true. Lessons are looked up in `LESSONS` (5.7.10).
+
+#### Lesson engine additions (phase 41)
+
+Steps can now check more than the graph, ask the user to pick a node, and point at nodes (5.7.10). The store and a small event log provide what they need.
+
+```ts
+// src/store/lessonEvents.ts (phase 41): no imports from the other stores, so any module can record events
+export type LessonEventKind =
+  | 'code-opened' | 'code-copied' | 'code-downloaded'   // CodeDialog; format: the ExportFormat ('yaml', 'dagitty', 'gml', …)
+  | 'export-copied' | 'export-downloaded'               // ExportDialog; format: 'svg' | 'png' | 'pdf' | 'tikz'
+  | 'link-copied'                                       // Share, after the clipboard write succeeded
+  | 'undo'                                              // graphStore.undo, when it changed the graph
+  | 'edge-refused'                                      // Canvas refused a connection; format: the EdgeCheck reason ('self' | 'duplicate' | 'cycle')
+export interface LessonEvent { kind: LessonEventKind; format?: string }
+export const useLessonEvents: UseBoundStore<StoreApi<{ recording: boolean; events: LessonEvent[] }>>
+export function lessonEvent(event: LessonEvent): void      // appends while recording; a no-op otherwise
+export function startRecording(): void                      // recording = true, events = []
+export function clearEvents(): void                         // events = []
+export function stopRecording(): void                       // recording = false, events = []
+
+// src/lessons/types.ts: the context a step's check sees (type-only imports)
+export interface LessonContext {
+  graph: Graph
+  selection: Selection                       // graphStore (4.6)
+  sidePanelTab: SidePanelTab                 // uiStore (4.14)
+  analysisOn: Record<AnalysisKey, boolean>   // uiStore (4.14)
+  events: readonly LessonEvent[]             // recorded since the current step began
+}
+
+// src/store/lessonStore.ts additions
+export interface LessonState {
+  // … active, start, next, back, exit as above
+  wrongPicks: string[]      // names of the wrongly picked nodes in the current step, oldest first
+  revealed: boolean         // Show answer was used in the current step
+  done: ReadonlySet<string> // ids of finished lessons; initial value readLessonsDone(safeLocalStorage())
+  revealAnswer(): void      // selects the node named pick.answers[0] with graphStore.select, sets revealed
+}
+export function lessonContext(): LessonContext   // built from the stores at call time
+export function isStepDone(): boolean            // stepDone(current step, lessonContext()); true when no lesson
+```
+
+- `start` calls `startRecording()`; `next` and `back` call `clearEvents()` after changing the step; `exit` calls `stopRecording()`. `start`, `next` and `back` also reset `wrongPicks` to `[]` and `revealed` to false.
+- **Picks.** While a lesson runs, the store subscribes to `useGraphStore`'s `selection`. When the current step has a `pick`, the selection changes to a node, and that node's name is not in `pick.answers`, the name is appended to `wrongPicks`. Selecting an edge or nothing is ignored, and so is any selection once the step is done. Picking the same wrong node twice in a row counts once, because the selection does not change.
+- **Progress.** `next` on the last step, when it is done, adds the lesson's id to `done`, writes it with `writeLessonsDone(safeLocalStorage(), done)`, and then exits. Closing a lesson (`exit`) does not mark it done. The tour counts like any other lesson.
+
+```ts
+// src/lib/lessonProgress.ts (phase 41)
+export const LESSONS_DONE_KEY = 'graphcreator:lessons-done'
+export function readLessonsDone(storage: Pick<Storage, 'getItem'> | null): Set<string>   // a JSON array of ids; null, throwing storage, bad JSON or a non-array give an empty set; non-string items are skipped
+export function writeLessonsDone(storage: Pick<Storage, 'setItem'> | null, done: ReadonlySet<string>): void   // the ids sorted, as a JSON array; null or throwing storage is ignored
+```
+
+Additions to `UiState` (4.7): `lessonsOpen: boolean` (default false), `openLessons()` and `closeLessons()` for the Lessons dialog (5.7.11).
 
 ### 4.9 Theme store (`src/store/themeStore.ts`, phase 19)
 
@@ -1103,7 +1159,7 @@ Details fixed in phase 36:
  rail 56 px                   canvas (teal tint)                    side panel 320 px
 ```
 
-- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save as a split button: **Save**, a 1 px vertical divider (16 px tall) and a narrow icon-only ▾ button, grouped with no gap between them, (`aria-label="Save as…"`) whose menu has **GraphCreator…** and **dagitty…** (5.4); **Export…** (`ImageDown` icon, phase 22) and **Share** (`Link` icon, phase 23), both ghost buttons with icon and word (5.4); on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node), **Help** (`CircleHelp` icon; opens the welcome slides, 5.7.9) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word. There is no separate dagitty menu (phase 18).
+- **Top bar** (`TopBar`, `role="toolbar"`, `aria-label="Toolbar"`): logo; graph name input (`aria-label="Graph name"`); New; Open…; Save as a split button: **Save**, a 1 px vertical divider (16 px tall) and a narrow icon-only ▾ button, grouped with no gap between them, (`aria-label="Save as…"`) whose menu has **GraphCreator…** and **dagitty…** (5.4); **Export…** (`ImageDown` icon, phase 22) and **Share** (`Link` icon, phase 23), both ghost buttons with icon and word (5.4); on the right the warnings badge (`N warning(s)`, hidden when 0; opens IssuesDialog, clicking a warning selects its node), **Help** (`CircleHelp` icon; opens the welcome slides, 5.7.9; from phase 44 a menu with Welcome and Lessons…, 5.7.11) and an icon-only **Dark mode** toggle (moon in light mode, sun in dark mode; `aria-pressed` gives the state; tooltip "Dark mode"). File buttons are ghost buttons with icon and word. There is no separate dagitty menu (phase 18).
 - **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−), a divider, Undo (`Undo2` icon, Ctrl+Z) and Redo (`Redo2` icon, Ctrl+Shift+Z) (phase 21). The active tool is solid teal. Undo and Redo are disabled when `past` or `future` is empty. Their tooltips read "Undo  Ctrl+Z" and "Redo  Ctrl+Shift+Z", with ⌘ in place of Ctrl on a Mac (`/Mac|iPhone|iPad/` in `navigator.userAgent`); their `aria-keyshortcuts` are `Control+Z Meta+Z` and `Control+Shift+Z Meta+Shift+Z Control+Y`.
 - **Lesson panel:** only while a lesson runs (5.7.10); 300 px, between the rail and the canvas.
 - **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow attribution, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
@@ -1375,30 +1431,56 @@ A centred dialog, 480 px wide, `rounded-xl`, elevation 2, over a dimmed page. It
 
 #### 5.7.10 Lessons (`src/lessons/`, `LessonPanel.tsx`)
 
-The six real lessons are deferred to [IDEAS.md](IDEAS.md). This round builds the engine and one simple tour lesson.
+Phase 10 built the engine and the tour. Phase 41 extends the engine; phases 45–47 write the 13 other lessons from [LESSONS.md](LESSONS.md), which is binding for their practice graphs, texts, checks, pointers, picks and test claims.
 
 ```ts
-// src/lessons/types.ts
+// src/lessons/types.ts (phase 41; phase 10 had isDone(graph) in place of check)
+export type LessonTrack = 'app' | 'causal'           // shown as "Using GraphCreator" and "Causal thinking"
+export interface LessonPointer { node: string; label: string }   // a node by name; label of at most three words
+export interface LessonPick {
+  answers: string[]                  // node names; selecting any of them answers the pick
+  hints: Record<string, string>      // node name → the text shown after picking that node wrongly
+  reveal: string                     // the explanation shown once the pick is answered
+}
 export interface LessonStep {
   title: string
-  body: string                       // at most three short sentences
-  task?: string                      // shown as "Try it: <task>"; omitted on the last step
-  isDone(graph: Graph): boolean      // the Next button is enabled when this returns true
+  body?: string                      // at most three short sentences
+  keyIdea?: string                   // one sentence, in the Key idea box
+  task?: string                      // shown as "Try it: <task>"
+  pointer?: LessonPointer[]          // canvas labels while the step shows (5.7.12)
+  pick?: LessonPick
+  check?(ctx: LessonContext): boolean
 }
 export interface Lesson {
   id: string
   title: string
+  summary: string                    // one line in the Lessons dialog
+  track: LessonTrack
   sample(): Graph                    // the practice graph loaded when the lesson starts
   steps: LessonStep[]
 }
 // src/lessons/index.ts
-export const LESSONS: Lesson[]       // [tourLesson]
+export const LESSONS: Lesson[]       // the 14 lessons in the order of LESSONS.md
 export function findLesson(id: string): Lesson | undefined
+// src/lessons/helpers.ts (phase 41): the notation of LESSONS.md "Notation for checks"
+export function practiceGraph(yaml: string): Graph              // parseYaml; throws Error(`Practice graph does not parse: <first message>`) on failure
+export function nodeNamed(graph: Graph, name: string): GNode | undefined
+export function edgeNamed(graph: Graph, from: string, to: string): GEdge | undefined
+export function roleIs(ctx: LessonContext, name: string, role: Role): boolean
+export function adjustedIs(ctx: LessonContext, names: string[]): boolean   // exactly these nodes are adjusted
+export function hasEvent(ctx: LessonContext, kind: LessonEventKind, formats?: string[]): boolean
+export function selectedNodeName(ctx: LessonContext): string | undefined
+export function selectedEdgeIs(ctx: LessonContext, from: string, to: string): boolean
+export function stepDone(step: LessonStep, ctx: LessonContext): boolean   // (no pick, or the selected node's name is in pick.answers) and (no check, or check(ctx))
 ```
+
+- A step with neither `pick` nor `check` is a reading step: Next is enabled at once.
+- Steps name nodes by their names in the practice graph. A node the user renamed no longer matches: its pointer is not drawn and checks that name it stay false. Lessons never ask the user to rename a practice node (the tour's rename step looks for any non-default name).
+- Each lesson lives in `src/lessons/<id>.ts` (`tour.ts`, `variables.ts`, `arrows.ts`, `files.ts`, `dag-basics.ts`, `confounding.ts`, `mediators.ts`, `colliders.ts`, `selection.ts`, `latent.ts`, `adjustment.ts`, `testing.ts`, `instruments.ts`, `reporting.ts`) and exports `<camelCaseId>Lesson`. Practice graphs are YAML text in the file, copied from LESSONS.md and read with `practiceGraph`; lesson 4 imports `src/model/__fixtures__/smoking.dag.yaml?raw`.
 
 **Tour lesson** (`src/lessons/tour.ts`, id `tour`, title "Drawing your first DAG", `sample()` returns `emptyGraph()`):
 
-| # | Title | Body | Task | `isDone(graph)` |
+| # | Title | Body | Task | `check(ctx)`, on `ctx.graph` |
 |---|---|---|---|---|
 | 1 | Add a variable | "Each circle is a variable." | "Double-click the canvas, or press N and click." | `graph.nodes.length >= 1` |
 | 2 | Name it | "Give the variable a name in the panel on the right." | "Rename the node to Smoking." | some node's name is not `defaultNodeName`-style (`/^Node \d+$/` does not match) |
@@ -1408,12 +1490,41 @@ export function findLesson(id: string): Lesson | undefined
 
 **Lesson panel:** 300 px, `--background`, border on the right, 20 px padding. From top to bottom:
 - a header with the label "LESSON · STEP n OF m" (label style) and a close button (`aria-label="Close lesson"`, calls `exit()`);
-- the step title (title style) and the body;
-- a teal callout (`--accent`, `--accent-foreground`, `CircleCheck` icon) with "Try it: <task>", which turns into "Done." with a check once `isDone` is true;
+- the step title (title style) and the body, when there is one;
+- from phase 42, the **Key idea** box when the step has `keyIdea`: `rounded-lg`, 1 px `--border`, 12 px padding; a first line with a `Lightbulb` icon (16 px, `--primary`) and the label "Key idea" (label style), then the sentence;
+- a teal callout (`--accent`, `--accent-foreground`, `CircleCheck` icon) with "Try it: <task>", which turns into "Done." with a check once the step is done (`stepDone`);
+- from phase 42, the **pick feedback** under the callout (`role="status"`, body text), for a step with `pick`:
+  - not done and `wrongPicks` empty: nothing;
+  - not done after a wrong pick: `pick.hints[<last wrong name>]`, or `Not quite. Try again.` when the pick has no hint for that node;
+  - not done and at least two wrong picks: also a link-style button **Show answer** (`variant="link"`), which calls `revealAnswer()`;
+  - done: `pick.reveal`, whether the user found the answer or used Show answer;
 - a row of segmented progress bars (`--primary` for steps up to the current one, `--border` for the rest);
 - Back (ghost) and Next (primary; disabled until done; reads "Finish" on the last step).
 
-**Running a lesson** (4.8): the user's graph is set aside and the practice graph loaded with `replaceGraph`. Autosave pauses (`autosave` status `paused`, phase 16). Leaving the lesson by Finish or close restores the user's graph; the practice graph is discarded.
+On a Mac (`/Mac|iPhone|iPad/` in `navigator.userAgent`, as `ToolRail`) the panel shows `⌘` for every `Ctrl` in a body or task.
+
+**Running a lesson** (4.8): the user's graph is set aside and the practice graph loaded with `replaceGraph`. Autosave pauses (`autosave` status `paused`, phase 16). Leaving the lesson by Finish or close restores the user's graph; the practice graph is discarded. Finish also marks the lesson as done (4.8 "Progress"). The Analysis switches a lesson asks the user to turn on stay on afterwards; they are a viewer preference (4.14).
+
+#### 5.7.11 Help menu and Lessons dialog (phase 44)
+
+- **Help menu.** The top bar's Help button (same look and position, `CircleHelp` icon and the word Help) opens a dropdown menu with **Welcome** (`Sparkles` icon; calls `openWelcome()`, slide 1 as before) and **Lessons…** (`BookOpen` icon; calls `openLessons()`).
+- **Lessons dialog** (`LessonsDialog.tsx`, mounted by `App`; open while `uiStore.lessonsOpen`): 560 px wide, at most 80 vh tall with the list scrolling. Title "Lessons". Description "Short interactive lessons on a practice graph. Your own graph is set aside and comes back when you finish."
+  - Two groups, each a `<section>` with a heading (label style) and a `<ul>` with `aria-label` = the heading: "Using GraphCreator" (`track: 'app'`) and "Causal thinking" (`track: 'causal'`), lessons in `LESSONS` order.
+  - Each row: the lesson's number in the course (1–14, Plex Mono, muted), the title (500 weight) with the summary below it (muted, 13 px), and on the right a `CircleCheck` icon in `--primary` with the accessible name "Finished" when the id is in `done`, then a small outline button **Start** (`aria-label="Start <title>"`).
+  - Start closes the dialog and calls `useLessonStore.getState().start(id)`. Starting while a lesson runs exits that lesson first (4.8).
+  - Below the groups a muted line: `<n> of 14 finished.` (`0 of 14 finished.` at first).
+  - Close button and Escape close the dialog (`closeLessons()`).
+- The welcome slides stay as they are: slide 4's **Take the tour** still starts the tour.
+
+#### 5.7.12 Canvas pointer (phase 43)
+
+While a lesson step has `pointer`, each entry whose node exists in the graph shows a label on the canvas.
+
+- `CircleNodeData` gains `pointer?: string`. `Canvas` sets it from the current step's `pointer` (names mapped to ids) while a lesson runs; otherwise it is undefined.
+- `CircleNode` draws the label centred above the circle with a 10 px gap: a pill in `--primary` with `--primary-foreground` text, 12 px weight 500, 2 px × 8 px padding, `rounded-full`, no wrapping, with a 6 px triangle pointing down at the circle. It has `data-lesson-pointer`, `pointer-events: none` and `aria-hidden="true"` (the lesson panel names the same variable in words).
+- It pulses gently: the keyframes `gc-pointer-pulse` in `canvas.css` move it up 3 px and back and fade a 6 px `--primary` ring out around it, 1.6 s, `ease-in-out`, repeating. Under `prefers-reduced-motion: reduce` it does not move.
+- The label is part of the node, so it pans, zooms and is clipped with it; it is not part of image exports.
+- Phase 43 also records `lessonEvent({ kind: 'edge-refused', format: check.reason })` in `Canvas` wherever a connection is refused (the two places that toast `check.message`).
 
 ### 5.8 Analysis tab (`AnalysisPanel.tsx`, phases 26 and 29)
 
@@ -1598,6 +1709,19 @@ Details fixed in phase 29: a count shows `(0)` for an empty list and is left out
 | dagitty details lists | `;`-separated, with `\;` and `\\` escapes | JSON array text | Recommended option; readable in dagitty.net. |
 | dagitty details checkbox | Off by default, remembered across visits | On by default; remembered only per page | Recommended option. Plain dagitty stays the default. |
 | Exchange-format oracle | A dev-time script (`scripts/check-formats.py` with networkx, pydot and causal-learn, plus bnlearn and dagitty in R) that reads committed sample exports and records what each tool saw | Unit tests only | Recommended option. It proves the files work in the real tools; it does not run in CI. |
+| Lesson home | Interactive lessons in the app, on the lesson engine | Lessons plus a written guide; a guide only; reading pages without tasks | Recommended option (2026-11-09). |
+| Lesson scope | A full course of 14 lessons in two tracks (using GraphCreator; causal thinking) | The six lessons in IDEAS.md; a core of five; causal concepts only | Recommended option. |
+| Lesson audience | Researchers new to DAGs: plain words, one idea per step, the formal term named once understood, no formulas | Complete beginners; methods students with notation; plain text plus "More detail" | Recommended option. |
+| Practice graphs | The smoking and birth weight story, extended per lesson, plus classic shapes (M-bias, selection, instrument) with names from the same story | One running example only; one textbook graph per concept; the user's own graph | Recommended option. |
+| Step checks | `check(ctx)` on the graph, the UI state (tab, Analysis switches, selection) and a log of app events | Graph and UI state only; graph only; graph only plus "Show me" | Recommended option. The Analysis and file lessons need the UI state and events. |
+| Step text | At most three short sentences, an optional Key idea box, and canvas pointers | Longer text; more steps; drawn diagrams in the panel | Recommended option. |
+| Understanding checks | Picks answered on the canvas by selecting a node, checked against the analysis engine | Multiple choice in the panel; both; none | Recommended option. |
+| Lesson text | Written in full during design, in `docs/LESSONS.md`, binding for the lesson files | Outlines only, text by the phase agents; text reviewed lesson by lesson | Recommended option; LESSONS.md keeps SPEC.md readable. |
+| Lesson accuracy | Every causal claim in a lesson is a unit test against `src/model/analysis/` | Only the pick answers; no tests | Recommended option. |
+| Lessons list | Help becomes a menu (Welcome, Lessons…); Lessons… opens a dialog with the two tracks | The last welcome slide; a Lessons button in the top bar; a book icon in the tool rail | Recommended option, picked from four drawn options. |
+| Key idea and pointer look | A Key idea box in the panel and a pulsing teal label on the canvas above the named nodes | The hover rim only; a bold lead sentence; dimming the rest of the canvas | User's choice, picked from four drawn options. |
+| Wrong picks | The node's own explanation, and a Show answer link after two wrong picks | Explanation only; a generic "Try again"; silent | User's choice. |
+| Lesson progress | Finished lessons get a checkmark, kept in this browser; no resuming mid-lesson | Checkmarks and resuming; nothing kept | Recommended option. |
 
 ## 8. Implementation phases
 
@@ -1655,8 +1779,18 @@ General rules for every phase:
 | 38 | PDF writer | 31 | 17 | `src/lib/pdfExport.ts`, `pdfExport.test.ts` |
 | 39 | Export and format dialogs | 31 | 17 | `src/components/TopBar.tsx`, `CodeDialog.tsx`, `ExportDialog.tsx`, `OpenDialog.tsx` |
 | 40 | Format integration, real-tool reference and end-to-end tests | 32, 33, 34, 35, 36, 37, 38, 39 | 18 | `scripts/check-formats.py`, `scripts/check-formats.R`, `src/model/__fixtures__/formats/*`, `src/model/formats.reference.test.ts`, `e2e/formats.spec.ts`, `e2e/export.spec.ts`, `e2e/files.spec.ts`, fixes in any file of phases 31–39, this spec's Status line and Open issues, `docs/IDEAS.md` |
+| 41 | Lesson engine contracts | 40 | 19 | `src/lessons/types.ts`, `index.ts`, `helpers.ts` (+ test), `tour.ts` (+ test), stubs `src/lessons/{variables,arrows,files,dag-basics,confounding,mediators,colliders,selection,latent,adjustment,testing,instruments,reporting}.ts`, `src/store/lessonEvents.ts` (+ test), `src/store/lessonStore.ts` (+ test), `src/lib/lessonProgress.ts` (+ test), `src/store/uiStore.ts` (+ test), `src/store/graphStore.ts` (+ test; the undo event only), `src/components/LessonPanel.tsx` (the switch to `stepDone` only) |
+| 42 | Lesson panel additions | 41 | 20 | `src/components/LessonPanel.tsx` |
+| 43 | Canvas pointer | 41 | 20 | `src/components/Canvas.tsx`, `canvas/CircleNode.tsx`, `canvas/types.ts`, `canvas/canvas.css` |
+| 44 | Help menu, Lessons dialog and events | 41 | 20 | `src/components/TopBar.tsx`, `LessonsDialog.tsx`, `CodeDialog.tsx`, `ExportDialog.tsx`, `src/App.tsx`, `e2e/welcome.spec.ts`, `e2e/lesson.spec.ts`, `e2e/share.spec.ts`, `e2e/smoke.spec.ts` |
+| 45 | App-track lessons | 41 | 20 | `src/lessons/{variables,arrows,files}.ts` and their tests |
+| 46 | Causal lessons 5–9 | 41 | 20 | `src/lessons/{dag-basics,confounding,mediators,colliders,selection}.ts` and their tests |
+| 47 | Causal lessons 10–14 | 41 | 20 | `src/lessons/{latent,adjustment,testing,instruments,reporting}.ts` and their tests |
+| 48 | Lessons integration and end-to-end tests | 42, 43, 44, 45, 46, 47 | 21 | `e2e/lessons.spec.ts`, fixes in any file of phases 41–47, this spec's Status line and Open issues, `docs/LESSONS.md` (corrections only), `docs/IDEAS.md` |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
+
+**Lesson contracts (fixed in phase 41, used by phases 42–48).** Wave 20 builds six parts in parallel against: the types and helpers in 5.7.10, the event log, context, picks and progress in 4.8, the `uiStore` additions, and `LESSONS.md`. Phase 41 leaves the app working as before: `LESSONS` holds all 14 lessons, the 13 new ones as stubs with their final `id`, `title`, `summary` and `track`, `sample` returning `emptyGraph()` and one reading step titled "Coming soon". No UI reaches them before phase 44, and phases 45–47 replace them. Phase 41 is the only phase that changes `types.ts`, `index.ts` and `helpers.ts`; a lesson phase that needs a helper writes it in its own lesson file.
 
 **Import and export contracts (fixed in phase 31, used by phases 32–40).** Wave 17 builds eight parts in parallel against these:
 - the signatures in 4.11 "PDF, legend and dark theme";
@@ -2323,7 +2457,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 
 Phases: 40. Parallel: single phase. Check after the wave: all checks; the browser checks in phase 40.
 
-#### Phase 40: Format integration, real-tool reference and end-to-end tests [x]
+#### Phase 40: Format integration, real-tool reference and end-to-end tests [x] (6527f15)
 
 - **Goal:** the new formats are checked against the real tools, the whole feature works end to end, and the spec, IDEAS.md and memory reflect it.
 - **Depends on:** phases 32–39.
@@ -2347,6 +2481,107 @@ Phases: 40. Parallel: single phase. Check after the wave: all checks; the browse
   - `scripts/check-formats.py` runs `scripts/check-formats.R` (which prints its JSON on stdout) and writes the whole `reference.json`, sorted, so one command refreshes it. Per sample it records `networkx_gml`, `networkx_json`, `pydot` (quotes and escapes removed), `causallearn` (directed edges as `[tail, head]`), `bnlearn` and `dagitty` (roles, edges, `same_as_plain`, `keeps_details` and the number of `gc.*` attributes). The first reference was made with Python 3.12.3, networkx 3.7, pydot 4.0.1, causal-learn 0.1.4.8, R 4.3.3, bnlearn 4.9.4 (archived: bnlearn 5 needs R 4.4) and dagitty 0.3.4.
   - dagitty-R refused the escapes sample's node `node`, which led to the `toDagittyIds` change in 4.2. Every other sample was read exactly as written by every tool.
   - The SVG snapshot test in `imageExport.test.ts` now reads only the top-level and `analysis/` fixtures, so the format samples do not need image snapshots.
+
+### Wave 19: Lesson contracts [ ]
+
+Phases: 41. Parallel: single phase. Check after the wave: all checks.
+
+#### Phase 41: Lesson engine contracts [ ]
+
+- **Goal:** the extended lesson engine exists (types, helpers, events, context, picks, progress), the tour runs on it unchanged for the user, and the 13 new lessons exist as stubs.
+- **Depends on:** phase 40.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.6, 4.7, 4.8, 4.14, 5.7.10; `parseYaml` (4.1).
+- **Work:**
+  - `types.ts`, `index.ts` and `helpers.ts` as in 5.7.10. `tour.ts`: each `isDone(graph)` becomes `check: (ctx) => …` on `ctx.graph`, and the lesson gets `summary` and `track` from LESSONS.md.
+  - The 13 stubs (contracts above), in `LESSONS` in the order of LESSONS.md.
+  - `lessonEvents.ts`, the `lessonStore` additions and `lessonProgress.ts` as in 4.8. `isStepDone` uses `stepDone`.
+  - `graphStore.undo` records `lessonEvent({ kind: 'undo' })` when it changed the graph.
+  - `uiStore`: `lessonsOpen`, `openLessons`, `closeLessons`.
+  - `LessonPanel.tsx`: replace `step.isDone(graph)` by `stepDone(step, lessonContext())`, re-rendering when the graph, the selection, the side panel tab, the Analysis switches or the events change. Nothing else in the panel changes in this phase.
+- **Tests:** `helpers.test.ts`, `lessonEvents.test.ts`, `lessonProgress.test.ts`, the `lessonStore.test.ts`, `uiStore.test.ts`, `graphStore.test.ts` and `tour.test.ts` updates (section 9).
+- **Done when:** all checks pass; the tour works as before in the browser.
+- **Out of scope:** the panel's new parts, the pointer, the dialog, the lesson texts.
+
+### Wave 20: Lesson parts [ ]
+
+Phases: 42–47. Parallel: yes. Check after the wave: all checks.
+
+#### Phase 42: Lesson panel additions [ ]
+
+- **Goal:** the panel shows the Key idea box, pick feedback and Show answer, and an optional body (5.7.10 "Lesson panel").
+- **Depends on:** phase 41.
+- **Owns files:** `src/components/LessonPanel.tsx`.
+- **Contracts used:** 4.8 (`wrongPicks`, `revealed`, `revealAnswer`, `lessonContext`), 5.7.10 (`stepDone`, `LessonStep`).
+- **Work:** 5.7.10 "Lesson panel", including `⌘` on a Mac. Until phases 45–47 land only the tour and the stubs exist, so check the new parts with a lesson built in the test or by starting a stub in the browser.
+- **Tests:** covered end to end in phase 48; keep the existing e2e tests passing.
+- **Done when:** all checks pass.
+- **Out of scope:** the canvas pointer, the dialog.
+
+#### Phase 43: Canvas pointer [ ]
+
+- **Goal:** the pulsing labels of 5.7.12, and the `edge-refused` event.
+- **Depends on:** phase 41.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.8, 5.7.10 (`LessonPointer`, `nodeNamed`), 5.7.12.
+- **Work:** 5.7.12. Do not change the node's size, its accessible name or any existing state in 5.7.7.
+- **Tests:** covered end to end in phase 48.
+- **Done when:** all checks pass; with a pointer set, the label shows above the circle, moves with it, and stays still with reduced motion.
+- **Out of scope:** pointers on edges or paths.
+
+#### Phase 44: Help menu, Lessons dialog and events [ ]
+
+- **Goal:** the Help menu and the Lessons dialog of 5.7.11, and the app events of 4.8.
+- **Depends on:** phase 41.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.7 (`openWelcome`, `lessonsOpen`), 4.8 (`lessonEvent`, `done`, `start`), 5.7.10 (`LESSONS`).
+- **Work:** 5.7.11. Record the events: `CodeDialog` records `code-opened` when it opens and `code-copied` or `code-downloaded` after a successful copy or download, with its `format`; `ExportDialog` records `export-copied` and `export-downloaded` with the format; `TopBar` records `link-copied` after a successful share. Update the e2e tests that click Help to choose Help → Welcome.
+- **Tests:** the updated e2e tests; the dialog itself is tested end to end in phase 48.
+- **Done when:** all checks pass.
+- **Out of scope:** the lesson texts; any change to the welcome slides.
+
+#### Phase 45: App-track lessons [ ]
+
+- **Goal:** lessons 2–4 (`variables`, `arrows`, `files`) exactly as in LESSONS.md.
+- **Depends on:** phase 41.
+- **Owns files:** `src/lessons/{variables,arrows,files}.ts` and `{variables,arrows,files}.test.ts`.
+- **Contracts used:** 5.7.10, `helpers.ts`, LESSONS.md.
+- **Work:** copy the practice graphs and texts character for character; write each check with the helpers.
+- **Tests:** per lesson, the lesson tests in section 9.
+- **Done when:** all checks pass.
+- **Out of scope:** changing the texts. If a text or claim in LESSONS.md is wrong, stop and report it.
+
+#### Phase 46: Causal lessons 5–9 [ ]
+
+- **Goal:** lessons 5–9 (`dag-basics`, `confounding`, `mediators`, `colliders`, `selection`) exactly as in LESSONS.md.
+- **Depends on:** phase 41.
+- **Owns files:** `src/lessons/{dag-basics,confounding,mediators,colliders,selection}.ts` and their tests.
+- **Contracts used:** as phase 45, plus `analyze` and `dsep.ts` (4.13) in the tests.
+- **Work and tests:** as phase 45; every item under a lesson's "Claims" is asserted with the analysis engine.
+- **Done when:** all checks pass.
+- **Out of scope:** as phase 45.
+
+#### Phase 47: Causal lessons 10–14 [ ]
+
+- **Goal:** lessons 10–14 (`latent`, `adjustment`, `testing`, `instruments`, `reporting`) exactly as in LESSONS.md.
+- **Depends on:** phase 41.
+- **Owns files:** `src/lessons/{latent,adjustment,testing,instruments,reporting}.ts` and their tests. Lessons 12 and 14 build on lesson 11's graph; write that YAML in `adjustment.ts` and export it from there.
+- **Contracts used, work and tests:** as phase 46.
+- **Done when:** all checks pass.
+- **Out of scope:** as phase 45.
+
+### Wave 21: Lessons integration [ ]
+
+Phases: 48. Parallel: single phase. Check after the wave: all checks; the browser checks below.
+
+#### Phase 48: Lessons integration and end-to-end tests [ ]
+
+- **Goal:** the whole course works end to end, and the spec, IDEAS.md and memory reflect it.
+- **Depends on:** phases 42–47.
+- **Owns files:** see the task graph row.
+- **Work:** write `e2e/lessons.spec.ts` (section 9); fix integration problems in any file of phases 41–47; update the Status line, the Open issues and `docs/IDEAS.md`. Correct LESSONS.md only where the built app shows a text to be wrong, and record each correction under "Details fixed in phase 48".
+- **Done when:** all checks pass; in the browser (both app themes) the Lessons dialog lists 14 lessons, a pointer pulses above its circle, a wrong pick shows its hint and Show answer appears after two, and a finished lesson keeps its checkmark after a reload.
+- **Out of scope:** new lessons; resuming mid-lesson.
 
 ## 9. Tests
 
@@ -2515,11 +2750,51 @@ Import and export (phases 31–40):
   - Theme and Legend keep their values when the dialog is reopened.
 - `e2e/files.spec.ts` (phase 40 update): the Open dialog's new description.
 
+- `src/lessons/helpers.test.ts` (phase 41):
+  - `practiceGraph` reads a YAML text and throws `Practice graph does not parse: …` on a bad one;
+  - every predicate helper is true and false on hand-built contexts;
+  - `stepDone` combines the pick and the check, and a step with neither is done.
+- `src/store/lessonEvents.test.ts` (phase 41):
+  - nothing is recorded before `startRecording` or after `stopRecording`;
+  - `clearEvents` empties the log but keeps recording.
+- `src/lib/lessonProgress.test.ts` (phase 41):
+  - a round trip keeps the ids, sorted;
+  - null storage, a throwing storage, bad JSON and a non-array give an empty set, and non-string items are skipped.
+- `src/store/lessonStore.test.ts` (phase 41 additions):
+  - events are cleared by `start`, `next` and `back`, and recording stops on `exit`;
+  - a wrong node selection in a pick step is recorded once, and selecting an edge, nothing or the answer is not;
+  - `revealAnswer` selects the first answer and sets `revealed`;
+  - finishing adds the id to `done` and writes it, and closing does not.
+- `src/store/uiStore.test.ts` and `graphStore.test.ts` (phase 41 additions):
+  - `openLessons` and `closeLessons` set `lessonsOpen`;
+  - `undo` records an `undo` event during a lesson only when it changed the graph.
+- `src/lessons/tour.test.ts` (phase 41 update): the same cases through `check(ctx)`.
+- `src/lessons/<id>.test.ts` (phases 45–47), for every lesson:
+  - the practice graph parses, and its nodes, roles and edges are those of the YAML in LESSONS.md;
+  - each step's texts equal LESSONS.md, and bodies have at most three sentences;
+  - every name in a pointer, a pick's answers or a pick's hints exists in the practice graph, and every hint key is a node that is not an answer;
+  - each step with a check is not done on the graph as it is when the step starts (the practice graph with every earlier step's task applied) and done after its scripted task;
+  - each pick is answered by selecting an answer node and not by any other node;
+  - every item under the lesson's "Claims" holds, computed with `analyze`, `ancestors`, `descendants`, `dConnected` or `canAddEdge`.
+- `e2e/lessons.spec.ts` (phase 48):
+  - Help → Lessons… lists the two groups with 4 and 10 lessons, and `0 of 14 finished.`;
+  - lesson 6 (Confounding) start to finish:
+    - the pointer label "Common cause" shows above SES;
+    - picking Birth weight shows its hint, and picking Maternal smoking as well shows Show answer;
+    - Show answer selects SES and shows the explanation;
+    - setting SES to Adjusted and opening the Analysis tab completes the steps;
+    - Finish restores the user's graph;
+  - after a reload, lesson 6 shows the Finished check, and the count reads `1 of 14 finished.`;
+  - lesson 3 step 5: drawing Birth weight → SES is refused, and the step is done;
+  - lesson 4: Save → Download, Save as… → dagitty… → Copy, Export as PDF, Share and Ctrl+Z each complete their step;
+  - every lesson can be started from the dialog and closed again, leaving the user's graph unchanged.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
 - **Raw exception text in messages:** `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
-- **Lessons:** only the tour exists (5.7.10). The real lessons and lesson features are listed under "Lessons" in [IDEAS.md](IDEAS.md).
+- **Lessons:** the course is designed in [LESSONS.md](LESSONS.md) (waves 19–21). Left for later: resuming a lesson mid-way, translations of the lesson texts, "Lesson: …" links at the end of info tooltips, and lessons on bidirected edges and direct effects once the app supports them.
+- **Analysis switches after a lesson:** a lesson that asks the user to switch on Paths, Instruments or Independencies leaves the switch on afterwards, because the switches are a stored viewer preference (4.14).
 - **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.
 - **Lesson viewport:** starting or ending a lesson keeps the current viewport instead of fitting the view, so the practice graph can open zoomed in (up to React Flow's 2×) after a fit on a small graph.
 - **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.

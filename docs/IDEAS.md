@@ -32,14 +32,12 @@ Adjustment sets, implied independencies, path highlighting, instrumental variabl
 
 ## Lessons
 
-The lesson engine and the tour ("Drawing your first DAG") are specified in SPEC.md 5.7.10. Still to design and write, each as an interactive lesson on a practice graph (running example: smoking and birth weight):
+The lesson course (14 lessons in two tracks, the Help menu and Lessons dialog, picks on the canvas, the canvas pointer and progress) is designed in [LESSONS.md](LESSONS.md) and [SPEC.md](SPEC.md) 4.8 and 5.7.10–5.7.12 (waves 19–21). Still deferred:
 
-- Roles explained: exposure, outcome, latent, adjusted, selected, other, and what each means for the analysis.
-- Variable types and levels: categorical, ordinal, continuous, discrete; ordered levels; units.
-- Documenting evidence: references and notes on edges, and why they matter for reporting.
-- Confounders, mediators and colliders: back-door paths, what to adjust for and what not to (highlighting paths on the canvas).
-- Reporting your DAG in a paper: what to show, following Tennant et al. (2021).
-- Lesson features: progress kept across visits, a lessons list on the last welcome slide, "Lesson: …" links at the end of info tooltips, citations inside lessons.
+- Resuming a lesson mid-way.
+- "Lesson: …" links at the end of info tooltips.
+- Citations inside lessons beyond the Tennant et al. (2021) mention.
+- Translations of the lesson texts.
 
 ## Import and export
 
