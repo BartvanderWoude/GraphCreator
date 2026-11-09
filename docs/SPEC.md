@@ -1600,7 +1600,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Done when:** all checks pass; every gallery file and every `random` entry matches `reference.json`; the brute-force comparison passes on all gallery files and on 200 random DAGs (seeded, 4–10 nodes).
 - **Out of scope:** direct effects; sets that are not minimal (DAGitty's "all" and "canonical" sets).
 
-#### Phase 26: Paths and canvas marking [x]
+#### Phase 26: Paths and canvas marking [x] (34da2c1)
 
 - **Goal:** `classifyPaths` lists and classifies the paths, and the canvas marks edges on open paths and circles hovered from the panel.
 - **Depends on:** phase 24.
@@ -1614,7 +1614,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Done when:** all checks pass; in the browser, setting `analysisOn.paths` from the devtools marks the smoking graph's edges (the tab does not exist yet in this branch).
 - **Out of scope:** the panel list (phase 29); image export of the marking.
 
-#### Phase 27: Implied independencies [ ]
+#### Phase 27: Implied independencies [x]
 
 - **Goal:** `impliedIndependencies` lists the testable independencies.
 - **Depends on:** phase 24.
