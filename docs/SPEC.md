@@ -2564,7 +2564,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - `code-opened` is recorded once per opening (an effect on open and format), even when the writer throws. Copy and download events are recorded only after success (PNG after the conversion resolves).
   - `copyShareLink` returns nothing and swallows errors, so `TopBar` repeats its steps with `shareUrl` and records `link-copied` after a successful write; `copyShareLink` is unused until phase 48 makes it report success.
 
-#### Phase 45: App-track lessons [x]
+#### Phase 45: App-track lessons [x] (e018b4c)
 
 - **Goal:** lessons 2–4 (`variables`, `arrows`, `files`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2578,7 +2578,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - Checks missing from `helpers.ts` are private to the lesson files (`typeIs`, `unitIs`, `levelsAre`, `hasDescription`, `hasEvidence`, `hasNote`). Units and levels compare trimmed and ignoring case; description, note and evidence need a non-blank value.
   - `sample()` parses on every call. Lesson tests parse their section of `docs/LESSONS.md?raw` and compare every text, so a correction to LESSONS.md fails the test until the lesson file follows.
 
-#### Phase 46: Causal lessons 5–9 [ ]
+#### Phase 46: Causal lessons 5–9 [x]
 
 - **Goal:** lessons 5–9 (`dag-basics`, `confounding`, `mediators`, `colliders`, `selection`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2587,6 +2587,9 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Work and tests:** as phase 45; every item under a lesson's "Claims" is asserted with the analysis engine.
 - **Done when:** all checks pass.
 - **Out of scope:** as phase 45.
+- **Details fixed in phase 46:**
+  - `no edge(A, B)` is `noEdge` in `selection.ts` and needs both nodes to exist. Tab and switch checks are written inline.
+  - The scripted test runs model that selecting a node switches the side panel to Edit, so steps asking for the Analysis tab after a role change start not done.
 
 #### Phase 47: Causal lessons 10–14 [ ]
 
