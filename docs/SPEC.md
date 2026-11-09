@@ -931,6 +931,13 @@ digraph "Smoking and birth weight" {
   - Any other key gives `ignoredAttribute('DOT', key, line)`.
 - **Round trip:** as for GML.
 
+Details fixed in phase 34:
+- **Quoting on export:** a safe id is written bare only when it matches `[A-Za-z_][A-Za-z0-9_]*` and is not a DOT keyword (`strict`, `graph`, `digraph`, `subgraph`, `node`, `edge`, in any case); otherwise it is quoted (`"1st_visit"`, `"a.b"`, `"node"`), because `toDagittyIds` can produce ids with `.` or a leading digit.
+- **Reading:** keywords are recognised in any case, and `"A"` and `A` are the same node. `\N` is checked on the label as written, so `label="\\N"` is a node named `\N`; an empty label means the id. Quoted strings unescape only `\"` and `\\` (Graphviz label escapes such as `\n` stay literal), and backslash-newline continues a string.
+- Attributes need `=`; `,` or `;` separate them and several `[…]` lists are joined. A `#` line is skipped only when `#` is its first non-blank character. All keys in `graph`/`node`/`edge` default statements are silent; the graph `label` is read only at the top level.
+- A subgraph used in an edge stands for every node named inside it (`{A -> B} -> C` gives A→B, A→C and B→C). `gc_evidence` and `gc_note` on a chain apply to every edge of it; on edges, `label` and other `gc_*` keys warn.
+- Further messages: `Line N: pos="<value>" is not a valid position; DOT positions look like pos="31.5,-27!".`, `Line N: a comment /* … */ is not closed (missing */).`, `Line N: "<c>" is not valid DOT syntax.` and the dagitty-style `not valid here`, `ends too early` and unclosed-quote messages. Syntax errors stop at the first one in source order, so `graph { a -- b }` reports the undirected-graph error.
+
 #### networkx JSON (`networkx.ts`, phase 35)
 
 ```ts
@@ -2198,7 +2205,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the example in 4.2 is reproduced exactly for the 4.1 graph; the round trip with details equals `toYaml(g)`.
 - **Out of scope:** the checkbox (phase 39); the dagitty-R check (phase 40).
 
-#### Phase 33: GML [x]
+#### Phase 33: GML [x] (20d0822)
 
 - **Goal:** `toGml` and `parseGml` as in 4.15.
 - **Depends on:** phase 31.
@@ -2209,7 +2216,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example is reproduced exactly for the 4.1 graph (the parts shown); the round trip holds on every valid fixture.
 - **Out of scope:** yEd's GraphML (XML), and other GML extensions.
 
-#### Phase 34: DOT [ ]
+#### Phase 34: DOT [x]
 
 - **Goal:** `toDot` and `parseDot` as in 4.15.
 - **Depends on:** phase 31.

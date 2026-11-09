@@ -122,9 +122,7 @@ describe('parseGraphText', () => {
       warnings: [],
     })
     const dot = parseGraphText('digraph { A -> B }')
-    expect(!dot.ok && dot.errors[0].message).toBe(
-      'DOT files cannot be opened yet.',
-    )
+    expect(dot.ok && dot.value.nodes.map((n) => n.name)).toEqual(['A', 'B'])
     const json = parseGraphText('{"nodes": []}')
     expect(!json.ok && json.errors[0].message).toBe(
       'networkx JSON files cannot be opened yet.',
