@@ -2482,11 +2482,11 @@ Phases: 40. Parallel: single phase. Check after the wave: all checks; the browse
   - dagitty-R refused the escapes sample's node `node`, which led to the `toDagittyIds` change in 4.2. Every other sample was read exactly as written by every tool.
   - The SVG snapshot test in `imageExport.test.ts` now reads only the top-level and `analysis/` fixtures, so the format samples do not need image snapshots.
 
-### Wave 19: Lesson contracts [ ]
+### Wave 19: Lesson contracts [x]
 
 Phases: 41. Parallel: single phase. Check after the wave: all checks.
 
-#### Phase 41: Lesson engine contracts [ ]
+#### Phase 41: Lesson engine contracts [x]
 
 - **Goal:** the extended lesson engine exists (types, helpers, events, context, picks, progress), the tour runs on it unchanged for the user, and the 13 new lessons exist as stubs.
 - **Depends on:** phase 40.
@@ -2502,6 +2502,15 @@ Phases: 41. Parallel: single phase. Check after the wave: all checks.
 - **Tests:** `helpers.test.ts`, `lessonEvents.test.ts`, `lessonProgress.test.ts`, the `lessonStore.test.ts`, `uiStore.test.ts`, `graphStore.test.ts` and `tour.test.ts` updates (section 9).
 - **Done when:** all checks pass; the tour works as before in the browser.
 - **Out of scope:** the panel's new parts, the pointer, the dialog, the lesson texts.
+- **Details fixed in phase 41:**
+  - `LessonContext.selection` is typed `GraphState['selection']`.
+  - Picks: "once the step is done" is judged on the state just before the selection change, so after the answer is selected, clicking a wrong node is not recorded (the step then shows as not done again). Selection changes are compared by kind and id: A, empty canvas, A records A twice; A clicked again with no change in between counts once. Adding a node during a pick step selects it and counts as a wrong pick. `start` subscribes to the graph store and `exit` unsubscribes.
+  - `next` and `back` reset `wrongPicks`, `revealed` and the events only when the step changes; `back` on step 0 keeps them. `exit` also resets `wrongPicks` and `revealed`.
+  - `start` sets `active`, `wrongPicks` and `revealed`, then starts recording, then sets the user's graph aside and loads the practice graph.
+  - `revealAnswer` does nothing without a pick; when the answer node no longer exists it selects nothing but still sets `revealed`.
+  - `undo` records `{ kind: 'undo' }` only when `past` was not empty; `redo` records nothing.
+  - `adjustedIs` compares as sets (`adjustedIs(ctx, [])` is true when nothing is adjusted). `hasEvent` with formats never matches an event without a format.
+  - `tour.test.ts` also checks that `LESSONS` holds the 14 ids, titles, summaries and tracks of LESSONS.md in order; it does not check the stubs' steps.
 
 ### Wave 20: Lesson parts [ ]
 

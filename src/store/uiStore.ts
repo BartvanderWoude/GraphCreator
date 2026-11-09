@@ -144,6 +144,10 @@ export interface UiState {
   dagittyDetails: boolean
   /** Also writes it with `writeDagittyDetails`. */
   setDagittyDetails(on: boolean): void
+  /** Lessons dialog visibility (spec 5.7.11); default false. */
+  lessonsOpen: boolean
+  openLessons(): void
+  closeLessons(): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -156,6 +160,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   analysisOn: readAnalysisOn(safeLocalStorage()),
   hoverNodeIds: [],
   dagittyDetails: readDagittyDetails(safeLocalStorage()),
+  lessonsOpen: false,
 
   setTool(tool) {
     set({ tool, connectFrom: null })
@@ -200,5 +205,13 @@ export const useUiStore = create<UiState>()((set, get) => ({
   setDagittyDetails(on) {
     writeDagittyDetails(safeLocalStorage(), on)
     set({ dagittyDetails: on })
+  },
+
+  openLessons() {
+    set({ lessonsOpen: true })
+  },
+
+  closeLessons() {
+    set({ lessonsOpen: false })
   },
 }))

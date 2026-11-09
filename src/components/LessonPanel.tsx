@@ -2,19 +2,28 @@ import { CircleCheck, X } from 'lucide-react'
 import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import { findLesson } from '@/lessons'
+import { stepDone } from '@/lessons/helpers'
 import { useGraphStore } from '@/store/graphStore'
-import { useLessonStore } from '@/store/lessonStore'
+import { useLessonEvents } from '@/store/lessonEvents'
+import { lessonContext, useLessonStore } from '@/store/lessonStore'
+import { useUiStore } from '@/store/uiStore'
 
 /**
  * The docked lesson panel (spec 5.7.10), between the tool rail and the canvas. Renders nothing
- * while no lesson runs. The step's "done" state follows the store's graph as the user edits.
+ * while no lesson runs. The step's "done" state follows the lesson context (graph, selection, side
+ * panel tab, Analysis switches and events) as the user works.
  */
 export function LessonPanel() {
   const active = useLessonStore((s) => s.active)
   const next = useLessonStore((s) => s.next)
   const back = useLessonStore((s) => s.back)
   const exit = useLessonStore((s) => s.exit)
-  const graph = useGraphStore((s) => s.graph)
+  // The step's check reads these through lessonContext(); subscribing re-renders on each change.
+  useGraphStore((s) => s.graph)
+  useGraphStore((s) => s.selection)
+  useUiStore((s) => s.sidePanelTab)
+  useUiStore((s) => s.analysisOn)
+  useLessonEvents((s) => s.events)
 
   const lesson = active ? findLesson(active.lessonId) : undefined
   const step = active ? lesson?.steps[active.step] : undefined
@@ -23,7 +32,7 @@ export function LessonPanel() {
   const index = active.step
   const count = lesson.steps.length
   const last = index === count - 1
-  const done = step.isDone(graph)
+  const done = stepDone(step, lessonContext())
 
   return (
     <aside

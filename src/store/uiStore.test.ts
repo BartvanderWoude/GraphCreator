@@ -73,6 +73,16 @@ describe('uiStore', () => {
     ui().setAutosave('blocked')
     expect(ui().autosave).toBe('blocked')
   })
+
+  it('openLessons and closeLessons set lessonsOpen, which is false at first', () => {
+    expect(ui().lessonsOpen).toBe(false)
+    ui().openLessons()
+    expect(ui().lessonsOpen).toBe(true)
+    ui().openLessons()
+    expect(ui().lessonsOpen).toBe(true)
+    ui().closeLessons()
+    expect(ui().lessonsOpen).toBe(false)
+  })
 })
 
 function memoryStorage(initial: Record<string, string> = {}) {

@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { emptyGraph, type Graph } from '@/model/graph'
 import { autoLayout } from '@/model/layout'
 import { HISTORY_LIMIT, useGraphStore } from './graphStore'
+import { startRecording, stopRecording, useLessonEvents } from './lessonEvents'
 
 const store = () => useGraphStore.getState()
 
@@ -525,6 +526,35 @@ describe('graphStore undo history', () => {
     expect(store()).toBe(before)
     expect(store().revision).toBe(0)
     expect(store().focusNameOf).toBe('n1')
+  })
+})
+
+describe('graphStore undo lesson event (phase 41)', () => {
+  afterEach(() => {
+    stopRecording()
+  })
+
+  it('records an undo event while recording, only when undo changed the graph', () => {
+    store().replaceGraph(sample())
+    startRecording()
+    store().undo()
+    expect(useLessonEvents.getState().events).toEqual([])
+    store().moveNode('n1', { x: 5, y: 5 })
+    store().undo()
+    expect(useLessonEvents.getState().events).toEqual([{ kind: 'undo' }])
+    store().redo()
+    store().undo()
+    expect(useLessonEvents.getState().events).toEqual([
+      { kind: 'undo' },
+      { kind: 'undo' },
+    ])
+  })
+
+  it('records nothing outside a lesson', () => {
+    store().replaceGraph(sample())
+    store().moveNode('n1', { x: 5, y: 5 })
+    store().undo()
+    expect(useLessonEvents.getState()).toEqual({ recording: false, events: [] })
   })
 })
 

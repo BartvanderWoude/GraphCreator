@@ -20,6 +20,7 @@ import { autoLayout } from '@/model/layout'
 import { nodeDiameter } from '@/model/nodeSize'
 import type { Result } from '@/model/result'
 import type { Role } from '@/model/schema'
+import { lessonEvent } from './lessonEvents'
 
 /** Most graphs kept on `past` and on `future` (spec 4.10). */
 export const HISTORY_LIMIT = 100
@@ -270,7 +271,9 @@ export const useGraphStore = create<GraphState>()((set, get) => {
     },
 
     undo() {
+      if (get().past.length === 0) return
       travel('past')
+      lessonEvent({ kind: 'undo' })
     },
 
     redo() {
