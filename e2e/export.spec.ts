@@ -148,3 +148,70 @@ test('TikZ shows the code, copies and downloads it', async ({ page }) => {
   expect(file.name).toBe(`${SLUG}.tex`)
   expect(file.bytes.toString('utf8')).toBe(text)
 })
+
+test('PDF shows the preview and the size in points, and downloads a PDF file', async ({
+  page,
+}) => {
+  await openFile(page, fixture('smoking.dag.yaml'))
+  await button(page, 'Export…').click()
+  const dialog = exportDialog(page)
+  await choose(page, 'Format', 'PDF')
+  await expect(
+    dialog.getByRole('img', { name: 'Preview of the image' }),
+  ).toBeVisible()
+  // 420 × 366 px × 0.75 (spec 4.11).
+  await expect(dialog).toContainText('315 × 275 points')
+  await expect(dialog.getByRole('button', { name: 'Copy' })).toHaveCount(0)
+  const file = await download(page, () =>
+    dialog.getByRole('button', { name: 'Download' }).click(),
+  )
+  expect(file.name).toBe(`${SLUG}.pdf`)
+  expect(file.bytes.subarray(0, 5).toString('latin1')).toBe('%PDF-')
+  expect(file.bytes.toString('latin1')).toContain(
+    '/Title (Smoking and birth weight)',
+  )
+})
+
+test('Theme and Legend change the image, and are kept when the dialog reopens', async ({
+  page,
+}) => {
+  await openFile(page, fixture('smoking.dag.yaml'))
+  await button(page, 'Export…').click()
+  const dialog = exportDialog(page)
+  const legend = dialog.getByRole('checkbox', { name: 'Legend' })
+  await expect(legend).not.toBeChecked()
+  await expect(dialog.getByRole('combobox', { name: 'Theme' })).toHaveText(
+    'Light',
+  )
+
+  await choose(page, 'Theme', 'Dark')
+  await legend.click()
+  await expect(legend).toBeChecked()
+  const svg = (
+    await download(page, () =>
+      dialog.getByRole('button', { name: 'Download' }).click(),
+    )
+  ).bytes.toString('utf8')
+  // The dark background (spec 4.11) and the legend's labels for the roles in use.
+  expect(svg).toContain('fill="#0e1513"')
+  for (const label of ['Exposure', 'Outcome', 'Latent', 'Other']) {
+    expect(svg).toContain(`>${label}</text>`)
+  }
+  expect(svg).not.toContain('>Adjusted</text>')
+
+  // TikZ has no theme, but draws the legend.
+  await choose(page, 'Format', 'TikZ')
+  await expect(dialog.getByRole('combobox', { name: 'Theme' })).toHaveCount(0)
+  await expect(dialog.getByRole('textbox', { name: 'TikZ code' })).toHaveValue(
+    /\{Exposure\};/,
+  )
+
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+  await button(page, 'Export…').click()
+  await choose(page, 'Format', 'SVG')
+  await expect(dialog.getByRole('combobox', { name: 'Theme' })).toHaveText(
+    'Dark',
+  )
+  await expect(dialog.getByRole('checkbox', { name: 'Legend' })).toBeChecked()
+})

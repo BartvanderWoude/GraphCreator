@@ -56,11 +56,11 @@ Graph Edges:
       edges: [edge('e1', 'n1', 'n3'), edge('e2', 'n2', 'n4')],
     }
     expect(toTetrad(graph)).toBe(`Graph Nodes:
-a_b;a_b_2;x_y;node
+a_b;a_b_2;x_y;node_2
 
 Graph Edges:
 1. a_b --> x_y
-2. a_b_2 --> node
+2. a_b_2 --> node_2
 `)
   })
 

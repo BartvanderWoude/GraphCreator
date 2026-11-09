@@ -1,0 +1,48 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "Z",
+      "name": "Z",
+      "pos": [32, 32]
+    },
+    {
+      "id": "X",
+      "name": "X",
+      "role": "exposure",
+      "pos": [182, 32]
+    },
+    {
+      "id": "Y",
+      "name": "Y",
+      "role": "outcome",
+      "pos": [332, 32]
+    },
+    {
+      "id": "U",
+      "name": "U",
+      "role": "latent",
+      "pos": [257, -68]
+    }
+  ],
+  "edges": [
+    {
+      "source": "Z",
+      "target": "X"
+    },
+    {
+      "source": "X",
+      "target": "Y"
+    },
+    {
+      "source": "U",
+      "target": "X"
+    },
+    {
+      "source": "U",
+      "target": "Y"
+    }
+  ]
+}

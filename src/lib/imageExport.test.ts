@@ -344,7 +344,10 @@ describe('theme and legend', () => {
 })
 
 const allFixtures: Record<string, string> = import.meta.glob(
-  '../model/__fixtures__/**/*.{yaml,txt}',
+  [
+    '../model/__fixtures__/*.{yaml,txt}',
+    '../model/__fixtures__/analysis/*.{yaml,txt}',
+  ],
   { query: '?raw', import: 'default', eager: true },
 )
 

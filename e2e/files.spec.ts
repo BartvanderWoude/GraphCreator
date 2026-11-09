@@ -192,6 +192,13 @@ test('Open file… recognises a dagitty file', async ({ page }) => {
   await expect(page.getByText('Opened with 5 warnings')).toBeVisible()
 })
 
+test('the Open dialog names the formats it reads', async ({ page }) => {
+  await button(page, 'Open…').click()
+  await expect(openDialog(page)).toContainText(
+    'Paste GraphCreator, dagitty, GML, DOT or networkx JSON code, or open a file. Opening replaces the current graph.',
+  )
+})
+
 test('pasted GraphCreator code opens', async ({ page }) => {
   await pasteAndOpen(page, fixtureText('smoking.dag.yaml'))
   await expect(openDialog(page)).toHaveCount(0)

@@ -1,0 +1,48 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "Severity",
+      "name": "Severity",
+      "role": "latent",
+      "pos": [190, -80]
+    },
+    {
+      "id": "Indication",
+      "name": "Indication",
+      "pos": [47, 7]
+    },
+    {
+      "id": "Drug",
+      "name": "Drug",
+      "role": "exposure",
+      "pos": [32, 132]
+    },
+    {
+      "id": "Recovery",
+      "name": "Recovery",
+      "role": "outcome",
+      "pos": [340, 140]
+    }
+  ],
+  "edges": [
+    {
+      "source": "Severity",
+      "target": "Indication"
+    },
+    {
+      "source": "Indication",
+      "target": "Drug"
+    },
+    {
+      "source": "Severity",
+      "target": "Recovery"
+    },
+    {
+      "source": "Drug",
+      "target": "Recovery"
+    }
+  ]
+}

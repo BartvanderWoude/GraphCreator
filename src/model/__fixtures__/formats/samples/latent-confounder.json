@@ -1,0 +1,49 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "U",
+      "name": "U",
+      "role": "latent",
+      "pos": [182, -88]
+    },
+    {
+      "id": "L",
+      "name": "L",
+      "role": "adjusted",
+      "pos": [32, -8]
+    },
+    {
+      "id": "E",
+      "name": "E",
+      "role": "exposure",
+      "pos": [32, 132]
+    },
+    {
+      "id": "D",
+      "name": "D",
+      "role": "outcome",
+      "pos": [332, 132]
+    }
+  ],
+  "edges": [
+    {
+      "source": "U",
+      "target": "L"
+    },
+    {
+      "source": "L",
+      "target": "E"
+    },
+    {
+      "source": "U",
+      "target": "D"
+    },
+    {
+      "source": "E",
+      "target": "D"
+    }
+  ]
+}

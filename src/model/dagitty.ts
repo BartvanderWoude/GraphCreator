@@ -642,11 +642,12 @@ export function toDagitty(
 /**
  * Maps node id → dagitty id (spec 4.2): whitespace runs → `_`, then every character outside
  * `[0-9A-Za-z_.]` → `_`; empty → `node`. Assigned in node order; on collision `_2`, `_3`, … is
- * appended (the first keeps the plain id).
+ * appended (the first keeps the plain id). `graph` and `node` count as taken from the start,
+ * because dagitty refuses them as variable names (phase 40), so they become `graph_2` and `node_2`.
  */
 export function toDagittyIds(nodes: GNode[]): Map<string, string> {
   const result = new Map<string, string>()
-  const taken = new Set<string>()
+  const taken = new Set<string>(['graph', 'node'])
   for (const node of nodes) {
     const base =
       node.name.replace(/\s+/gu, '_').replace(/[^0-9A-Za-z_.]/gu, '_') || 'node'

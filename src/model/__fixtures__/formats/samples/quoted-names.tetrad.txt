@@ -1,0 +1,8 @@
+Graph Nodes:
+Maternal_smoking;Birth_weight;Socio_economic_status;say__hi_
+
+Graph Edges:
+1. Maternal_smoking --> Birth_weight
+2. Socio_economic_status --> Maternal_smoking
+3. Socio_economic_status --> Birth_weight
+4. say__hi_ --> Birth_weight

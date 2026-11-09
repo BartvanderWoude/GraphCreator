@@ -43,7 +43,7 @@ The lesson engine and the tour ("Drawing your first DAG") are specified in SPEC.
 
 ## Import and export
 
-PDF export, the legend, the dark-theme image, dagitty details and the GML, DOT, networkx JSON, bnlearn, Tetrad and Mermaid formats are designed in [SPEC.md](SPEC.md) 4.2, 4.11, 4.15 and 5.4 (waves 16–18). Still deferred:
+PDF export, the legend, the dark-theme image, dagitty details and the GML, DOT, networkx JSON, bnlearn, Tetrad and Mermaid formats are built ([SPEC.md](SPEC.md) 4.2, 4.11, 4.15 and 5.4, waves 16–18). Still deferred:
 
 - A versioned JSON Schema for the YAML format.
 - Opening bnlearn, Tetrad and Mermaid; GraphML.

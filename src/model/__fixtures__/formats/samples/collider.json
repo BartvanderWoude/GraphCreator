@@ -1,0 +1,39 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "E",
+      "name": "E",
+      "role": "exposure",
+      "pos": [32, 32]
+    },
+    {
+      "id": "D",
+      "name": "D",
+      "role": "outcome",
+      "pos": [332, 32]
+    },
+    {
+      "id": "C",
+      "name": "C",
+      "role": "adjusted",
+      "pos": [182, 152]
+    }
+  ],
+  "edges": [
+    {
+      "source": "E",
+      "target": "D"
+    },
+    {
+      "source": "E",
+      "target": "C"
+    },
+    {
+      "source": "D",
+      "target": "C"
+    }
+  ]
+}

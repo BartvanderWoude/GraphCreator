@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done; next: wave 18 (phase 40, the real-tool reference and end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -272,7 +272,7 @@ Genetic_factors -> Birth_weight
 
 #### `toDagittyIds(nodes: GNode[]): Map<string, string>`
 
-Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Each Unicode code point becomes one `_`. Exported ids always match dagitty's bareword pattern, so no quoting is needed on export.
+Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Each Unicode code point becomes one `_`. Exported ids always match dagitty's bareword pattern, so no quoting is needed on export. `graph` and `node` count as taken from the start (so they become `graph_2` and `node_2`, and an empty name `node_2`), because dagitty refuses them as variable names; phase 40 found this with dagitty-R. The exchange formats (4.15) use the same ids.
 
 Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design. With `details: true` the metadata survives too: `toYaml(parseDagitty(toDagitty(g, { details: true })).value)` equals `toYaml(g)` without its name (dagitty files do not carry the graph name), up to positions within 0.1 px.
 
@@ -2302,7 +2302,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; a PDF of a hand-built scene opens in the browser's PDF viewer and in `pdftotext` or `qpdf --check` when available (otherwise say so).
 - **Out of scope:** embedded fonts; compression; several pages.
 
-#### Phase 39: Export and format dialogs [x]
+#### Phase 39: Export and format dialogs [x] (f627465)
 
 - **Goal:** the Save as… menu, `CodeDialog`, the Export dialog and the Open dialog work as in 5.4 "Import and export additions".
 - **Depends on:** phase 31.
@@ -2319,11 +2319,11 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; in the browser every menu item opens its dialog, the checkbox survives a reload, and Theme and Legend change the preview once phase 37 has landed. When this phase runs before it lands, check that the controls update their state.
 - **Out of scope:** the formats themselves.
 
-### Wave 18: Format integration [ ]
+### Wave 18: Format integration [x]
 
 Phases: 40. Parallel: single phase. Check after the wave: all checks; the browser checks in phase 40.
 
-#### Phase 40: Format integration, real-tool reference and end-to-end tests [ ]
+#### Phase 40: Format integration, real-tool reference and end-to-end tests [x]
 
 - **Goal:** the new formats are checked against the real tools, the whole feature works end to end, and the spec, IDEAS.md and memory reflect it.
 - **Depends on:** phases 32–39.
@@ -2342,6 +2342,11 @@ Phases: 40. Parallel: single phase. Check after the wave: all checks; the browse
   - the PDF with a legend opens in the browser;
   - a dark PNG with a legend downloads.
 - **Out of scope:** opening bnlearn, Tetrad or Mermaid; the JSON Schema; analysis marking in images.
+- **Details fixed in phase 40:**
+  - The writers' outputs live in `src/model/__fixtures__/formats/samples/` as `<sample>.gml`, `.dot`, `.json`, `.bnlearn.txt`, `.tetrad.txt`, `.mmd`, `.plain.dagitty.txt` and `.details.dagitty.txt`. Besides the planned samples there is `formats/escapes.dag.yaml`, a graph with non-ASCII names, `;` and `\` in levels and evidence, quotes, `&`, `<`, and nodes named `node`, `1st visit` and `a.b`.
+  - `scripts/check-formats.py` runs `scripts/check-formats.R` (which prints its JSON on stdout) and writes the whole `reference.json`, sorted, so one command refreshes it. Per sample it records `networkx_gml`, `networkx_json`, `pydot` (quotes and escapes removed), `causallearn` (directed edges as `[tail, head]`), `bnlearn` and `dagitty` (roles, edges, `same_as_plain`, `keeps_details` and the number of `gc.*` attributes). The first reference was made with Python 3.12.3, networkx 3.7, pydot 4.0.1, causal-learn 0.1.4.8, R 4.3.3, bnlearn 4.9.4 (archived: bnlearn 5 needs R 4.4) and dagitty 0.3.4.
+  - dagitty-R refused the escapes sample's node `node`, which led to the `toDagittyIds` change in 4.2. Every other sample was read exactly as written by every tool.
+  - The SVG snapshot test in `imageExport.test.ts` now reads only the top-level and `analysis/` fixtures, so the format samples do not need image snapshots.
 
 ## 9. Tests
 

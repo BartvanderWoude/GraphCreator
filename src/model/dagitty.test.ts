@@ -436,8 +436,17 @@ describe('toDagittyIds', () => {
     expect(ids('Größe', 'café 😀')).toEqual(['Gr__e', 'caf___'])
   })
 
-  it('uses "node" for empty results', () => {
-    expect(ids('')).toEqual(['node'])
+  it('uses "node" for empty results, suffixed like a collision', () => {
+    expect(ids('')).toEqual(['node_2'])
+  })
+
+  it('never uses graph or node, which dagitty refuses as variable names', () => {
+    expect(ids('graph', 'node', 'Node', 'node_2')).toEqual([
+      'graph_2',
+      'node_2',
+      'Node',
+      'node_2_2',
+    ])
   })
 
   it('suffixes collisions in node order', () => {
@@ -446,8 +455,8 @@ describe('toDagittyIds', () => {
       'a_b',
       'a_b_2',
       'a_b_3',
-      'node',
       'node_2',
+      'node_3',
     ])
   })
 

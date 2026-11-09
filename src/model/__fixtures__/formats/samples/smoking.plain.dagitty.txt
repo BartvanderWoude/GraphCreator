@@ -1,0 +1,10 @@
+dag {
+Maternal_smoking [exposure,label="Maternal smoking",pos="0.000,0.000"]
+Birth_weight [outcome,label="Birth weight",pos="3.000,0.000"]
+SES [pos="1.500,-1.200"]
+Genetic_factors [latent,label="Genetic factors",pos="1.500,1.200"]
+SES -> Maternal_smoking
+Maternal_smoking -> Birth_weight
+SES -> Birth_weight
+Genetic_factors -> Birth_weight
+}

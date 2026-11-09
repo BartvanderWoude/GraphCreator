@@ -1,0 +1,4813 @@
+{
+  "samples": {
+    "butterfly": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "A",
+            "M"
+          ],
+          [
+            "B",
+            "M"
+          ],
+          [
+            "A",
+            "E"
+          ],
+          [
+            "M",
+            "E"
+          ],
+          [
+            "B",
+            "D"
+          ],
+          [
+            "M",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "B",
+          "D",
+          "E",
+          "M"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "A",
+            "M"
+          ],
+          [
+            "A",
+            "E"
+          ],
+          [
+            "B",
+            "M"
+          ],
+          [
+            "B",
+            "D"
+          ],
+          [
+            "M",
+            "E"
+          ],
+          [
+            "M",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "B",
+          "M",
+          "E",
+          "D"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "M"
+          ],
+          [
+            "B",
+            "D"
+          ],
+          [
+            "B",
+            "M"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "M",
+            "D"
+          ],
+          [
+            "M",
+            "E"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "A",
+            "M",
+            {}
+          ],
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "B",
+            "M",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "M",
+            "E",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "A"
+          },
+          "B": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "B"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 192
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 192
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "M": {
+            "graphics": {
+              "x": 182,
+              "y": 112
+            },
+            "name": "M"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "A",
+            "M",
+            {}
+          ],
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "B",
+            "M",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "M",
+            "E",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "name": "A",
+            "pos": [
+              32,
+              32
+            ]
+          },
+          "B": {
+            "name": "B",
+            "pos": [
+              332,
+              32
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              192
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              192
+            ],
+            "role": "exposure"
+          },
+          "M": {
+            "name": "M",
+            "pos": [
+              182,
+              112
+            ]
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "A",
+            "M",
+            {}
+          ],
+          [
+            "B",
+            "M",
+            {}
+          ],
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "M",
+            "E",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "24,-24!"
+          },
+          "B": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "249,-24!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-144!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-144!"
+          },
+          "M": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "136.5,-84!"
+          }
+        }
+      }
+    },
+    "collider": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "C"
+          ],
+          [
+            "D",
+            "C"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "D",
+          "E"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "C"
+          ],
+          [
+            "D",
+            "C"
+          ]
+        ],
+        "nodes": [
+          "E",
+          "D",
+          "C"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "D",
+            "C"
+          ],
+          [
+            "E",
+            "C"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "C",
+            {}
+          ],
+          [
+            "D",
+            "C",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "graphics": {
+              "x": 182,
+              "y": 152
+            },
+            "name": "C",
+            "role": "adjusted"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "E",
+            "role": "exposure"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "C",
+            {}
+          ],
+          [
+            "D",
+            "C",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "name": "C",
+            "pos": [
+              182,
+              152
+            ],
+            "role": "adjusted"
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              32
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              32
+            ],
+            "role": "exposure"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "C",
+            {}
+          ],
+          [
+            "D",
+            "C",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "color": "#ad7a2c",
+            "fillcolor": "#f8eedd",
+            "fontcolor": "#6b4510",
+            "gc_role": "adjusted",
+            "pos": "136.5,-114!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-24!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-24!"
+          }
+        }
+      }
+    },
+    "confounding": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "B",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "Z",
+            "D"
+          ],
+          [
+            "A",
+            "E"
+          ],
+          [
+            "Z",
+            "E"
+          ],
+          [
+            "A",
+            "Z"
+          ],
+          [
+            "B",
+            "Z"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "B",
+          "D",
+          "E",
+          "Z"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "Z"
+          ],
+          [
+            "B",
+            "D"
+          ],
+          [
+            "B",
+            "Z"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "Z",
+            "D"
+          ],
+          [
+            "Z",
+            "E"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "B",
+          "D",
+          "E",
+          "Z"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "Z"
+          ],
+          [
+            "B",
+            "D"
+          ],
+          [
+            "B",
+            "Z"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "Z",
+            "D"
+          ],
+          [
+            "Z",
+            "E"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "Z",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "B",
+            "Z",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "E",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "graphics": {
+              "x": -188,
+              "y": -120
+            },
+            "name": "A"
+          },
+          "B": {
+            "graphics": {
+              "x": 172,
+              "y": -114
+            },
+            "name": "B"
+          },
+          "D": {
+            "graphics": {
+              "x": 172,
+              "y": 194.1
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": -188,
+              "y": 191.7
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "Z": {
+            "graphics": {
+              "x": 2,
+              "y": 23.8
+            },
+            "name": "Z"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "Z",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "B",
+            "Z",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "E",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "name": "A",
+            "pos": [
+              -188,
+              -120
+            ]
+          },
+          "B": {
+            "name": "B",
+            "pos": [
+              172,
+              -114
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              172,
+              194.1
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              -188,
+              191.7
+            ],
+            "role": "exposure"
+          },
+          "Z": {
+            "name": "Z",
+            "pos": [
+              2,
+              23.8
+            ]
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "Z",
+            {}
+          ],
+          [
+            "B",
+            "D",
+            {}
+          ],
+          [
+            "B",
+            "Z",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "D",
+            {}
+          ],
+          [
+            "Z",
+            "E",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "-141,90!"
+          },
+          "B": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "129,85.5!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "129,-145.57!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "-141,-143.77!"
+          },
+          "Z": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "1.5,-17.85!"
+          }
+        }
+      }
+    },
+    "confounding-by-indication": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "Severity",
+            "Indication"
+          ],
+          [
+            "Indication",
+            "Drug"
+          ],
+          [
+            "Severity",
+            "Recovery"
+          ],
+          [
+            "Drug",
+            "Recovery"
+          ]
+        ],
+        "nodes": [
+          "Drug",
+          "Indication",
+          "Recovery",
+          "Severity"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "Severity",
+            "Indication"
+          ],
+          [
+            "Severity",
+            "Recovery"
+          ],
+          [
+            "Indication",
+            "Drug"
+          ],
+          [
+            "Drug",
+            "Recovery"
+          ]
+        ],
+        "nodes": [
+          "Severity",
+          "Indication",
+          "Drug",
+          "Recovery"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "Drug",
+            "Recovery"
+          ],
+          [
+            "Indication",
+            "Drug"
+          ],
+          [
+            "Severity",
+            "Indication"
+          ],
+          [
+            "Severity",
+            "Recovery"
+          ]
+        ],
+        "exposures": [
+          "Drug"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "Severity"
+        ],
+        "outcomes": [
+          "Recovery"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "Severity",
+            "Indication",
+            {}
+          ],
+          [
+            "Severity",
+            "Recovery",
+            {}
+          ],
+          [
+            "Indication",
+            "Drug",
+            {}
+          ],
+          [
+            "Drug",
+            "Recovery",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Drug": {
+            "graphics": {
+              "x": 32,
+              "y": 132
+            },
+            "name": "Drug",
+            "role": "exposure"
+          },
+          "Indication": {
+            "graphics": {
+              "x": 47,
+              "y": 7
+            },
+            "name": "Indication"
+          },
+          "Recovery": {
+            "graphics": {
+              "x": 340,
+              "y": 140
+            },
+            "name": "Recovery",
+            "role": "outcome"
+          },
+          "Severity": {
+            "graphics": {
+              "x": 190,
+              "y": -80
+            },
+            "name": "Severity",
+            "role": "latent"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "Severity",
+            "Indication",
+            {}
+          ],
+          [
+            "Severity",
+            "Recovery",
+            {}
+          ],
+          [
+            "Indication",
+            "Drug",
+            {}
+          ],
+          [
+            "Drug",
+            "Recovery",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Drug": {
+            "name": "Drug",
+            "pos": [
+              32,
+              132
+            ],
+            "role": "exposure"
+          },
+          "Indication": {
+            "name": "Indication",
+            "pos": [
+              47,
+              7
+            ]
+          },
+          "Recovery": {
+            "name": "Recovery",
+            "pos": [
+              340,
+              140
+            ],
+            "role": "outcome"
+          },
+          "Severity": {
+            "name": "Severity",
+            "pos": [
+              190,
+              -80
+            ],
+            "role": "latent"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "Severity",
+            "Indication",
+            {}
+          ],
+          [
+            "Indication",
+            "Drug",
+            {}
+          ],
+          [
+            "Severity",
+            "Recovery",
+            {}
+          ],
+          [
+            "Drug",
+            "Recovery",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Drug": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-99!"
+          },
+          "Indication": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "35.25,-5.25!"
+          },
+          "Recovery": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "255,-105!"
+          },
+          "Severity": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "142.5,60!"
+          }
+        }
+      }
+    },
+    "escapes": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "node_2",
+            "Gr__e__"
+          ],
+          [
+            "Gr__e__",
+            "1st_visit"
+          ],
+          [
+            "node_2",
+            "1st_visit"
+          ],
+          [
+            "1st_visit",
+            "a.b"
+          ]
+        ],
+        "nodes": [
+          "1st_visit",
+          "a.b",
+          "Gr__e__",
+          "node_2"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "Gr__e__",
+            "1st_visit"
+          ],
+          [
+            "node_2",
+            "Gr__e__"
+          ],
+          [
+            "node_2",
+            "1st_visit"
+          ],
+          [
+            "1st_visit",
+            "a.b"
+          ]
+        ],
+        "nodes": [
+          "Gr__e__",
+          "1st_visit",
+          "node_2",
+          "a.b"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "1st_visit",
+            "a.b"
+          ],
+          [
+            "Gr__e__",
+            "1st_visit"
+          ],
+          [
+            "node_2",
+            "1st_visit"
+          ],
+          [
+            "node_2",
+            "Gr__e__"
+          ]
+        ],
+        "exposures": [
+          "Gr__e__"
+        ],
+        "gc_attributes": 7,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "1st_visit"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "Gr__e__",
+            "1st_visit",
+            {
+              "evidence": [
+                "PMID:1;2",
+                "doi:10.1/x"
+              ],
+              "note": "It's \"known\""
+            }
+          ],
+          [
+            "1st_visit",
+            "a.b",
+            {}
+          ],
+          [
+            "node_2",
+            "Gr__e__",
+            {}
+          ],
+          [
+            "node_2",
+            "1st_visit",
+            {}
+          ]
+        ],
+        "nodes": {
+          "1st_visit": {
+            "graphics": {
+              "x": 233,
+              "y": 33
+            },
+            "name": "1st visit",
+            "role": "outcome",
+            "unit": "kg/m²",
+            "var_type": "continuous"
+          },
+          "Gr__e__": {
+            "description": "Says \"hi\" & <bye>",
+            "graphics": {
+              "x": 33,
+              "y": 33
+            },
+            "levels": [
+              "a;b",
+              "back\\slash",
+              "c"
+            ],
+            "name": "Größe β",
+            "role": "exposure",
+            "var_type": "ordinal"
+          },
+          "a.b": {
+            "graphics": {
+              "x": 332,
+              "y": 182
+            },
+            "name": "a.b",
+            "role": "selected"
+          },
+          "node_2": {
+            "graphics": {
+              "x": 132,
+              "y": 182
+            },
+            "name": "node",
+            "role": "adjusted"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "Gr__e__",
+            "1st_visit",
+            {
+              "evidence": [
+                "PMID:1;2",
+                "doi:10.1/x"
+              ],
+              "note": "It's \"known\""
+            }
+          ],
+          [
+            "1st_visit",
+            "a.b",
+            {}
+          ],
+          [
+            "node_2",
+            "Gr__e__",
+            {}
+          ],
+          [
+            "node_2",
+            "1st_visit",
+            {}
+          ]
+        ],
+        "nodes": {
+          "1st_visit": {
+            "name": "1st visit",
+            "pos": [
+              233,
+              33
+            ],
+            "role": "outcome",
+            "unit": "kg/m²",
+            "var_type": "continuous"
+          },
+          "Gr__e__": {
+            "description": "Says \"hi\" & <bye>",
+            "levels": [
+              "a;b",
+              "back\\slash",
+              "c"
+            ],
+            "name": "Größe β",
+            "pos": [
+              33,
+              33
+            ],
+            "role": "exposure",
+            "var_type": "ordinal"
+          },
+          "a.b": {
+            "name": "a.b",
+            "pos": [
+              332,
+              182
+            ],
+            "role": "selected"
+          },
+          "node_2": {
+            "name": "node",
+            "pos": [
+              132,
+              182
+            ],
+            "role": "adjusted"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "Gr__e__",
+            "1st_visit",
+            {
+              "gc_evidence": "PMID:1\\;2;doi:10.1/x",
+              "gc_note": "It's \"known\""
+            }
+          ],
+          [
+            "node_2",
+            "Gr__e__",
+            {}
+          ],
+          [
+            "node_2",
+            "1st_visit",
+            {}
+          ],
+          [
+            "1st_visit",
+            "a.b",
+            {}
+          ]
+        ],
+        "nodes": {
+          "1st_visit": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "gc_unit": "kg/m²",
+            "gc_var_type": "continuous",
+            "label": "1st visit",
+            "pos": "174.75,-24.75!"
+          },
+          "Gr__e__": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_description": "Says \"hi\" & <bye>",
+            "gc_levels": "a\\;b;back\\\\slash;c",
+            "gc_role": "exposure",
+            "gc_var_type": "ordinal",
+            "label": "Größe β",
+            "pos": "24.75,-24.75!"
+          },
+          "a.b": {
+            "color": "#9375c4",
+            "fillcolor": "#efe7f7",
+            "fontcolor": "#4c2f75",
+            "gc_role": "selected",
+            "pos": "249,-136.5!"
+          },
+          "node_2": {
+            "color": "#ad7a2c",
+            "fillcolor": "#f8eedd",
+            "fontcolor": "#6b4510",
+            "gc_role": "adjusted",
+            "label": "node",
+            "pos": "99,-136.5!"
+          }
+        }
+      }
+    },
+    "instrument": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "Z",
+            "X"
+          ],
+          [
+            "U",
+            "X"
+          ],
+          [
+            "X",
+            "Y"
+          ],
+          [
+            "U",
+            "Y"
+          ]
+        ],
+        "nodes": [
+          "U",
+          "X",
+          "Y",
+          "Z"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "Z",
+            "X"
+          ],
+          [
+            "X",
+            "Y"
+          ],
+          [
+            "U",
+            "X"
+          ],
+          [
+            "U",
+            "Y"
+          ]
+        ],
+        "nodes": [
+          "Z",
+          "X",
+          "Y",
+          "U"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "U",
+            "X"
+          ],
+          [
+            "U",
+            "Y"
+          ],
+          [
+            "X",
+            "Y"
+          ],
+          [
+            "Z",
+            "X"
+          ]
+        ],
+        "exposures": [
+          "X"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "U"
+        ],
+        "outcomes": [
+          "Y"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "Z",
+            "X",
+            {}
+          ],
+          [
+            "X",
+            "Y",
+            {}
+          ],
+          [
+            "U",
+            "X",
+            {}
+          ],
+          [
+            "U",
+            "Y",
+            {}
+          ]
+        ],
+        "nodes": {
+          "U": {
+            "graphics": {
+              "x": 257,
+              "y": -68
+            },
+            "name": "U",
+            "role": "latent"
+          },
+          "X": {
+            "graphics": {
+              "x": 182,
+              "y": 32
+            },
+            "name": "X",
+            "role": "exposure"
+          },
+          "Y": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "Y",
+            "role": "outcome"
+          },
+          "Z": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "Z"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "Z",
+            "X",
+            {}
+          ],
+          [
+            "X",
+            "Y",
+            {}
+          ],
+          [
+            "U",
+            "X",
+            {}
+          ],
+          [
+            "U",
+            "Y",
+            {}
+          ]
+        ],
+        "nodes": {
+          "U": {
+            "name": "U",
+            "pos": [
+              257,
+              -68
+            ],
+            "role": "latent"
+          },
+          "X": {
+            "name": "X",
+            "pos": [
+              182,
+              32
+            ],
+            "role": "exposure"
+          },
+          "Y": {
+            "name": "Y",
+            "pos": [
+              332,
+              32
+            ],
+            "role": "outcome"
+          },
+          "Z": {
+            "name": "Z",
+            "pos": [
+              32,
+              32
+            ]
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "Z",
+            "X",
+            {}
+          ],
+          [
+            "X",
+            "Y",
+            {}
+          ],
+          [
+            "U",
+            "X",
+            {}
+          ],
+          [
+            "U",
+            "Y",
+            {}
+          ]
+        ],
+        "nodes": {
+          "U": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "192.75,51!"
+          },
+          "X": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "136.5,-24!"
+          },
+          "Y": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-24!"
+          },
+          "Z": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "24,-24!"
+          }
+        }
+      }
+    },
+    "latent-confounder": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "U",
+            "L"
+          ],
+          [
+            "L",
+            "E"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "D",
+          "E",
+          "L",
+          "U"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "U",
+            "L"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "L",
+            "E"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "U",
+          "L",
+          "E",
+          "D"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "L",
+            "E"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "U",
+            "L"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "U"
+        ],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "U",
+            "L",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "L",
+            "E",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 132
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 132
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "L": {
+            "graphics": {
+              "x": 32,
+              "y": -8
+            },
+            "name": "L",
+            "role": "adjusted"
+          },
+          "U": {
+            "graphics": {
+              "x": 182,
+              "y": -88
+            },
+            "name": "U",
+            "role": "latent"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "U",
+            "L",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "L",
+            "E",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              132
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              132
+            ],
+            "role": "exposure"
+          },
+          "L": {
+            "name": "L",
+            "pos": [
+              32,
+              -8
+            ],
+            "role": "adjusted"
+          },
+          "U": {
+            "name": "U",
+            "pos": [
+              182,
+              -88
+            ],
+            "role": "latent"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "U",
+            "L",
+            {}
+          ],
+          [
+            "L",
+            "E",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-99!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-99!"
+          },
+          "L": {
+            "color": "#ad7a2c",
+            "fillcolor": "#f8eedd",
+            "fontcolor": "#6b4510",
+            "gc_role": "adjusted",
+            "pos": "24,6!"
+          },
+          "U": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "136.5,66!"
+          }
+        }
+      }
+    },
+    "m-bias": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "U2",
+            "D"
+          ],
+          [
+            "U1",
+            "E"
+          ],
+          [
+            "U1",
+            "Z"
+          ],
+          [
+            "U2",
+            "Z"
+          ]
+        ],
+        "nodes": [
+          "D",
+          "E",
+          "U1",
+          "U2",
+          "Z"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "U2",
+            "D"
+          ],
+          [
+            "U1",
+            "E"
+          ],
+          [
+            "U1",
+            "Z"
+          ],
+          [
+            "U2",
+            "Z"
+          ]
+        ],
+        "nodes": [
+          "D",
+          "E",
+          "U1",
+          "U2",
+          "Z"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "U1",
+            "E"
+          ],
+          [
+            "U1",
+            "Z"
+          ],
+          [
+            "U2",
+            "D"
+          ],
+          [
+            "U2",
+            "Z"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "U1",
+          "U2"
+        ],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "U1",
+            "E",
+            {}
+          ],
+          [
+            "U1",
+            "Z",
+            {}
+          ],
+          [
+            "U2",
+            "D",
+            {}
+          ],
+          [
+            "U2",
+            "Z",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "graphics": {
+              "x": 132,
+              "y": 132
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": -168,
+              "y": 132
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "U1": {
+            "graphics": {
+              "x": -168,
+              "y": -18
+            },
+            "name": "U1",
+            "role": "latent"
+          },
+          "U2": {
+            "graphics": {
+              "x": 132,
+              "y": -18
+            },
+            "name": "U2",
+            "role": "latent"
+          },
+          "Z": {
+            "graphics": {
+              "x": -18,
+              "y": 82
+            },
+            "name": "Z"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "U1",
+            "E",
+            {}
+          ],
+          [
+            "U1",
+            "Z",
+            {}
+          ],
+          [
+            "U2",
+            "D",
+            {}
+          ],
+          [
+            "U2",
+            "Z",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "name": "D",
+            "pos": [
+              132,
+              132
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              -168,
+              132
+            ],
+            "role": "exposure"
+          },
+          "U1": {
+            "name": "U1",
+            "pos": [
+              -168,
+              -18
+            ],
+            "role": "latent"
+          },
+          "U2": {
+            "name": "U2",
+            "pos": [
+              132,
+              -18
+            ],
+            "role": "latent"
+          },
+          "Z": {
+            "name": "Z",
+            "pos": [
+              -18,
+              82
+            ]
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "U1",
+            "E",
+            {}
+          ],
+          [
+            "U1",
+            "Z",
+            {}
+          ],
+          [
+            "U2",
+            "D",
+            {}
+          ],
+          [
+            "U2",
+            "Z",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "99,-99!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "-126,-99!"
+          },
+          "U1": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "-126,13.5!"
+          },
+          "U2": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "99,13.5!"
+          },
+          "Z": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "-13.5,-61.5!"
+          }
+        }
+      }
+    },
+    "mediation": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "E",
+            "M"
+          ],
+          [
+            "C",
+            "M"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "M",
+            "D"
+          ],
+          [
+            "C",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "D",
+          "E",
+          "M"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "E",
+            "M"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "M",
+            "D"
+          ],
+          [
+            "C",
+            "M"
+          ],
+          [
+            "C",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "E",
+          "M",
+          "D",
+          "C"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "M"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "M"
+          ],
+          [
+            "M",
+            "D"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "E",
+            "M",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "C",
+            "M",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "graphics": {
+              "x": 332,
+              "y": -18
+            },
+            "name": "C"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 132
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 132
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "M": {
+            "graphics": {
+              "x": 182,
+              "y": 32
+            },
+            "name": "M",
+            "role": "adjusted"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "E",
+            "M",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "C",
+            "M",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "name": "C",
+            "pos": [
+              332,
+              -18
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              132
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              132
+            ],
+            "role": "exposure"
+          },
+          "M": {
+            "name": "M",
+            "pos": [
+              182,
+              32
+            ],
+            "role": "adjusted"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "M",
+            {}
+          ],
+          [
+            "M",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "C",
+            "M",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "249,13.5!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-99!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-99!"
+          },
+          "M": {
+            "color": "#ad7a2c",
+            "fillcolor": "#f8eedd",
+            "fontcolor": "#6b4510",
+            "gc_role": "adjusted",
+            "pos": "136.5,-24!"
+          }
+        }
+      }
+    },
+    "no-adjustment-possible": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "U",
+            "E"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "D",
+          "E",
+          "U"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "U",
+            "E"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "U",
+          "E",
+          "D"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "U",
+            "D"
+          ],
+          [
+            "U",
+            "E"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "U"
+        ],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "U",
+            "E",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "U": {
+            "graphics": {
+              "x": 182,
+              "y": -68
+            },
+            "name": "U",
+            "role": "latent"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "U",
+            "E",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              32
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              32
+            ],
+            "role": "exposure"
+          },
+          "U": {
+            "name": "U",
+            "pos": [
+              182,
+              -68
+            ],
+            "role": "latent"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "U",
+            "E",
+            {}
+          ],
+          [
+            "U",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-24!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-24!"
+          },
+          "U": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "pos": "136.5,51!"
+          }
+        }
+      }
+    },
+    "quoted-names": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "Socio_economic_status",
+            "Maternal_smoking"
+          ],
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight"
+          ],
+          [
+            "say__hi_",
+            "Birth_weight"
+          ]
+        ],
+        "nodes": [
+          "Birth_weight",
+          "Maternal_smoking",
+          "say__hi_",
+          "Socio_economic_status"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "Socio_economic_status",
+            "Maternal_smoking"
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight"
+          ],
+          [
+            "say__hi_",
+            "Birth_weight"
+          ]
+        ],
+        "nodes": [
+          "Maternal_smoking",
+          "Birth_weight",
+          "Socio_economic_status",
+          "say__hi_"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight"
+          ],
+          [
+            "Socio_economic_status",
+            "Maternal_smoking"
+          ],
+          [
+            "say__hi_",
+            "Birth_weight"
+          ]
+        ],
+        "exposures": [
+          "Maternal_smoking"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [
+          "say__hi_"
+        ],
+        "outcomes": [
+          "Birth_weight"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Maternal_smoking",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "say__hi_",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "graphics": {
+              "x": 336,
+              "y": 36
+            },
+            "name": "Birth weight",
+            "role": "outcome"
+          },
+          "Maternal_smoking": {
+            "graphics": {
+              "x": 42,
+              "y": 42
+            },
+            "name": "Maternal smoking",
+            "role": "exposure"
+          },
+          "Socio_economic_status": {
+            "graphics": {
+              "x": 213,
+              "y": -57
+            },
+            "name": "Socio-economic status"
+          },
+          "say__hi_": {
+            "graphics": {
+              "x": 182,
+              "y": 152
+            },
+            "name": "say \"hi\"",
+            "role": "latent"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Maternal_smoking",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "say__hi_",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "name": "Birth weight",
+            "pos": [
+              336,
+              36
+            ],
+            "role": "outcome"
+          },
+          "Maternal_smoking": {
+            "name": "Maternal smoking",
+            "pos": [
+              42,
+              42
+            ],
+            "role": "exposure"
+          },
+          "Socio_economic_status": {
+            "name": "Socio-economic status",
+            "pos": [
+              213,
+              -57
+            ]
+          },
+          "say__hi_": {
+            "name": "say \"hi\"",
+            "pos": [
+              182,
+              152
+            ],
+            "role": "latent"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Maternal_smoking",
+            {}
+          ],
+          [
+            "Socio_economic_status",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "say__hi_",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "label": "Birth weight",
+            "pos": "252,-27!"
+          },
+          "Maternal_smoking": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "label": "Maternal smoking",
+            "pos": "31.5,-31.5!"
+          },
+          "Socio_economic_status": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "label": "Socio-economic status",
+            "pos": "159.75,42.75!"
+          },
+          "say__hi_": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "label": "say \"hi\"",
+            "pos": "136.5,-114!"
+          }
+        }
+      }
+    },
+    "selection-bias": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ],
+          [
+            "C",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "D",
+          "E",
+          "S"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "E",
+          "D",
+          "S",
+          "C"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "S"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "graphics": {
+              "x": 332,
+              "y": 152
+            },
+            "name": "C"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "S": {
+            "graphics": {
+              "x": 182,
+              "y": 152
+            },
+            "name": "S",
+            "role": "selected"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "name": "C",
+            "pos": [
+              332,
+              152
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              32
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              32
+            ],
+            "role": "exposure"
+          },
+          "S": {
+            "name": "S",
+            "pos": [
+              182,
+              152
+            ],
+            "role": "selected"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "249,-114!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-24!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-24!"
+          },
+          "S": {
+            "color": "#9375c4",
+            "fillcolor": "#efe7f7",
+            "fontcolor": "#4c2f75",
+            "gc_role": "selected",
+            "pos": "136.5,-114!"
+          }
+        }
+      }
+    },
+    "selection-confounder": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "A",
+            "S"
+          ],
+          [
+            "C",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "C",
+          "D",
+          "E",
+          "S"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "S"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "E",
+          "D",
+          "S",
+          "C"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "S"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "S"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "graphics": {
+              "x": 32,
+              "y": -68
+            },
+            "name": "A"
+          },
+          "C": {
+            "graphics": {
+              "x": 332,
+              "y": -68
+            },
+            "name": "C"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 82
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 82
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "S": {
+            "graphics": {
+              "x": 182,
+              "y": -68
+            },
+            "name": "S",
+            "role": "selected"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "name": "A",
+            "pos": [
+              32,
+              -68
+            ]
+          },
+          "C": {
+            "name": "C",
+            "pos": [
+              332,
+              -68
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              82
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              82
+            ],
+            "role": "exposure"
+          },
+          "S": {
+            "name": "S",
+            "pos": [
+              182,
+              -68
+            ],
+            "role": "selected"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "24,51!"
+          },
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "249,51!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-61.5!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-61.5!"
+          },
+          "S": {
+            "color": "#9375c4",
+            "fillcolor": "#efe7f7",
+            "fontcolor": "#4c2f75",
+            "gc_role": "selected",
+            "pos": "136.5,51!"
+          }
+        }
+      }
+    },
+    "selection-on-exposure": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "C",
+            "E"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "D",
+          "E",
+          "S"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "C",
+            "E"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "E",
+          "D",
+          "S"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "E"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "E",
+            "S"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "graphics": {
+              "x": 182,
+              "y": -68
+            },
+            "name": "C"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 82
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 82
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "S": {
+            "graphics": {
+              "x": 32,
+              "y": 232
+            },
+            "name": "S",
+            "role": "selected"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "name": "C",
+            "pos": [
+              182,
+              -68
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              82
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              82
+            ],
+            "role": "exposure"
+          },
+          "S": {
+            "name": "S",
+            "pos": [
+              32,
+              232
+            ],
+            "role": "selected"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "136.5,51!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-61.5!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-61.5!"
+          },
+          "S": {
+            "color": "#9375c4",
+            "fillcolor": "#efe7f7",
+            "fontcolor": "#4c2f75",
+            "gc_role": "selected",
+            "pos": "24,-174!"
+          }
+        }
+      }
+    },
+    "selection-recoverable": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "C",
+            "E"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ],
+          [
+            "A",
+            "S"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "C",
+          "D",
+          "E",
+          "S"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "S"
+          ],
+          [
+            "C",
+            "E"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "nodes": [
+          "A",
+          "C",
+          "E",
+          "D",
+          "S"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "A",
+            "E"
+          ],
+          [
+            "A",
+            "S"
+          ],
+          [
+            "C",
+            "D"
+          ],
+          [
+            "C",
+            "E"
+          ],
+          [
+            "E",
+            "D"
+          ]
+        ],
+        "exposures": [
+          "E"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "graphics": {
+              "x": 32,
+              "y": -68
+            },
+            "name": "A"
+          },
+          "C": {
+            "graphics": {
+              "x": 182,
+              "y": -88
+            },
+            "name": "C"
+          },
+          "D": {
+            "graphics": {
+              "x": 332,
+              "y": 82
+            },
+            "name": "D",
+            "role": "outcome"
+          },
+          "E": {
+            "graphics": {
+              "x": 32,
+              "y": 82
+            },
+            "name": "E",
+            "role": "exposure"
+          },
+          "S": {
+            "graphics": {
+              "x": -118,
+              "y": -68
+            },
+            "name": "S",
+            "role": "selected"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ],
+          [
+            "E",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "name": "A",
+            "pos": [
+              32,
+              -68
+            ]
+          },
+          "C": {
+            "name": "C",
+            "pos": [
+              182,
+              -88
+            ]
+          },
+          "D": {
+            "name": "D",
+            "pos": [
+              332,
+              82
+            ],
+            "role": "outcome"
+          },
+          "E": {
+            "name": "E",
+            "pos": [
+              32,
+              82
+            ],
+            "role": "exposure"
+          },
+          "S": {
+            "name": "S",
+            "pos": [
+              -118,
+              -68
+            ],
+            "role": "selected"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "E",
+            "D",
+            {}
+          ],
+          [
+            "A",
+            "E",
+            {}
+          ],
+          [
+            "A",
+            "S",
+            {}
+          ],
+          [
+            "C",
+            "E",
+            {}
+          ],
+          [
+            "C",
+            "D",
+            {}
+          ]
+        ],
+        "nodes": {
+          "A": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "24,51!"
+          },
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "136.5,66!"
+          },
+          "D": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-61.5!"
+          },
+          "E": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-61.5!"
+          },
+          "S": {
+            "color": "#9375c4",
+            "fillcolor": "#efe7f7",
+            "fontcolor": "#4c2f75",
+            "gc_role": "selected",
+            "pos": "-88.5,51!"
+          }
+        }
+      }
+    },
+    "smoking": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "SES",
+            "Maternal_smoking"
+          ],
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "SES",
+            "Birth_weight"
+          ],
+          [
+            "Genetic_factors",
+            "Birth_weight"
+          ]
+        ],
+        "nodes": [
+          "Birth_weight",
+          "Genetic_factors",
+          "Maternal_smoking",
+          "SES"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "SES",
+            "Maternal_smoking"
+          ],
+          [
+            "SES",
+            "Birth_weight"
+          ],
+          [
+            "Genetic_factors",
+            "Birth_weight"
+          ]
+        ],
+        "nodes": [
+          "Maternal_smoking",
+          "Birth_weight",
+          "SES",
+          "Genetic_factors"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "Genetic_factors",
+            "Birth_weight"
+          ],
+          [
+            "Maternal_smoking",
+            "Birth_weight"
+          ],
+          [
+            "SES",
+            "Birth_weight"
+          ],
+          [
+            "SES",
+            "Maternal_smoking"
+          ]
+        ],
+        "exposures": [
+          "Maternal_smoking"
+        ],
+        "gc_attributes": 9,
+        "keeps_details": true,
+        "latents": [
+          "Genetic_factors"
+        ],
+        "outcomes": [
+          "Birth_weight"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "SES",
+            "Maternal_smoking",
+            {
+              "evidence": [
+                "PMID:123",
+                "doi:10.1000/xyz"
+              ],
+              "note": "Well established"
+            }
+          ],
+          [
+            "SES",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Genetic_factors",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "graphics": {
+              "x": 336,
+              "y": 36
+            },
+            "name": "Birth weight",
+            "role": "outcome",
+            "unit": "g",
+            "var_type": "continuous"
+          },
+          "Genetic_factors": {
+            "graphics": {
+              "x": 189,
+              "y": 159
+            },
+            "name": "Genetic factors",
+            "role": "latent"
+          },
+          "Maternal_smoking": {
+            "description": "Self-reported during pregnancy",
+            "graphics": {
+              "x": 42,
+              "y": 42
+            },
+            "levels": [
+              "never",
+              "former",
+              "current"
+            ],
+            "name": "Maternal smoking",
+            "role": "exposure",
+            "var_type": "categorical"
+          },
+          "SES": {
+            "graphics": {
+              "x": 182,
+              "y": -88
+            },
+            "levels": [
+              "low",
+              "mid",
+              "high"
+            ],
+            "name": "SES",
+            "var_type": "ordinal"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "SES",
+            "Maternal_smoking",
+            {
+              "evidence": [
+                "PMID:123",
+                "doi:10.1000/xyz"
+              ],
+              "note": "Well established"
+            }
+          ],
+          [
+            "SES",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Genetic_factors",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "name": "Birth weight",
+            "pos": [
+              336,
+              36
+            ],
+            "role": "outcome",
+            "unit": "g",
+            "var_type": "continuous"
+          },
+          "Genetic_factors": {
+            "name": "Genetic factors",
+            "pos": [
+              189,
+              159
+            ],
+            "role": "latent"
+          },
+          "Maternal_smoking": {
+            "description": "Self-reported during pregnancy",
+            "levels": [
+              "never",
+              "former",
+              "current"
+            ],
+            "name": "Maternal smoking",
+            "pos": [
+              42,
+              42
+            ],
+            "role": "exposure",
+            "var_type": "categorical"
+          },
+          "SES": {
+            "levels": [
+              "low",
+              "mid",
+              "high"
+            ],
+            "name": "SES",
+            "pos": [
+              182,
+              -88
+            ],
+            "var_type": "ordinal"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "SES",
+            "Maternal_smoking",
+            {
+              "gc_evidence": "PMID:123;doi:10.1000/xyz",
+              "gc_note": "Well established"
+            }
+          ],
+          [
+            "Maternal_smoking",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "SES",
+            "Birth_weight",
+            {}
+          ],
+          [
+            "Genetic_factors",
+            "Birth_weight",
+            {}
+          ]
+        ],
+        "nodes": {
+          "Birth_weight": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "gc_unit": "g",
+            "gc_var_type": "continuous",
+            "label": "Birth weight",
+            "pos": "252,-27!"
+          },
+          "Genetic_factors": {
+            "color": "#80868f",
+            "fillcolor": "#f3f4f6",
+            "fontcolor": "#374151",
+            "gc_role": "latent",
+            "label": "Genetic factors",
+            "pos": "141.75,-119.25!"
+          },
+          "Maternal_smoking": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_description": "Self-reported during pregnancy",
+            "gc_levels": "never;former;current",
+            "gc_role": "exposure",
+            "gc_var_type": "categorical",
+            "label": "Maternal smoking",
+            "pos": "31.5,-31.5!"
+          },
+          "SES": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "gc_levels": "low;mid;high",
+            "gc_var_type": "ordinal",
+            "pos": "136.5,66!"
+          }
+        }
+      }
+    },
+    "two-exposures-two-outcomes": {
+      "bnlearn": {
+        "arcs": [
+          [
+            "C",
+            "E1"
+          ],
+          [
+            "B",
+            "E2"
+          ],
+          [
+            "E1",
+            "E2"
+          ],
+          [
+            "C",
+            "D1"
+          ],
+          [
+            "E1",
+            "D1"
+          ],
+          [
+            "B",
+            "D2"
+          ],
+          [
+            "E2",
+            "D2"
+          ]
+        ],
+        "nodes": [
+          "B",
+          "C",
+          "D1",
+          "D2",
+          "E1",
+          "E2"
+        ]
+      },
+      "causallearn": {
+        "edges": [
+          [
+            "C",
+            "E1"
+          ],
+          [
+            "C",
+            "D1"
+          ],
+          [
+            "B",
+            "E2"
+          ],
+          [
+            "B",
+            "D2"
+          ],
+          [
+            "E1",
+            "E2"
+          ],
+          [
+            "E1",
+            "D1"
+          ],
+          [
+            "E2",
+            "D2"
+          ]
+        ],
+        "nodes": [
+          "C",
+          "B",
+          "E1",
+          "E2",
+          "D1",
+          "D2"
+        ]
+      },
+      "dagitty": {
+        "edges": [
+          [
+            "B",
+            "D2"
+          ],
+          [
+            "B",
+            "E2"
+          ],
+          [
+            "C",
+            "D1"
+          ],
+          [
+            "C",
+            "E1"
+          ],
+          [
+            "E1",
+            "D1"
+          ],
+          [
+            "E1",
+            "E2"
+          ],
+          [
+            "E2",
+            "D2"
+          ]
+        ],
+        "exposures": [
+          "E1",
+          "E2"
+        ],
+        "gc_attributes": 0,
+        "keeps_details": true,
+        "latents": [],
+        "outcomes": [
+          "D1",
+          "D2"
+        ],
+        "same_as_plain": true
+      },
+      "networkx_gml": {
+        "edges": [
+          [
+            "C",
+            "E1",
+            {}
+          ],
+          [
+            "C",
+            "D1",
+            {}
+          ],
+          [
+            "B",
+            "E2",
+            {}
+          ],
+          [
+            "B",
+            "D2",
+            {}
+          ],
+          [
+            "E1",
+            "D1",
+            {}
+          ],
+          [
+            "E1",
+            "E2",
+            {}
+          ],
+          [
+            "E2",
+            "D2",
+            {}
+          ]
+        ],
+        "nodes": {
+          "B": {
+            "graphics": {
+              "x": 332,
+              "y": -68
+            },
+            "name": "B",
+            "role": "adjusted"
+          },
+          "C": {
+            "graphics": {
+              "x": 32,
+              "y": -68
+            },
+            "name": "C"
+          },
+          "D1": {
+            "graphics": {
+              "x": 332,
+              "y": 32
+            },
+            "name": "D1",
+            "role": "outcome"
+          },
+          "D2": {
+            "graphics": {
+              "x": 332,
+              "y": 182
+            },
+            "name": "D2",
+            "role": "outcome"
+          },
+          "E1": {
+            "graphics": {
+              "x": 32,
+              "y": 32
+            },
+            "name": "E1",
+            "role": "exposure"
+          },
+          "E2": {
+            "graphics": {
+              "x": 182,
+              "y": 132
+            },
+            "name": "E2",
+            "role": "exposure"
+          }
+        }
+      },
+      "networkx_json": {
+        "edges": [
+          [
+            "C",
+            "E1",
+            {}
+          ],
+          [
+            "C",
+            "D1",
+            {}
+          ],
+          [
+            "B",
+            "E2",
+            {}
+          ],
+          [
+            "B",
+            "D2",
+            {}
+          ],
+          [
+            "E1",
+            "D1",
+            {}
+          ],
+          [
+            "E1",
+            "E2",
+            {}
+          ],
+          [
+            "E2",
+            "D2",
+            {}
+          ]
+        ],
+        "nodes": {
+          "B": {
+            "name": "B",
+            "pos": [
+              332,
+              -68
+            ],
+            "role": "adjusted"
+          },
+          "C": {
+            "name": "C",
+            "pos": [
+              32,
+              -68
+            ]
+          },
+          "D1": {
+            "name": "D1",
+            "pos": [
+              332,
+              32
+            ],
+            "role": "outcome"
+          },
+          "D2": {
+            "name": "D2",
+            "pos": [
+              332,
+              182
+            ],
+            "role": "outcome"
+          },
+          "E1": {
+            "name": "E1",
+            "pos": [
+              32,
+              32
+            ],
+            "role": "exposure"
+          },
+          "E2": {
+            "name": "E2",
+            "pos": [
+              182,
+              132
+            ],
+            "role": "exposure"
+          }
+        }
+      },
+      "pydot": {
+        "edges": [
+          [
+            "C",
+            "E1",
+            {}
+          ],
+          [
+            "C",
+            "D1",
+            {}
+          ],
+          [
+            "E1",
+            "D1",
+            {}
+          ],
+          [
+            "E1",
+            "E2",
+            {}
+          ],
+          [
+            "E2",
+            "D2",
+            {}
+          ],
+          [
+            "B",
+            "E2",
+            {}
+          ],
+          [
+            "B",
+            "D2",
+            {}
+          ]
+        ],
+        "nodes": {
+          "B": {
+            "color": "#ad7a2c",
+            "fillcolor": "#f8eedd",
+            "fontcolor": "#6b4510",
+            "gc_role": "adjusted",
+            "pos": "249,51!"
+          },
+          "C": {
+            "color": "#7d8a9c",
+            "fillcolor": "#ffffff",
+            "fontcolor": "#0f172a",
+            "pos": "24,51!"
+          },
+          "D1": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-24!"
+          },
+          "D2": {
+            "color": "#5b83cf",
+            "fillcolor": "#e2eaf8",
+            "fontcolor": "#23407a",
+            "gc_role": "outcome",
+            "pos": "249,-136.5!"
+          },
+          "E1": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "24,-24!"
+          },
+          "E2": {
+            "color": "#4a946a",
+            "fillcolor": "#e3f1e8",
+            "fontcolor": "#24563a",
+            "gc_role": "exposure",
+            "pos": "136.5,-99!"
+          }
+        }
+      }
+    }
+  },
+  "tools": {
+    "R": "4.3.3",
+    "bnlearn": "4.9.4",
+    "causal-learn": "0.1.4.8",
+    "dagitty": "0.3.4",
+    "networkx": "3.7",
+    "pydot": "4.0.1",
+    "python": "3.12.3"
+  }
+}

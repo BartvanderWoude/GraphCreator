@@ -1,0 +1,18 @@
+%% Smoking and birth weight
+flowchart TB
+  v1(("Maternal smoking"))
+  v2(("Birth weight"))
+  v3(("SES"))
+  v4(("Genetic factors"))
+  v3 --> v1
+  v1 --> v2
+  v3 --> v2
+  v4 --> v2
+  classDef exposure fill:#e3f1e8,stroke:#4a946a,color:#24563a
+  classDef outcome fill:#e2eaf8,stroke:#5b83cf,color:#23407a
+  classDef latent fill:#f3f4f6,stroke:#80868f,color:#374151
+  classDef other fill:#ffffff,stroke:#7d8a9c,color:#0f172a
+  class v1 exposure
+  class v2 outcome
+  class v4 latent
+  class v3 other

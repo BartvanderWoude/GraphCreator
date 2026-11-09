@@ -110,13 +110,15 @@ describe('toDot', () => {
     }
     const text = toDot(g)
     expect(text).toContain('digraph "Say \\"hi\\" \\\\ bye" {')
-    expect(text).toContain('  "node" [gc_role="adjusted", pos="0,0!"')
+    expect(text).toContain(
+      '  node_2 [label="node", gc_role="adjusted", pos="0,0!"',
+    )
     expect(text).toContain(
       '  "1st_visit" [label="1st visit", gc_role="selected"',
     )
     expect(text).toContain('  "a.b__q_" [label="a.b \\"q\\"", pos=')
     expect(text).toContain(
-      '  "node" -> "1st_visit" [gc_evidence="x\\\\;y;a\\\\\\\\b"]',
+      '  node_2 -> "1st_visit" [gc_evidence="x\\\\;y;a\\\\\\\\b"]',
     )
     expect(text).not.toContain('-0')
     expect(text).not.toContain('missing')

@@ -1,0 +1,10 @@
+dag {
+Gr__e__ [exposure,label="Größe β",pos="0.000,0.000",gc.var_type="ordinal",gc.levels="a\\;b;back\\\\slash;c",gc.description="Says \"hi\" & <bye>"]
+1st_visit [outcome,label="1st visit",pos="2.000,0.000",gc.var_type="continuous",gc.unit="kg/m²"]
+node_2 [adjusted,label="node",pos="1.000,1.500"]
+a.b [selected,pos="3.000,1.500"]
+Gr__e__ -> 1st_visit [gc.evidence="PMID:1\\;2;doi:10.1/x",gc.note="It's \"known\""]
+node_2 -> Gr__e__
+node_2 -> 1st_visit
+1st_visit -> a.b
+}

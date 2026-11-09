@@ -1,0 +1,10 @@
+dag {
+E [exposure,pos="0.000,0.000"]
+D [outcome,pos="3.000,0.000"]
+S [selected,pos="1.500,1.200"]
+C [pos="3.000,1.200"]
+E -> D
+E -> S
+C -> S
+C -> D
+}

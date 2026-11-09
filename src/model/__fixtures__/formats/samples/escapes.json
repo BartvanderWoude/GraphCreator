@@ -1,0 +1,58 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "name": "Größe & \"quotes\""
+  },
+  "nodes": [
+    {
+      "id": "Gr__e__",
+      "name": "Größe β",
+      "role": "exposure",
+      "var_type": "ordinal",
+      "levels": ["a;b", "back\\slash", "c"],
+      "description": "Says \"hi\" & <bye>",
+      "pos": [33, 33]
+    },
+    {
+      "id": "1st_visit",
+      "name": "1st visit",
+      "role": "outcome",
+      "var_type": "continuous",
+      "unit": "kg/m²",
+      "pos": [233, 33]
+    },
+    {
+      "id": "node_2",
+      "name": "node",
+      "role": "adjusted",
+      "pos": [132, 182]
+    },
+    {
+      "id": "a.b",
+      "name": "a.b",
+      "role": "selected",
+      "pos": [332, 182]
+    }
+  ],
+  "edges": [
+    {
+      "source": "Gr__e__",
+      "target": "1st_visit",
+      "evidence": ["PMID:1;2", "doi:10.1/x"],
+      "note": "It's \"known\""
+    },
+    {
+      "source": "node_2",
+      "target": "Gr__e__"
+    },
+    {
+      "source": "node_2",
+      "target": "1st_visit"
+    },
+    {
+      "source": "1st_visit",
+      "target": "a.b"
+    }
+  ]
+}

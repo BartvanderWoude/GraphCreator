@@ -1,0 +1,10 @@
+dag {
+Gr__e__ [exposure,label="Größe β",pos="0.000,0.000"]
+1st_visit [outcome,label="1st visit",pos="2.000,0.000"]
+node_2 [adjusted,label="node",pos="1.000,1.500"]
+a.b [selected,pos="3.000,1.500"]
+Gr__e__ -> 1st_visit
+node_2 -> Gr__e__
+node_2 -> 1st_visit
+1st_visit -> a.b
+}

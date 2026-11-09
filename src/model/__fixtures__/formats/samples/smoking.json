@@ -1,0 +1,59 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "name": "Smoking and birth weight"
+  },
+  "nodes": [
+    {
+      "id": "Maternal_smoking",
+      "name": "Maternal smoking",
+      "role": "exposure",
+      "var_type": "categorical",
+      "levels": ["never", "former", "current"],
+      "description": "Self-reported during pregnancy",
+      "pos": [42, 42]
+    },
+    {
+      "id": "Birth_weight",
+      "name": "Birth weight",
+      "role": "outcome",
+      "var_type": "continuous",
+      "unit": "g",
+      "pos": [336, 36]
+    },
+    {
+      "id": "SES",
+      "name": "SES",
+      "var_type": "ordinal",
+      "levels": ["low", "mid", "high"],
+      "pos": [182, -88]
+    },
+    {
+      "id": "Genetic_factors",
+      "name": "Genetic factors",
+      "role": "latent",
+      "pos": [189, 159]
+    }
+  ],
+  "edges": [
+    {
+      "source": "SES",
+      "target": "Maternal_smoking",
+      "evidence": ["PMID:123", "doi:10.1000/xyz"],
+      "note": "Well established"
+    },
+    {
+      "source": "Maternal_smoking",
+      "target": "Birth_weight"
+    },
+    {
+      "source": "SES",
+      "target": "Birth_weight"
+    },
+    {
+      "source": "Genetic_factors",
+      "target": "Birth_weight"
+    }
+  ]
+}
