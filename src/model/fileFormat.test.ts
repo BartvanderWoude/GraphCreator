@@ -125,7 +125,7 @@ describe('parseGraphText', () => {
     expect(dot.ok && dot.value.nodes.map((n) => n.name)).toEqual(['A', 'B'])
     const json = parseGraphText('{"nodes": []}')
     expect(!json.ok && json.errors[0].message).toBe(
-      'networkx JSON files cannot be opened yet.',
+      'This networkx graph is not directed. GraphCreator reads directed graphs only.',
     )
   })
 

@@ -990,6 +990,13 @@ export function parseNetworkx(text: string): Result<Graph>
   - Other keys on nodes, on edges or in `graph` give `ignoredAttribute('networkx', key)`, once per key.
 - **Round trip:** as for GML.
 
+Details fixed in phase 35:
+- The checks stop at the first failure in the order: invalid JSON, no `nodes`, not directed, multigraph. A missing `"directed"` counts as not directed (networkx's default).
+- `edges` is read whenever that key exists, even next to `links`. A chosen key that is not a list gives `This JSON is not a networkx graph ("edges" is not a list).` (or `"links"`).
+- Malformed items are collected, 1-based: `Node N in the "nodes" list is not an object.`, `Node N in the "nodes" list needs an "id" (text or a number).`, `Edge N in the "edges" list is not an object.`, `Edge N in the "edges" list needs a "source" and a "target" (text or a number).` Then the field errors `Node "X": pos must be a list of two numbers, like [42, 42].`, `Node "X": name must be text.` and `The graph name must be text.`, before `buildGraph`'s. A numeric `name`, `label` or graph name is read as text.
+- An unknown key warns once in the whole file, in order of first appearance with `graph` first; unknown top-level keys and a `graph` that is not an object are ignored silently.
+- The one-line arrays come from a regex on the `JSON.stringify` output that joins only arrays whose every line is one JSON string or number.
+
 #### bnlearn (`bnlearn.ts`, phase 36)
 
 ```ts
@@ -2216,7 +2223,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example is reproduced exactly for the 4.1 graph (the parts shown); the round trip holds on every valid fixture.
 - **Out of scope:** yEd's GraphML (XML), and other GML extensions.
 
-#### Phase 34: DOT [x]
+#### Phase 34: DOT [x] (19f2a07)
 
 - **Goal:** `toDot` and `parseDot` as in 4.15.
 - **Depends on:** phase 31.
@@ -2227,7 +2234,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example is reproduced exactly; the round trip holds on every valid fixture; a typical DoWhy string (`digraph { A -> B; B -> C; A -> C }`) opens with layout.
 - **Out of scope:** undirected graphs, HTML labels, ports, edge splines.
 
-#### Phase 35: networkx JSON [ ]
+#### Phase 35: networkx JSON [x]
 
 - **Goal:** `toNetworkx` and `parseNetworkx` as in 4.15.
 - **Depends on:** phase 31.
