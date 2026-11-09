@@ -36,13 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import {
-  SHARE_COPIED_MESSAGE,
-  SHARE_COPY_FAILED_MESSAGE,
-  SHARE_LONG,
-  SHARE_LONG_MESSAGE,
-  shareUrl,
-} from '@/lib/shareLink'
+import { copyShareLink } from '@/lib/shareLink'
 import {
   Tooltip,
   TooltipContent,
@@ -133,23 +127,11 @@ function LessonLock({
 }
 
 /**
- * The Share action (spec 5.4), as `copyShareLink` in `shareLink.ts`, plus the `link-copied` lesson
- * event after the clipboard write succeeded (spec 4.8). `copyShareLink` does not say whether it
- * succeeded, so its steps are repeated here.
+ * The Share action (spec 5.4): `copyShareLink`, plus the `link-copied` lesson event after the
+ * clipboard write succeeded (spec 4.8).
  */
 async function share(graph: Graph): Promise<void> {
-  let url: string
-  try {
-    url = await shareUrl(graph)
-    await navigator.clipboard.writeText(url)
-  } catch {
-    toast.error(SHARE_COPY_FAILED_MESSAGE)
-    return
-  }
-  toast(SHARE_COPIED_MESSAGE, {
-    description: url.length > SHARE_LONG ? SHARE_LONG_MESSAGE : undefined,
-  })
-  lessonEvent({ kind: 'link-copied' })
+  if (await copyShareLink(graph)) lessonEvent({ kind: 'link-copied' })
 }
 
 /**

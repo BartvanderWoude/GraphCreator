@@ -257,6 +257,25 @@ describe('lessonStore engine (phase 41)', () => {
     expect(isStepDone()).toBe(true)
   })
 
+  it('clears the selection when a pick step is left or entered, and keeps it otherwise', () => {
+    lessons().start('test-picks')
+    selectNode('b')
+    lessons().next()
+    expect(graphStore().selection).toBeNull()
+    selectNode('a')
+    lessons().back()
+    expect(graphStore().selection).toBeNull()
+    selectNode('c')
+    lessons().next()
+    graphStore().moveNode('a', { x: 10, y: 10 })
+    graphStore().undo()
+    selectNode('d')
+    lessons().next()
+    expect(lessons().active?.step).toBe(2)
+    expect(graphStore().selection).toEqual({ kind: 'node', id: 'd' })
+    lessons().exit()
+  })
+
   it('records a wrong node selection in a pick step once', () => {
     lessons().start('test-picks')
     expect(lessons().wrongPicks).toEqual([])

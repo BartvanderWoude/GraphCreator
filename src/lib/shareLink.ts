@@ -96,15 +96,19 @@ export async function decodeShare(hash: string): Promise<Result<Graph> | null> {
 /**
  * The top bar's Share (spec 5.4): copies `shareUrl(graph)` to the clipboard and toasts, with a
  * warning when the link is longer than `SHARE_LONG`. Any failure shows the clipboard error toast.
+ * Resolves to true after a successful clipboard write, false otherwise.
  */
-export async function copyShareLink(graph: Graph): Promise<void> {
+export async function copyShareLink(graph: Graph): Promise<boolean> {
+  let url: string
   try {
-    const url = await shareUrl(graph)
+    url = await shareUrl(graph)
     await navigator.clipboard.writeText(url)
-    toast(SHARE_COPIED_MESSAGE, {
-      description: url.length > SHARE_LONG ? SHARE_LONG_MESSAGE : undefined,
-    })
   } catch {
     toast.error(SHARE_COPY_FAILED_MESSAGE)
+    return false
   }
+  toast(SHARE_COPIED_MESSAGE, {
+    description: url.length > SHARE_LONG ? SHARE_LONG_MESSAGE : undefined,
+  })
+  return true
 }

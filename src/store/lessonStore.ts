@@ -86,6 +86,18 @@ function watchPicks(): () => void {
   })
 }
 
+/**
+ * Clears the selection when the step being left or the step entered has a pick, so a node picked
+ * in one step is not still selected in the next (clicking it would then neither switch the side
+ * panel to Edit nor count as a pick). Other steps keep the selection, e.g. a selected edge whose
+ * evidence the next step asks for.
+ */
+function clearSelectionAroundPicks(lessonId: string, from: number, to: number) {
+  const steps = lessonOf(lessonId).steps
+  if (steps[from]?.pick || steps[to]?.pick)
+    useGraphStore.getState().select(null)
+}
+
 export const useLessonStore = create<LessonState>()((set, get) => ({
   active: null,
   wrongPicks: [],
@@ -118,6 +130,7 @@ export const useLessonStore = create<LessonState>()((set, get) => ({
       wrongPicks: [],
       revealed: false,
     })
+    clearSelectionAroundPicks(active.lessonId, active.step, active.step + 1)
     clearEvents()
   },
 
@@ -129,6 +142,7 @@ export const useLessonStore = create<LessonState>()((set, get) => ({
       wrongPicks: [],
       revealed: false,
     })
+    clearSelectionAroundPicks(active.lessonId, active.step, active.step - 1)
     clearEvents()
   },
 

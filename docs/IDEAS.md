@@ -32,7 +32,7 @@ Adjustment sets, implied independencies, path highlighting, instrumental variabl
 
 ## Lessons
 
-The lesson course (14 lessons in two tracks, the Help menu and Lessons dialog, picks on the canvas, the canvas pointer and progress) is designed in [LESSONS.md](LESSONS.md) and [SPEC.md](SPEC.md) 4.8 and 5.7.10–5.7.12 (waves 19–21). Still deferred:
+The lesson course (14 lessons in two tracks, the Help menu and Lessons dialog, picks on the canvas, the canvas pointer and progress) is built ([LESSONS.md](LESSONS.md), [SPEC.md](SPEC.md) 4.8 and 5.7.10–5.7.12; waves 19–21). Still deferred:
 
 - Resuming a lesson mid-way.
 - "Lesson: …" links at the end of info tooltips.

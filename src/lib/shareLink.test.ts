@@ -177,7 +177,7 @@ describe('copyShareLink', () => {
 
   it('copies the link and toasts', async () => {
     const g = smoking()
-    await copyShareLink(g)
+    expect(await copyShareLink(g)).toBe(true)
     expect(writeText).toHaveBeenCalledWith(await shareUrl(g))
     expect(toast).toHaveBeenCalledWith(SHARE_COPIED_MESSAGE, {
       description: undefined,
@@ -193,7 +193,7 @@ describe('copyShareLink', () => {
         ((k * 7919 + i * 104729) % 65521).toString(36),
       ).join(' '),
     }))
-    await copyShareLink(g)
+    expect(await copyShareLink(g)).toBe(true)
     expect(writeText.mock.calls[0]![0].length).toBeGreaterThan(SHARE_LONG)
     expect(toast).toHaveBeenCalledWith(SHARE_COPIED_MESSAGE, {
       description: SHARE_LONG_MESSAGE,
@@ -202,8 +202,22 @@ describe('copyShareLink', () => {
 
   it('shows the error toast when the clipboard fails', async () => {
     writeText.mockRejectedValue(new Error('denied'))
-    await copyShareLink(smoking())
+    expect(await copyShareLink(smoking())).toBe(false)
     expect(toast).not.toHaveBeenCalled()
+    expect(toast.error).toHaveBeenCalledWith(SHARE_COPY_FAILED_MESSAGE)
+  })
+
+  it('resolves to false when the link cannot be built', async () => {
+    vi.stubGlobal(
+      'CompressionStream',
+      class {
+        constructor() {
+          throw new Error('unsupported')
+        }
+      },
+    )
+    expect(await copyShareLink(smoking())).toBe(false)
+    expect(writeText).not.toHaveBeenCalled()
     expect(toast.error).toHaveBeenCalledWith(SHARE_COPY_FAILED_MESSAGE)
   })
 })

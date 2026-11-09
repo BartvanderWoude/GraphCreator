@@ -1,6 +1,6 @@
 # GraphCreator lessons
 
-**Status:** designed 2026-11-09, not implemented yet (waves 19–21, phases 41–48 in [SPEC.md](SPEC.md)). This document is **binding** for the lesson files in `src/lessons/`: their practice graphs, step texts, checks, pointers, picks and the claims their tests assert. The engine, the panel, the Lessons dialog and the canvas pointer are specified in SPEC.md 4.8 and 5.7.10–5.7.12.
+**Status:** designed 2026-11-09; implemented (waves 19–21, phases 41–48 in [SPEC.md](SPEC.md)). This document is **binding** for the lesson files in `src/lessons/`: their practice graphs, step texts, checks, pointers, picks and the claims their tests assert. The engine, the panel, the Lessons dialog and the canvas pointer are specified in SPEC.md 4.8 and 5.7.10–5.7.12.
 
 ## Course
 

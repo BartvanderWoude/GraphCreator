@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+import { useReactFlow, type Viewport } from '@xyflow/react'
 import { CircleCheck, Lightbulb, X } from 'lucide-react'
 import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
@@ -22,6 +24,49 @@ function forPlatform(text: string): string {
   return isMac() ? text.replaceAll('Ctrl', '⌘') : text
 }
 
+/** Fits and view changes animate for 300 ms, or not at all with reduced motion (5.7.5). */
+function fitDuration(): number {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : 300
+  } catch {
+    return 300
+  }
+}
+
+/**
+ * Fits the practice graph into view, at 100 % at most, whenever a lesson starts, and puts the
+ * user's own view back when the lesson ends (phase 48). Practice graphs reach above and left of
+ * the origin, so without the fit their circles and pointers could start off screen.
+ */
+function useLessonViewport(lessonId: string | undefined) {
+  const flow = useReactFlow()
+  const saved = useRef<Viewport | null>(null)
+  useEffect(() => {
+    if (lessonId === undefined) {
+      const view = saved.current
+      saved.current = null
+      if (view) {
+        requestAnimationFrame(
+          () => void flow.setViewport(view, { duration: fitDuration() }),
+        )
+      }
+      return
+    }
+    saved.current ??= flow.getViewport()
+    // An empty practice graph (the tour) has nothing to fit.
+    if (useGraphStore.getState().graph.nodes.length === 0) return
+    // Two frames: React Flow learns the canvas's new width (the panel just took 300 px of it) from
+    // a ResizeObserver, which reports after the first frame's callbacks.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(
+        () => void flow.fitView({ maxZoom: 1, duration: fitDuration() }),
+      ),
+    )
+  }, [lessonId, flow])
+}
+
 /**
  * The docked lesson panel (spec 5.7.10), between the tool rail and the canvas. Renders nothing
  * while no lesson runs. The step's "done" state follows the lesson context (graph, selection, side
@@ -40,6 +85,7 @@ export function LessonPanel() {
   useUiStore((s) => s.sidePanelTab)
   useUiStore((s) => s.analysisOn)
   useLessonEvents((s) => s.events)
+  useLessonViewport(active?.lessonId)
 
   const lesson = active ? findLesson(active.lessonId) : undefined
   const step = active ? lesson?.steps[active.step] : undefined

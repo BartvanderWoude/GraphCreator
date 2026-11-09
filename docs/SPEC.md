@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; not implemented yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -37,6 +37,7 @@ src/
     lessonEvents.ts      app events recorded while a lesson runs (4.8, phase 41)
     autosave.ts          localStorage autosave (5.5)
   lessons/               lesson types, helpers, the tour and the 13 other lessons (5.7.10, LESSONS.md; phases 10, 41–47)
+    lessonTestKit.ts     test-only helpers shared by the lesson tests: LESSONS.md parsing, scripted runs, analysis by name (phase 48)
   components/
     Canvas.tsx, SidePanel.tsx, NodeEditor.tsx, EdgeEditor.tsx, ListEditor.tsx,
     OpenDialog.tsx, CodeDialog.tsx, IssuesDialog.tsx                     (phase 18; were DagittyImportDialog/DagittyExportDialog)
@@ -1503,7 +1504,7 @@ export function stepDone(step: LessonStep, ctx: LessonContext): boolean   // (no
 
 On a Mac (`/Mac|iPhone|iPad/` in `navigator.userAgent`, as `ToolRail`) the panel shows `⌘` for every `Ctrl` in a body or task.
 
-**Running a lesson** (4.8): the user's graph is set aside and the practice graph loaded with `replaceGraph`. Autosave pauses (`autosave` status `paused`, phase 16). Leaving the lesson by Finish or close restores the user's graph; the practice graph is discarded. Finish also marks the lesson as done (4.8 "Progress"). The Analysis switches a lesson asks the user to turn on stay on afterwards; they are a viewer preference (4.14).
+**Running a lesson** (4.8): the user's graph is set aside and the practice graph loaded with `replaceGraph`. Autosave pauses (`autosave` status `paused`, phase 16). Leaving the lesson by Finish or close restores the user's graph; the practice graph is discarded. Finish also marks the lesson as done (4.8 "Progress"). From phase 48, starting a lesson fits the practice graph into view (at most 100 %), and leaving it puts the user's earlier view back. The Analysis switches a lesson asks the user to turn on stay on afterwards; they are a viewer preference (4.14).
 
 #### 5.7.11 Help menu and Lessons dialog (phase 44)
 
@@ -2591,7 +2592,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - `no edge(A, B)` is `noEdge` in `selection.ts` and needs both nodes to exist. Tab and switch checks are written inline.
   - The scripted test runs model that selecting a node switches the side panel to Edit, so steps asking for the Analysis tab after a role change start not done.
 
-#### Phase 47: Causal lessons 10–14 [x]
+#### Phase 47: Causal lessons 10–14 [x] (7bb6e7f)
 
 - **Goal:** lessons 10–14 (`latent`, `adjustment`, `testing`, `instruments`, `reporting`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2606,11 +2607,11 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - Because Report is on by default, lesson 14 step 2 is done as soon as the Analysis tab opens; a user whose stored switches already have Instruments or Independencies on finds lessons 13 step 3 and 12 step 2 done at once.
   - Lesson 12's collider claim is checked by giving SES and Maternal age the exposure and outcome roles and listing the paths between them.
 
-### Wave 21: Lessons integration [ ]
+### Wave 21: Lessons integration [x]
 
 Phases: 48. Parallel: single phase. Check after the wave: all checks; the browser checks below.
 
-#### Phase 48: Lessons integration and end-to-end tests [ ]
+#### Phase 48: Lessons integration and end-to-end tests [x]
 
 - **Goal:** the whole course works end to end, and the spec, IDEAS.md and memory reflect it.
 - **Depends on:** phases 42–47.
@@ -2618,6 +2619,13 @@ Phases: 48. Parallel: single phase. Check after the wave: all checks; the browse
 - **Work:** write `e2e/lessons.spec.ts` (section 9); fix integration problems in any file of phases 41–47; update the Status line, the Open issues and `docs/IDEAS.md`. Correct LESSONS.md only where the built app shows a text to be wrong, and record each correction under "Details fixed in phase 48".
 - **Done when:** all checks pass; in the browser (both app themes) the Lessons dialog lists 14 lessons, a pointer pulses above its circle, a wrong pick shows its hint and Show answer appears after two, and a finished lesson keeps its checkmark after a reload.
 - **Out of scope:** new lessons; resuming mid-lesson.
+- **Details fixed in phase 48:**
+  - `next` and `back` clear the selection when the step being left or the step entered has a pick, so a node picked in one step is not still selected in the next (clicking it would neither switch the side panel to Edit nor count as a pick). Other steps keep the selection, so lesson 3's selected arrow stays selected for its evidence and note steps.
+  - **Lesson viewport.** A lesson starting with a fresh view (`translate(0, 0) scale(1)`) left the practice graph's upper nodes, and lesson 6's SES pointer, above the canvas, because practice graphs reach negative y. `LessonPanel` now fits the view to the practice graph when a lesson starts, with `maxZoom: 1` and the 300 ms fit (none with reduced motion), and puts the user's earlier viewport back when the lesson ends. The fit waits two animation frames, so React Flow has measured the canvas after the panel took its 300 px. An empty practice graph (the tour) is not fitted. This replaces the "Lesson viewport" open issue.
+  - `copyShareLink` returns `Promise<boolean>`: true after a successful clipboard write, false after any failure (the error toast shows as before). `TopBar`'s Share calls it and records `link-copied` only when it returns true; the steps copied in phase 44 are gone.
+  - The helpers repeated in the 13 lesson tests live in `src/lessons/lessonTestKit.ts` (test-only; nothing in the app imports it, so it is not in the bundle). It parses LESSONS.md (`\\|` reads as `|`), counts sentences ("et al." ends none), builds contexts, scripts tasks and runs, and gives analysis results by name. One parser and one sentence counter now serve every lesson, so the step comparison also checks the Check column for lessons 2–4 and the whole step object for lessons 10–14, picks in lessons 10–13 are also tried with an edge and with nothing selected, and every scripted run clears the events at each step. No assertion was dropped; the lesson test count is unchanged (151).
+  - `e2e/lessons.spec.ts` waits for the view to stop moving after a lesson starts or ends, because of the fit above. The pick feedback is the second `role="status"` in the panel (phase 42).
+  - Browser walk-through (both themes): every lesson's steps 1–n were completed with the UI, including lesson 4's "Move a circle, then press Ctrl+Z" (the practice graph starts with an empty undo history, and the move is one undo step). No text in LESSONS.md needed a correction; only its Status line changed (implemented).
 
 ## 9. Tests
 
@@ -2829,10 +2837,9 @@ Import and export (phases 31–40):
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
 - **Raw exception text in messages:** `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
-- **Lessons:** the course is designed in [LESSONS.md](LESSONS.md) (waves 19–21). Left for later: resuming a lesson mid-way, translations of the lesson texts, "Lesson: …" links at the end of info tooltips, and lessons on bidirected edges and direct effects once the app supports them.
+- **Lessons:** the course in [LESSONS.md](LESSONS.md) is built (waves 19–21). Left for later: resuming a lesson mid-way, translations of the lesson texts, "Lesson: …" links at the end of info tooltips, and lessons on bidirected edges and direct effects once the app supports them.
 - **Analysis switches after a lesson:** a lesson that asks the user to switch on Paths, Instruments or Independencies leaves the switch on afterwards, because the switches are a stored viewer preference (4.14).
 - **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.
-- **Lesson viewport:** starting or ending a lesson keeps the current viewport instead of fitting the view, so the practice graph can open zoomed in (up to React Flow's 2×) after a fit on a small graph.
 - **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.
 - **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
 - **Share links and hosting:** a link names the address it was made on, so links made on a local or preview build only open there. Once a host and domain are chosen, links should be made on that domain.
