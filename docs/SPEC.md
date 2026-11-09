@@ -2516,7 +2516,7 @@ Phases: 41. Parallel: single phase. Check after the wave: all checks.
 
 Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 
-#### Phase 42: Lesson panel additions [x]
+#### Phase 42: Lesson panel additions [x] (dab3c6e)
 
 - **Goal:** the panel shows the Key idea box, pick feedback and Show answer, and an optional body (5.7.10 "Lesson panel").
 - **Depends on:** phase 41.
@@ -2532,7 +2532,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - "Key idea" is written in sentence case and shown uppercase by CSS. Ctrl→⌘ applies to body and task only.
   - A wrong click after the step is done is not recorded (phase 41), so the panel then shows "Try it" with no feedback.
 
-#### Phase 43: Canvas pointer [ ]
+#### Phase 43: Canvas pointer [x]
 
 - **Goal:** the pulsing labels of 5.7.12, and the `edge-refused` event.
 - **Depends on:** phase 41.
@@ -2542,6 +2542,11 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Tests:** covered end to end in phase 48.
 - **Done when:** all checks pass; with a pointer set, the label shows above the circle, moves with it, and stays still with reduced motion.
 - **Out of scope:** pointers on edges or paths.
+- **Details fixed in phase 43:**
+  - The 10 px gap runs from the triangle's tip to the circle's top, clear of the 7 px hover rim; the triangle is 6 px tall and 12 px wide and moves with the label. The label is centred over the node and overflows evenly when wider; `z-index: 4` inside the node.
+  - Pulse: `translateY` 0 → −3 px → 0 and a ring from 45% `--primary` (`color-mix`) to 6 px transparent. Reduced motion: `animation: none`.
+  - Two pointer entries for one node: the first wins. Outside a lesson the `pointer` key is left out of node data.
+  - `Canvas` shows refusals through one helper that toasts and records `edge-refused`, used by connect mode, `onConnect` and `onConnectEnd`.
 
 #### Phase 44: Help menu, Lessons dialog and events [ ]
 

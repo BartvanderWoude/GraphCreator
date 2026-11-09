@@ -13,6 +13,8 @@ export type CircleNodeData = {
   connectSource: boolean
   /** In `uiStore.hoverNodeIds` (an Analysis item points at it): shows the hover rim (5.7.7). */
   highlighted?: boolean
+  /** The current lesson step's pointer label for this node (5.7.12); undefined outside a lesson. */
+  pointer?: string
 }
 
 /** Data of a React Flow edge of type `floating`. */

@@ -16,6 +16,9 @@ const DOT_SIZE = 20
  * behind the circle and shows 7 px around it (the rim, the drag-to-connect area), and a target
  * handle covers the whole circle but takes pointer events only while a connection is being
  * dragged. Dragging the middle of the circle moves it. Styles are in `canvas.css`.
+ *
+ * During a lesson step that points at this node, a pulsing label sits centred above the circle
+ * (5.7.12). It is part of the node, so it pans, zooms and moves with it.
  */
 export function CircleNode({
   id,
@@ -74,6 +77,12 @@ export function CircleNode({
           style={{ top: dotOffset, right: dotOffset }}
         >
           <TriangleAlert size={12} strokeWidth={1.75} aria-hidden="true" />
+        </span>
+      )}
+      {data.pointer !== undefined && (
+        // A lesson pointer (5.7.12): decorative, since the lesson panel names the same variable.
+        <span className="gc-pointer" data-lesson-pointer="" aria-hidden="true">
+          <span className="gc-pointer-label">{data.pointer}</span>
         </span>
       )}
       <Handle

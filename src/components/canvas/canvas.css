@@ -256,3 +256,69 @@
   stroke-width: 1.75;
   stroke-dasharray: 6 4;
 }
+
+/* ---- Lesson pointer (5.7.12) ------------------------------------------------------------- */
+
+/* Centred above the circle: the box spans the node's width and centres the label, which may be
+   wider than the circle and then overflows evenly on both sides. The box ends 10 px above the
+   circle; the triangle fills the label's bottom margin, so its tip is where the gap begins.
+   Decorative only, so it never takes the pointer. */
+.react-flow .gc-pointer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.react-flow .gc-pointer-label {
+  position: relative;
+  display: block;
+  margin-bottom: 6px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  animation: gc-pointer-pulse 1.6s ease-in-out infinite;
+}
+
+/* A 6 px triangle pointing down at the circle; it moves with the label. */
+.react-flow .gc-pointer-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border-top: 6px solid var(--primary);
+  border-right: 6px solid transparent;
+  border-left: 6px solid transparent;
+}
+
+/* Up 3 px and back, while a 6 px teal ring fades out around the label. */
+@keyframes gc-pointer-pulse {
+  0% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--primary) 0%, transparent);
+  }
+}
+
+/* Reduced motion: the label stays still and shows no ring (5.7.5). */
+@media (prefers-reduced-motion: reduce) {
+  .react-flow .gc-pointer-label {
+    animation: none;
+  }
+}

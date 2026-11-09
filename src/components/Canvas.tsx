@@ -26,10 +26,19 @@ import {
   type FloatingFlowEdge,
 } from '@/components/canvas/types'
 import { useAnalysis } from '@/components/useAnalysis'
+import { findLesson } from '@/lessons'
+import { nodeNamed } from '@/lessons/helpers'
 import { cn } from '@/lib/utils'
-import { canAddEdge, defaultNodeName, type Graph } from '@/model/graph'
+import {
+  canAddEdge,
+  defaultNodeName,
+  type EdgeCheck,
+  type Graph,
+} from '@/model/graph'
 import { nodeDiameter } from '@/model/nodeSize'
 import { useGraphStore, type GraphState } from '@/store/graphStore'
+import { lessonEvent } from '@/store/lessonEvents'
+import { useLessonStore } from '@/store/lessonStore'
 import { useThemeStore } from '@/store/themeStore'
 import { useUiStore } from '@/store/uiStore'
 
@@ -40,6 +49,11 @@ type PathMarks = ReadonlyMap<string, 'causal' | 'biasing'>
 
 const NO_MARKS: PathMarks = new Map()
 
+/** Node id → the lesson pointer label above it (spec 5.7.12). */
+type Pointers = ReadonlyMap<string, string>
+
+const NO_POINTERS: Pointers = new Map()
+
 /** What the flow is derived from besides the graph and the selection. */
 interface Overlay {
   connectFrom: string | null
@@ -47,6 +61,8 @@ interface Overlay {
   pathMarks: PathMarks
   /** Circles an Analysis item points at (`uiStore.hoverNodeIds`). */
   hoverNodeIds: string[]
+  /** Labels of the current lesson step's pointer, for the nodes that exist; empty otherwise. */
+  pointers: Pointers
 }
 
 /**
@@ -90,7 +106,7 @@ function syncFlow(
   selection: Selection,
   overlay: Overlay,
 ): Flow {
-  const { connectFrom, pathMarks } = overlay
+  const { connectFrom, pathMarks, pointers } = overlay
   const hovered = new Set(overlay.hoverNodeIds)
   const oldNodes = new Map(prev.nodes.map((n) => [n.id, n]))
   const oldEdges = new Map(prev.edges.map((e) => [e.id, e]))
@@ -101,6 +117,7 @@ function syncFlow(
     const untyped = g.varType === undefined
     const connectSource = connectFrom === g.id
     const highlighted = hovered.has(g.id)
+    const pointer = pointers.get(g.id)
     if (
       old &&
       old.position.x === position.x &&
@@ -109,7 +126,8 @@ function syncFlow(
       old.data.role === g.role &&
       old.data.untyped === untyped &&
       old.data.connectSource === connectSource &&
-      !!old.data.highlighted === highlighted
+      !!old.data.highlighted === highlighted &&
+      old.data.pointer === pointer
     ) {
       return old
     }
@@ -120,7 +138,14 @@ function syncFlow(
       position,
       width: d,
       height: d,
-      data: { name: g.name, role: g.role, untyped, connectSource, highlighted },
+      data: {
+        name: g.name,
+        role: g.role,
+        untyped,
+        connectSource,
+        highlighted,
+        ...(pointer !== undefined && { pointer }),
+      },
       // A renamed circle changes size; React Flow measures it again.
       measured: old && old.width === d ? old.measured : undefined,
       dragging: old?.dragging,
@@ -172,10 +197,36 @@ function hasNodes(graph: Graph, ...ids: string[]): boolean {
   return ids.every((id) => graph.nodes.some((n) => n.id === id))
 }
 
-/** Calls the store's `connect` and toasts the reason when the edge is not allowed. */
+/** Toasts why a connection was refused and records it for lessons (spec 5.2, 5.7.12). */
+function explainRefusal(check: EdgeCheck) {
+  if (check.ok) return
+  toast(check.message)
+  lessonEvent({ kind: 'edge-refused', format: check.reason })
+}
+
+/** Calls the store's `connect` and explains the refusal when the edge is not allowed. */
 function connectOrExplain(source: string, target: string) {
-  const check = useGraphStore.getState().connect(source, target)
-  if (!check.ok) toast(check.message)
+  explainRefusal(useGraphStore.getState().connect(source, target))
+}
+
+/**
+ * The current lesson step's pointers (spec 5.7.12): node names mapped to ids. An entry whose node
+ * does not exist (for example after a rename) is left out; the first entry for a node wins.
+ */
+function lessonPointers(
+  active: { lessonId: string; step: number } | null,
+  graph: Graph,
+): Pointers {
+  const entries = active
+    ? findLesson(active.lessonId)?.steps[active.step]?.pointer
+    : undefined
+  if (!entries?.length) return NO_POINTERS
+  const pointers = new Map<string, string>()
+  for (const { node, label } of entries) {
+    const id = nodeNamed(graph, node)?.id
+    if (id !== undefined && !pointers.has(id)) pointers.set(id, label)
+  }
+  return pointers.size > 0 ? pointers : NO_POINTERS
 }
 
 /** The React Flow canvas (spec 5.2). Must be rendered inside a `<ReactFlowProvider>`. */
@@ -186,6 +237,7 @@ export function Canvas() {
   const connectFrom = useUiStore((s) => s.connectFrom)
   const pathsOn = useUiStore((s) => s.analysisOn.paths)
   const hoverNodeIds = useUiStore((s) => s.hoverNodeIds)
+  const lesson = useLessonStore((s) => s.active)
   const paths = useAnalysis().paths
   // Open paths are marked only while the Paths switch is on and they are not truncated (4.14).
   const pathMarks = useMemo<PathMarks>(() => {
@@ -195,9 +247,10 @@ export function Canvas() {
     for (const id of paths.biasingEdges) marks.set(id, 'biasing')
     return marks
   }, [pathsOn, paths])
+  const pointers = useMemo(() => lessonPointers(lesson, graph), [lesson, graph])
   const overlay = useMemo<Overlay>(
-    () => ({ connectFrom, pathMarks, hoverNodeIds }),
-    [connectFrom, pathMarks, hoverNodeIds],
+    () => ({ connectFrom, pathMarks, hoverNodeIds, pointers }),
+    [connectFrom, pathMarks, hoverNodeIds, pointers],
   )
   // React Flow's colour mode follows the theme (spec 7, "Dark theme mechanism").
   const colorMode: ColorMode = useThemeStore((s) => s.theme)
@@ -290,8 +343,7 @@ export function Canvas() {
           : [state.toNode.id, state.fromNode.id]
       const { graph } = useGraphStore.getState()
       if (!hasNodes(graph, source, target)) return
-      const check = canAddEdge(graph, source, target)
-      if (!check.ok) toast(check.message)
+      explainRefusal(canAddEdge(graph, source, target))
     },
     [],
   )
