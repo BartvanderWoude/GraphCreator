@@ -2512,7 +2512,7 @@ Phases: 41. Parallel: single phase. Check after the wave: all checks.
   - `adjustedIs` compares as sets (`adjustedIs(ctx, [])` is true when nothing is adjusted). `hasEvent` with formats never matches an event without a format.
   - `tour.test.ts` also checks that `LESSONS` holds the 14 ids, titles, summaries and tracks of LESSONS.md in order; it does not check the stubs' steps.
 
-### Wave 20: Lesson parts [ ]
+### Wave 20: Lesson parts [x]
 
 Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 
@@ -2578,7 +2578,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - Checks missing from `helpers.ts` are private to the lesson files (`typeIs`, `unitIs`, `levelsAre`, `hasDescription`, `hasEvidence`, `hasNote`). Units and levels compare trimmed and ignoring case; description, note and evidence need a non-blank value.
   - `sample()` parses on every call. Lesson tests parse their section of `docs/LESSONS.md?raw` and compare every text, so a correction to LESSONS.md fails the test until the lesson file follows.
 
-#### Phase 46: Causal lessons 5–9 [x]
+#### Phase 46: Causal lessons 5–9 [x] (9185cf0)
 
 - **Goal:** lessons 5–9 (`dag-basics`, `confounding`, `mediators`, `colliders`, `selection`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2591,7 +2591,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - `no edge(A, B)` is `noEdge` in `selection.ts` and needs both nodes to exist. Tab and switch checks are written inline.
   - The scripted test runs model that selecting a node switches the side panel to Edit, so steps asking for the Analysis tab after a role change start not done.
 
-#### Phase 47: Causal lessons 10–14 [ ]
+#### Phase 47: Causal lessons 10–14 [x]
 
 - **Goal:** lessons 10–14 (`latent`, `adjustment`, `testing`, `instruments`, `reporting`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2599,6 +2599,12 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Contracts used, work and tests:** as phase 46.
 - **Done when:** all checks pass.
 - **Out of scope:** as phase 45.
+- **Details fixed in phase 47:**
+  - Lesson 11's graph is exported from `adjustment.ts` as `EXTENDED_EXAMPLE_YAML` and `extendedExample()` (lessons 11 and 12). Lesson 14's graph is built in code by `reportingGraph()` from it (Genetic factors gets the next id and is the last node and edge); a test checks it field by field and through a save and reload.
+  - Reading steps at the end of a lesson have no check (the tour keeps `check: () => true`).
+  - Sentence counting treats "et al." as not ending a sentence. In LESSONS.md tables, `\\|` reads as `|`.
+  - Because Report is on by default, lesson 14 step 2 is done as soon as the Analysis tab opens; a user whose stored switches already have Instruments or Independencies on finds lessons 13 step 3 and 12 step 2 done at once.
+  - Lesson 12's collider claim is checked by giving SES and Maternal age the exposure and outcome roles and listing the paths between them.
 
 ### Wave 21: Lessons integration [ ]
 
