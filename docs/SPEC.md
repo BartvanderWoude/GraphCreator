@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; wave 13 (phase 24: contracts, d-separation, dagitty-R reference) is done, waves 14–15 are not. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; waves 13–14 (phases 24–29: contracts, the four analyses, canvas marking and the Analysis tab) are done; wave 15 (phase 30, integration and end-to-end tests) is not. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -970,6 +970,8 @@ export function findLesson(id: string): Lesson | undefined
 
 **During a lesson** the tab analyses the practice graph like any other graph.
 
+Details fixed in phase 29: a count shows `(0)` for an empty list and is left out when the list cannot be computed (truncated paths, `'needs-single'`, sections hidden by the empty state). Hovering an independence row highlights a, b and the conditioning set; an adjustment row's hover area includes its button. Intro lines use body text; only `Showing the first 100 sets.` is muted. Every Report sentence is its own `<p>`. `SidePanel` switches to Edit through a `useGraphStore.subscribe` on `selection`, so clicking a node that is already selected does not switch (the selection does not change); a selection from IssuesDialog always does. "Show all" resets when the tab is left, because the tab content unmounts.
+
 ## 6. Project setup and conventions
 
 
@@ -1589,7 +1591,7 @@ Phases: 24. Parallel: single phase. Check after the wave: all checks; the app ru
 - **Done when:** all checks pass; `reference.json` covers every gallery file; `dsep.test.ts` agrees with the reference's d-separation facts (each implied independence is d-separated, each adjacent pair is not).
 - **Out of scope:** the four algorithms, the tab, the canvas marking.
 
-### Wave 14: Analysis parts [ ]
+### Wave 14: Analysis parts [x]
 
 Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own worktree); their files are disjoint. Land them in the order 25, 26, 27, 28, 29. Check after the wave: all checks; in the browser, `smoking.dag.yaml` shows the Analysis tab with real results. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
@@ -1629,7 +1631,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Done when:** all checks pass; the pairs match `reference.json` (without duplicates) on every gallery file without a selected node; on files with one, validity and minimality hold.
 - **Out of scope:** the "basis set" form of DAGitty; tests against data.
 
-#### Phase 28: Instrumental variables [x]
+#### Phase 28: Instrumental variables [x] (0050117)
 
 - **Goal:** `instrumentalVariables` finds unconditional and conditional instruments.
 - **Depends on:** phase 24.
@@ -1640,7 +1642,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Done when:** all checks pass; the instruments match `reference.json` on every gallery file with one exposure and one outcome.
 - **Out of scope:** instruments for several exposures or outcomes.
 
-#### Phase 29: Analysis tab [ ]
+#### Phase 29: Analysis tab [x]
 
 - **Goal:** the side panel has Edit and Analysis tabs, and the Analysis tab shows the five sections of 5.8 with their switches, rows, Use this set, Show all and hover.
 - **Depends on:** phase 24.
