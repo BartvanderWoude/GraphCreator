@@ -2548,7 +2548,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - Two pointer entries for one node: the first wins. Outside a lesson the `pointer` key is left out of node data.
   - `Canvas` shows refusals through one helper that toasts and records `edge-refused`, used by connect mode, `onConnect` and `onConnectEnd`.
 
-#### Phase 44: Help menu, Lessons dialog and events [x]
+#### Phase 44: Help menu, Lessons dialog and events [x] (291b119)
 
 - **Goal:** the Help menu and the Lessons dialog of 5.7.11, and the app events of 4.8.
 - **Depends on:** phase 41.
@@ -2564,7 +2564,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - `code-opened` is recorded once per opening (an effect on open and format), even when the writer throws. Copy and download events are recorded only after success (PNG after the conversion resolves).
   - `copyShareLink` returns nothing and swallows errors, so `TopBar` repeats its steps with `shareUrl` and records `link-copied` after a successful write; `copyShareLink` is unused until phase 48 makes it report success.
 
-#### Phase 45: App-track lessons [ ]
+#### Phase 45: App-track lessons [x]
 
 - **Goal:** lessons 2–4 (`variables`, `arrows`, `files`) exactly as in LESSONS.md.
 - **Depends on:** phase 41.
@@ -2574,6 +2574,9 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Tests:** per lesson, the lesson tests in section 9.
 - **Done when:** all checks pass.
 - **Out of scope:** changing the texts. If a text or claim in LESSONS.md is wrong, stop and report it.
+- **Details fixed in phase 45:**
+  - Checks missing from `helpers.ts` are private to the lesson files (`typeIs`, `unitIs`, `levelsAre`, `hasDescription`, `hasEvidence`, `hasNote`). Units and levels compare trimmed and ignoring case; description, note and evidence need a non-blank value.
+  - `sample()` parses on every call. Lesson tests parse their section of `docs/LESSONS.md?raw` and compare every text, so a correction to LESSONS.md fails the test until the lesson file follows.
 
 #### Phase 46: Causal lessons 5–9 [ ]
 
