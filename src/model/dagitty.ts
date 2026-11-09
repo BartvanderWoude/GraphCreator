@@ -1,7 +1,8 @@
+import { decodeList, encodeList } from './exchange'
 import type { GEdge, GNode, Graph, Position } from './graph'
 import { autoLayout } from './layout'
 import type { Issue, Result } from './result'
-import type { Role } from './schema'
+import { VAR_TYPES, type Role, type VarType } from './schema'
 import { validateGraph } from './validate'
 
 /** dagitty `pos` units are multiplied by this to get canvas px. */
@@ -17,6 +18,14 @@ const DAGITTY_ROLES = [
 
 /** Graph-type keywords dagitty knows; only `dag` is accepted. */
 const GRAPH_TYPES = new Set(['dag', 'pdag', 'mag', 'pag', 'graph', 'digraph'])
+
+/** GraphCreator details carried as dagitty attributes (spec 4.2, phase 32). */
+const GC_VAR_TYPE = 'gc.var_type'
+const GC_LEVELS = 'gc.levels'
+const GC_DESCRIPTION = 'gc.description'
+const GC_UNIT = 'gc.unit'
+const GC_EVIDENCE = 'gc.evidence'
+const GC_NOTE = 'gc.note'
 
 const LAYOUT_WARNING =
   'Some nodes had no position, so the graph was laid out automatically.'
@@ -166,11 +175,17 @@ interface ParsedNode {
   rolesLine: number
   label?: string
   pos?: Position
+  varType?: VarType
+  levels?: string[]
+  description?: string
+  unit?: string
 }
 
 interface ParsedEdge {
   from: string
   to: string
+  evidence?: string[]
+  note?: string
 }
 
 interface Parsed {
@@ -202,7 +217,7 @@ function parseTokens(tokens: Token[]): Parsed {
 
   const nodes = new Map<string, ParsedNode>()
   const edges: ParsedEdge[] = []
-  const edgeKeys = new Set<string>()
+  const edgeByKey = new Map<string, ParsedEdge>()
   const ignored = new Map<string, number>()
 
   const ignore = (attr: Attr) => {
@@ -295,6 +310,37 @@ function parseTokens(tokens: Token[]): Parsed {
         )
       }
       node.label = attr.value
+    } else if (attr.key === GC_VAR_TYPE) {
+      const value = detail(attr)
+      if (value === undefined) return
+      if (!(VAR_TYPES as readonly string[]).includes(value)) {
+        throw new DagittySyntaxError(
+          attr.line,
+          `gc.var_type must be one of ${VAR_TYPES.join(', ')}.`,
+        )
+      }
+      node.varType = value as VarType
+    } else if (attr.key === GC_LEVELS) {
+      const value = detailList(attr)
+      if (value !== undefined) node.levels = value
+    } else if (attr.key === GC_DESCRIPTION) {
+      const value = detail(attr)
+      if (value !== undefined) node.description = value
+    } else if (attr.key === GC_UNIT) {
+      const value = detail(attr)
+      if (value !== undefined) node.unit = value
+    } else {
+      ignore(attr)
+    }
+  }
+
+  const applyEdgeAttr = (edge: ParsedEdge, attr: Attr) => {
+    if (attr.key === GC_EVIDENCE) {
+      const value = detailList(attr)
+      if (value !== undefined) edge.evidence = value
+    } else if (attr.key === GC_NOTE) {
+      const value = detail(attr)
+      if (value !== undefined) edge.note = value
     } else {
       ignore(attr)
     }
@@ -318,6 +364,8 @@ function parseTokens(tokens: Token[]): Parsed {
     const start = operand()
     let left = start.ids
     let isEdge = false
+    // Every edge of this statement, so attributes after a chain or group apply to all of them.
+    const statementEdges: ParsedEdge[] = []
     while (peek().kind === 'op') {
       const direction = edgeDirection(next())
       const right = operand().ids
@@ -325,10 +373,13 @@ function parseTokens(tokens: Token[]): Parsed {
         for (const b of right) {
           const [from, to] = direction === 'forward' ? [a, b] : [b, a]
           const key = `${from}\u0000${to}`
-          if (!edgeKeys.has(key)) {
-            edgeKeys.add(key)
-            edges.push({ from, to })
+          let edge = edgeByKey.get(key)
+          if (!edge) {
+            edge = { from, to }
+            edgeByKey.set(key, edge)
+            edges.push(edge)
           }
+          statementEdges.push(edge)
         }
       }
       left = right
@@ -344,7 +395,13 @@ function parseTokens(tokens: Token[]): Parsed {
     if (isPunct(peek(), '[')) {
       const list = attrs()
       if (isEdge) {
-        list.forEach(ignore)
+        for (const attr of list) {
+          if (attr.key === GC_EVIDENCE || attr.key === GC_NOTE) {
+            for (const edge of statementEdges) applyEdgeAttr(edge, attr)
+          } else {
+            ignore(attr)
+          }
+        }
       } else {
         const node = nodes.get(start.ids[0])!
         for (const attr of list) applyVertexAttr(node, attr)
@@ -401,6 +458,20 @@ function parseTokens(tokens: Token[]): Parsed {
   return { nodes, edges, ignored }
 }
 
+/** A `gc.*` value; a missing, empty or whitespace-only value counts as absent. */
+function detail(attr: Attr): string | undefined {
+  const value = attr.value
+  return value === undefined || value.trim() === '' ? undefined : value
+}
+
+/** A `gc.*` list value (`encodeList` text); empty → absent. */
+function detailList(attr: Attr): string[] | undefined {
+  const value = detail(attr)
+  if (value === undefined) return undefined
+  const items = decodeList(value)
+  return items.length > 0 ? items : undefined
+}
+
 /** dagitty units → canvas px, rounded to 0.001 px to drop floating-point noise. */
 function toPx(v: number): number {
   return Math.round(v * DAGITTY_SCALE * 1000) / 1000
@@ -416,7 +487,10 @@ function toPx(v: number): number {
  *   (`a -> b -> c`), `<-` and groups (`{a b} -> c`); `bb="…"` is ignored.
  * - Roles `exposure`, `outcome`, `latent`, `adjusted`, `selected`; more than one role on a node
  *   is an error. `pos="x,y"` → `{ x: x * DAGITTY_SCALE, y: y * DAGITTY_SCALE }`. `label="…"` sets
- *   the name. Other attributes are ignored with one warning per key.
+ *   the name. The GraphCreator details `gc.var_type`, `gc.levels`, `gc.description`, `gc.unit`
+ *   (nodes) and `gc.evidence`, `gc.note` (edges; on a chain or group they apply to every edge of
+ *   the statement) are always read; empty values count as absent and a `gc.var_type` outside
+ *   `VAR_TYPES` is a line-numbered error. Other attributes are ignored with one warning per key.
  * - Duplicate edges merge silently; self-edges and cycles are errors. `<->`, `--`, `@-`/`-@`/`o-`
  *   edges, graph types other than `dag` and unexpected tokens are rejected with a line-numbered
  *   error. Two ids with the same label are an error.
@@ -449,12 +523,17 @@ export function parseDagitty(text: string): Result<Graph> {
       })
     }
     if (!p.pos) missingPos = true
-    nodes.push({
+    const node: GNode = {
       id,
       name,
       role: p.roles[0] ?? 'other',
       pos: p.pos ?? { x: 0, y: 0 },
-    })
+    }
+    if (p.varType) node.varType = p.varType
+    if (p.levels) node.levels = p.levels
+    if (p.description !== undefined) node.description = p.description
+    if (p.unit !== undefined) node.unit = p.unit
+    nodes.push(node)
   }
 
   const byName = new Map<string, number>()
@@ -464,12 +543,16 @@ export function parseDagitty(text: string): Result<Graph> {
     errors.push({ message: `Two dagitty nodes have the label "${name}".` })
   }
 
-  const edges: GEdge[] = parsed.edges.map((e, i) => ({
-    id: `e${i + 1}`,
-    source: internalId.get(e.from)!,
-    target: internalId.get(e.to)!,
-    evidence: [],
-  }))
+  const edges: GEdge[] = parsed.edges.map((e, i) => {
+    const edge: GEdge = {
+      id: `e${i + 1}`,
+      source: internalId.get(e.from)!,
+      target: internalId.get(e.to)!,
+      evidence: e.evidence ?? [],
+    }
+    if (e.note !== undefined) edge.note = e.note
+    return edge
+  })
 
   let graph: Graph = { nodes, edges }
   // Self-edges, cycles and empty names; duplicate names are reported above as label collisions.
@@ -501,16 +584,20 @@ function quote(s: string): string {
 }
 
 /**
- * Writes plain dagitty (spec 4.2), without GraphCreator metadata or the graph name: `dag {`, one
- * vertex line per node (`id [role,label="…",pos="x,y"]`, role omitted for `other`, label only when
- * the name differs from the id, pos in px ÷ 100 with 3 decimals), one edge line per edge, `}`.
- * `details` (the GraphCreator `gc.*` attributes, spec 4.2) is accepted and ignored until phase 32.
+ * Writes dagitty (spec 4.2), without the graph name: `dag {`, one vertex line per node
+ * (`id [role,label="…",pos="x,y"]`, role omitted for `other`, label only when the name differs
+ * from the id, pos in px ÷ 100 with 3 decimals), one edge line per edge, `}`.
+ *
+ * With `details: true` the GraphCreator metadata is added as `gc.*` attributes (spec 4.2
+ * "GraphCreator details in dagitty"): `gc.var_type`, `gc.levels`, `gc.description`, `gc.unit` on
+ * nodes and `gc.evidence`, `gc.note` in `[…]` after edges, each only when set. Lists are written
+ * with `encodeList`.
  */
 export function toDagitty(
   graph: Graph,
   opts: { details?: boolean } = {},
 ): string {
-  void opts
+  const details = opts.details === true
   const ids = toDagittyIds(graph.nodes)
   const lines = ['dag {']
   for (const node of graph.nodes) {
@@ -519,12 +606,34 @@ export function toDagitty(
     if (node.role !== 'other') attrs.push(node.role)
     if (node.name !== id) attrs.push(`label=${quote(node.name)}`)
     attrs.push(`pos="${formatCoord(node.pos.x)},${formatCoord(node.pos.y)}"`)
+    if (details) {
+      if (node.varType) attrs.push(`${GC_VAR_TYPE}=${quote(node.varType)}`)
+      if (node.levels && node.levels.length > 0) {
+        attrs.push(`${GC_LEVELS}=${quote(encodeList(node.levels))}`)
+      }
+      if (node.description) {
+        attrs.push(`${GC_DESCRIPTION}=${quote(node.description)}`)
+      }
+      if (node.unit) attrs.push(`${GC_UNIT}=${quote(node.unit)}`)
+    }
     lines.push(`${id} [${attrs.join(',')}]`)
   }
   for (const edge of graph.edges) {
     const from = ids.get(edge.source)
     const to = ids.get(edge.target)
-    if (from !== undefined && to !== undefined) lines.push(`${from} -> ${to}`)
+    if (from === undefined || to === undefined) continue
+    const attrs: string[] = []
+    if (details) {
+      if (edge.evidence.length > 0) {
+        attrs.push(`${GC_EVIDENCE}=${quote(encodeList(edge.evidence))}`)
+      }
+      if (edge.note) attrs.push(`${GC_NOTE}=${quote(edge.note)}`)
+    }
+    lines.push(
+      attrs.length > 0
+        ? `${from} -> ${to} [${attrs.join(',')}]`
+        : `${from} -> ${to}`,
+    )
   }
   lines.push('}')
   return `${lines.join('\n')}\n`

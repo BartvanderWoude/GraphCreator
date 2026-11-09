@@ -10,6 +10,22 @@ import twoRoles from './__fixtures__/two-roles.dagitty.txt?raw'
 import { DAGITTY_SCALE, parseDagitty, toDagitty, toDagittyIds } from './dagitty'
 import type { GNode, Graph } from './graph'
 import type { Issue, Result } from './result'
+import { parseYaml, toYaml } from './yaml'
+
+/** Every fixture that opens without errors, YAML and dagitty, including the analysis gallery. */
+const validFixtures: Record<string, string> = import.meta.glob(
+  [
+    './__fixtures__/smoking.dag.yaml',
+    './__fixtures__/minimal.dag.yaml',
+    './__fixtures__/confounding.dagitty.txt',
+    './__fixtures__/groups-and-chains.dagitty.txt',
+    './__fixtures__/m-bias.dagitty.txt',
+    './__fixtures__/no-positions.dagitty.txt',
+    './__fixtures__/quoted-names.dagitty.txt',
+    './__fixtures__/analysis/*.dagitty.txt',
+  ],
+  { query: '?raw', import: 'default', eager: true },
+)
 
 function ok(result: Result<Graph>): { graph: Graph; warnings: Issue[] } {
   if (!result.ok) {
@@ -595,5 +611,240 @@ describe('round trip', () => {
 
   it('uses a scale of 100', () => {
     expect(DAGITTY_SCALE).toBe(100)
+  })
+})
+
+describe('GraphCreator details in dagitty (phase 32)', () => {
+  const smokingDetails = `dag {
+Maternal_smoking [exposure,label="Maternal smoking",pos="0.000,0.000",gc.var_type="categorical",gc.levels="never;former;current",gc.description="Self-reported during pregnancy"]
+Birth_weight [outcome,label="Birth weight",pos="3.000,0.000",gc.var_type="continuous",gc.unit="g"]
+SES [pos="1.500,-1.200",gc.var_type="ordinal",gc.levels="low;mid;high"]
+Genetic_factors [latent,label="Genetic factors",pos="1.500,1.200"]
+SES -> Maternal_smoking [gc.evidence="PMID:123;doi:10.1000/xyz",gc.note="Well established"]
+Maternal_smoking -> Birth_weight
+SES -> Birth_weight
+Genetic_factors -> Birth_weight
+}
+`
+
+  /** The graph without its name, which dagitty does not carry (spec 4.2). */
+  const unnamed = (g: Graph): Graph => ({ nodes: g.nodes, edges: g.edges })
+
+  it('writes the 4.2 details example for the 4.1 graph', () => {
+    expect(toDagitty(smokingGraph(), { details: true })).toBe(smokingDetails)
+  })
+
+  it('writes plain dagitty without the option or with details: false', () => {
+    const plain = toDagitty(smokingGraph())
+    expect(plain).not.toContain('gc.')
+    expect(toDagitty(smokingGraph(), {})).toBe(plain)
+    expect(toDagitty(smokingGraph(), { details: false })).toBe(plain)
+  })
+
+  it('reads the details back from the 4.2 example without warnings about them', () => {
+    const { graph, warnings } = ok(parseDagitty(smokingDetails))
+    expect(graph).toEqual(unnamed(smokingGraph()))
+    // Only validateGraph's warning for the untyped latent node.
+    expect(messages(warnings)).toEqual([
+      'Node "Genetic factors" has no variable type.',
+    ])
+  })
+
+  it('round-trips items with ";", "\\" and quotes, and quotes in text', () => {
+    const g: Graph = {
+      nodes: [
+        {
+          id: 'n1',
+          name: 'A',
+          role: 'other',
+          varType: 'categorical',
+          levels: ['a;b', 'back\\slash', 'say "hi"', 'end\\', '\\;'],
+          description: 'He said "x" \\ then; left',
+          pos: { x: 0, y: 0 },
+        },
+        {
+          id: 'n2',
+          name: 'B',
+          role: 'other',
+          varType: 'discrete',
+          unit: 'm"\\s',
+          pos: { x: 100, y: 0 },
+        },
+      ],
+      edges: [
+        {
+          id: 'e1',
+          source: 'n1',
+          target: 'n2',
+          evidence: ['doi:10.1/a;b', 'C:\\path', '"quoted"'],
+          note: 'a "note"; with \\ backslash',
+        },
+      ],
+    }
+    const text = toDagitty(g, { details: true })
+    // encodeList first (`\` → `\\`, `;` → `\;`), then dagitty escaping (`\` → `\\`, `"` → `\"`).
+    expect(text).toContain(
+      String.raw`gc.levels="a\\;b;back\\\\slash;say \"hi\";end\\\\;\\\\\\;"`,
+    )
+    expect(ok(parseDagitty(text)).graph).toEqual(g)
+  })
+
+  it('gives the attributes after a chain or group to every edge of the statement', () => {
+    const { graph, warnings } = ok(
+      parseDagitty(
+        'a -> b -> c [gc.note="x",gc.evidence="PMID:1"]\n{a b} -> d [gc.note="y"]\nc -> d',
+      ),
+    )
+    expect(edgeNames(graph)).toEqual([
+      'a -> b',
+      'b -> c',
+      'a -> d',
+      'b -> d',
+      'c -> d',
+    ])
+    expect(graph.edges.map((e) => e.note)).toEqual([
+      'x',
+      'x',
+      'y',
+      'y',
+      undefined,
+    ])
+    expect(graph.edges.map((e) => e.evidence)).toEqual([
+      ['PMID:1'],
+      ['PMID:1'],
+      [],
+      [],
+      [],
+    ])
+    expect(messages(warnings).some((m) => m.startsWith('Ignored'))).toBe(false)
+  })
+
+  it('merges the details of repeated vertex and edge statements', () => {
+    const { graph } = ok(
+      parseDagitty(
+        'a [pos="0,0",gc.var_type="ordinal"]\na [gc.levels="lo;hi"]\nb [pos="1,0"]\na -> b\na -> b [gc.note="n"]',
+      ),
+    )
+    expect(graph.nodes[0].varType).toBe('ordinal')
+    expect(graph.nodes[0].levels).toEqual(['lo', 'hi'])
+    expect(graph.edges).toHaveLength(1)
+    expect(graph.edges[0].note).toBe('n')
+  })
+
+  it('reads unquoted detail values', () => {
+    const { graph } = ok(
+      parseDagitty('a [pos="0,0",gc.var_type=continuous,gc.unit=kg]'),
+    )
+    expect(graph.nodes[0]).toMatchObject({ varType: 'continuous', unit: 'kg' })
+  })
+
+  it('treats empty and whitespace-only values as absent', () => {
+    const { graph, warnings } = ok(
+      parseDagitty(
+        'a [pos="0,0",gc.var_type="",gc.levels="",gc.description="  ",gc.unit=""]\nb [pos="1,0",gc.var_type]\na -> b [gc.evidence=";",gc.note=" "]',
+      ),
+    )
+    expect(graph.nodes.map((n) => Object.keys(n).sort())).toEqual([
+      ['id', 'name', 'pos', 'role'],
+      ['id', 'name', 'pos', 'role'],
+    ])
+    expect(graph.edges[0]).toEqual({
+      id: 'e1',
+      source: 'n1',
+      target: 'n2',
+      evidence: [],
+    })
+    expect(messages(warnings).some((m) => m.startsWith('Ignored'))).toBe(false)
+  })
+
+  it('warns about unknown gc.* keys and about details in the wrong place', () => {
+    const { warnings } = ok(
+      parseDagitty(
+        'dag {\na [pos="0,0",gc.foo="1"]\nb [pos="1,0",gc.note="n"]\na -> b [gc.unit="g"]\n}',
+      ),
+    )
+    expect(warnings.filter((w) => w.message.startsWith('Ignored'))).toEqual([
+      {
+        message:
+          'Ignored dagitty attribute "gc.foo" (not used by GraphCreator).',
+        line: 2,
+      },
+      {
+        message:
+          'Ignored dagitty attribute "gc.note" (not used by GraphCreator).',
+        line: 3,
+      },
+      {
+        message:
+          'Ignored dagitty attribute "gc.unit" (not used by GraphCreator).',
+        line: 4,
+      },
+    ])
+  })
+
+  it('rejects an unknown gc.var_type with its line', () => {
+    expect(
+      errors(
+        parseDagitty(
+          'dag {\na [pos="0,0"]\nb [pos="1,0",gc.var_type="number"]\n}',
+        ),
+      ),
+    ).toEqual([
+      {
+        message:
+          'Line 3: gc.var_type must be one of categorical, ordinal, continuous, discrete.',
+        line: 3,
+      },
+    ])
+  })
+
+  it("gives validateGraph's errors for levels and units on the wrong type", () => {
+    expect(
+      messages(
+        errors(
+          parseDagitty(
+            'a [pos="0,0",gc.var_type="continuous",gc.levels="low;high"]\nb [pos="1,0",gc.unit="g"]',
+          ),
+        ),
+      ),
+    ).toEqual([
+      'Node "a" has levels, but only categorical and ordinal variables can have levels.',
+      'Node "b" has a unit, but only continuous and discrete variables can have a unit.',
+    ])
+  })
+
+  it("gives validateGraph's warnings for typed nodes", () => {
+    const { warnings } = ok(
+      parseDagitty(
+        'a [pos="0,0",gc.var_type="ordinal",gc.levels="x;x"]\nb [pos="1,0",gc.var_type="categorical",gc.levels="y"]',
+      ),
+    )
+    expect(messages(warnings)).toEqual([
+      'Node "a" has duplicate levels ("x").',
+      'Node "b" is categorical but has fewer than two levels.',
+    ])
+  })
+
+  it('round-trips the 4.1 graph to the same YAML', () => {
+    const g = smokingGraph()
+    const { graph } = ok(parseDagitty(toDagitty(g, { details: true })))
+    expect(toYaml(graph)).toBe(toYaml(unnamed(g)))
+  })
+
+  it('round-trips every valid fixture to the same YAML', () => {
+    const names = Object.keys(validFixtures)
+    expect(names.length).toBeGreaterThanOrEqual(20)
+    for (const name of names) {
+      const text = validFixtures[name]
+      const g = ok(
+        name.endsWith('.yaml') ? parseYaml(text) : parseDagitty(text),
+      ).graph
+      const { graph } = ok(parseDagitty(toDagitty(g, { details: true })))
+      expect(toYaml(graph), name).toBe(toYaml(unnamed(g)))
+      graph.nodes.forEach((n, i) => {
+        expect(Math.abs(n.pos.x - g.nodes[i].pos.x)).toBeLessThanOrEqual(0.1)
+        expect(Math.abs(n.pos.y - g.nodes[i].pos.y)).toBeLessThanOrEqual(0.1)
+      })
+    }
   })
 })

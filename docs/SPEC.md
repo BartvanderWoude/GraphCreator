@@ -274,7 +274,7 @@ Genetic_factors -> Birth_weight
 
 Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Each Unicode code point becomes one `_`. Exported ids always match dagitty's bareword pattern, so no quoting is needed on export.
 
-Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design. With `details: true` the metadata survives too: `toYaml(parseDagitty(toDagitty(g, { details: true })).value)` equals `toYaml(g)` up to positions within 0.1 px.
+Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design. With `details: true` the metadata survives too: `toYaml(parseDagitty(toDagitty(g, { details: true })).value)` equals `toYaml(g)` without its name (dagitty files do not carry the graph name), up to positions within 0.1 px.
 
 #### GraphCreator details in dagitty (phase 32)
 
@@ -297,6 +297,13 @@ Genetic_factors -> Birth_weight
 - **Lists** (`levels`, `evidence`) are one string with the items separated by `;`. Inside an item, `\` is written `\\` and `;` is written `\;` (`encodeList`, 4.15). The result is then escaped as any dagitty string (`\` → `\\`, `"` → `\"`). An empty list is not written.
 - **Reading:** `parseDagitty` always reads the six `gc.*` keys, with or without the option, and gives no warning for them. `gc.var_type` must be one of `VAR_TYPES` (else the error `Line N: gc.var_type must be one of categorical, ordinal, continuous, discrete.`); `levels` and `unit` follow the rules of 3.2, checked by `validateGraph` as for YAML. An empty `gc.*` value counts as absent. Any other `gc.*` key gets the usual ignored-attribute warning. `gc.evidence` and `gc.note` on an edge written as a chain or group (`a -> b -> c [gc.note="x"]`) apply to every edge of the statement.
 - The plain `toDagitty` example above stays the default output (phase 39 adds the checkbox, 5.4).
+
+Details fixed in phase 32:
+- An invalid `gc.var_type` is a syntax-level error: it stops at the first one, like an invalid `pos`, and carries `line`.
+- A detail key without a value (`[gc.var_type]`), an empty value and a list that decodes to no items all count as absent. An empty value never clears a value set earlier.
+- Repeated vertex statements and merged duplicate edges merge their `gc.*` attributes; a later non-empty value wins.
+- Node detail keys on an edge, and edge detail keys on a node, get the usual ignored-attribute warning.
+- Unquoted values (`gc.var_type=continuous`) are accepted. A description or note containing a newline is written inside its quoted string, which the parser accepts across lines.
 
 #### `detectFormat(text, fileName?)` and `parseGraphText(text, fileName?)` (`src/model/fileFormat.ts`, phase 18)
 
@@ -2133,7 +2140,7 @@ Phases: 30. Parallel: single phase. Check after the wave: all checks; the browse
 
 Phases: 31. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except that the Open dialog now routes `digraph` text to the DOT stub.
 
-#### Phase 31: Export contracts [x]
+#### Phase 31: Export contracts [x] (18367c4)
 
 - **Goal:** the shared parts and signatures of 4.11 "PDF, legend and dark theme", 4.15 and 5.4 exist, so wave 17 can build the formats, the image changes and the dialogs in parallel.
 - **Depends on:** phase 30.
@@ -2172,7 +2179,7 @@ Check after the wave: all checks, then in the browser:
 
 Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
-#### Phase 32: dagitty details [ ]
+#### Phase 32: dagitty details [x]
 
 - **Goal:** dagitty code can carry the GraphCreator metadata as `gc.*` attributes, and Open always reads them back.
 - **Depends on:** phase 31.
@@ -2382,7 +2389,7 @@ Import and export (phases 31–40):
   - an unknown `gc.foo` warns;
   - a bad `gc.var_type` gives its line-numbered error;
   - `gc.levels` on a continuous node gives `validateGraph`'s error;
-  - the full round trip with details equals `toYaml(g)`.
+  - the full round trip with details equals `toYaml(g)` without the graph name.
 - `src/model/gml.test.ts` (phase 33):
   - the 4.15 example;
   - the round trip on every valid YAML and dagitty fixture;
