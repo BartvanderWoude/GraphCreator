@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09 and is not implemented yet; next: wave 16. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; wave 16 (phase 31, the contracts) is done; next: wave 17. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -756,6 +756,12 @@ export function ignoredAttribute(format: string, key: string, line?: number): Is
 2. **Edges.** An edge must name existing node keys: `The edge from "A" to "B" refers to "B", but there is no node with that id.`, with `line` when known. A duplicate edge is merged silently, keeping the first edge's evidence and note (dagitty does the same).
 3. **Graph.** Nodes and edges get fresh internal ids, in file order. A node's `pos` is `centre − nodeDiameter(name) / 2` (the top-left of its square, 3.2). If any node lacks `centre`, `autoLayout` runs on the whole graph and adds the YAML warning `Some nodes had no position, so the graph was laid out automatically.`
 4. **Checks.** `validateGraph` (4.4) supplies the errors: empty and duplicate names, `levels` or `unit` on the wrong type, self-edges and cycles. If there are any, the result is `{ ok: false, errors }` with every problem from steps 1–4, and nothing is loaded. Otherwise the warnings are the parser's own, then `validateGraph`'s.
+
+Details fixed in phase 31:
+- `buildGraph` also rejects two nodes with the same key (`Two nodes have the id "A".`, with `line`), which GML and JSON files can contain.
+- Each error carries the node's or edge's `line` when the parser knows it.
+- An edge with a missing endpoint is left out before `validateGraph` runs, so it gives only its own message.
+- The layout warning is added only when the graph has nodes.
 
 #### Formats and files (`src/model/fileFormat.ts`, phase 31)
 
@@ -2123,11 +2129,11 @@ Phases: 30. Parallel: single phase. Check after the wave: all checks; the browse
 - **Done when:** all checks pass; in the browser (both themes) an M-bias graph shows `(empty set)` as sufficient and adjusting the collider Z makes the path through Z dashed and the report say "not sufficient"; Use this set and undo work.
 - **Out of scope:** an exportable report; analysis in exported images.
 
-### Wave 16: Export contracts [ ]
+### Wave 16: Export contracts [x]
 
 Phases: 31. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except that the Open dialog now routes `digraph` text to the DOT stub.
 
-#### Phase 31: Export contracts [ ]
+#### Phase 31: Export contracts [x]
 
 - **Goal:** the shared parts and signatures of 4.11 "PDF, legend and dark theme", 4.15 and 5.4 exist, so wave 17 can build the formats, the image changes and the dialogs in parallel.
 - **Depends on:** phase 30.

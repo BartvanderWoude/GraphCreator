@@ -78,6 +78,34 @@ export function writeAnalysisOn(
   }
 }
 
+/** localStorage key holding the "Include GraphCreator details" checkbox of Save as dagitty. */
+export const DAGITTY_DETAILS_KEY = 'graphcreator:dagitty-details'
+
+/** The stored dagitty-details choice: true only for `'1'`. Null or failing storage gives false. */
+export function readDagittyDetails(
+  storage: Pick<Storage, 'getItem'> | null,
+): boolean {
+  if (storage === null) return false
+  try {
+    return storage.getItem(DAGITTY_DETAILS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Stores the dagitty-details choice as `'1'` or `'0'`; null or failing storage is ignored. */
+export function writeDagittyDetails(
+  storage: Pick<Storage, 'setItem'> | null,
+  on: boolean,
+): void {
+  if (storage === null) return
+  try {
+    storage.setItem(DAGITTY_DETAILS_KEY, on ? '1' : '0')
+  } catch {
+    // Storage full or blocked: the checkbox is off again on the next visit.
+  }
+}
+
 /** Index of the last welcome slide (four slides, spec 5.7.9). */
 const LAST_WELCOME_SLIDE = 3
 
@@ -112,6 +140,10 @@ export interface UiState {
   /** Also writes all switches with `writeAnalysisOn`. */
   setAnalysisOn(key: AnalysisKey, on: boolean): void
   setHoverNodeIds(ids: string[]): void
+  /** Save as dagitty's "Include GraphCreator details"; initial value from `readDagittyDetails`. */
+  dagittyDetails: boolean
+  /** Also writes it with `writeDagittyDetails`. */
+  setDagittyDetails(on: boolean): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -123,6 +155,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   sidePanelTab: 'edit',
   analysisOn: readAnalysisOn(safeLocalStorage()),
   hoverNodeIds: [],
+  dagittyDetails: readDagittyDetails(safeLocalStorage()),
 
   setTool(tool) {
     set({ tool, connectFrom: null })
@@ -162,5 +195,10 @@ export const useUiStore = create<UiState>()((set, get) => ({
 
   setHoverNodeIds(ids) {
     set({ hoverNodeIds: ids })
+  },
+
+  setDagittyDetails(on) {
+    writeDagittyDetails(safeLocalStorage(), on)
+    set({ dagittyDetails: on })
   },
 }))

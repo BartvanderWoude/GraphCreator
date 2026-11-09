@@ -1,38 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
 import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
-import { ROLES } from '@/model/schema'
 import { parseYaml } from '@/model/yaml'
 import {
   EXPORT_MARGIN,
-  EXPORT_PALETTE,
+  EXPORT_PALETTES,
   imageFileName,
   svgSize,
   toSvg,
   toTikz,
 } from './imageExport'
-
-// `node:fs` is loaded dynamically and typed by hand, as in theme.test.ts: the app tsconfig has
-// no Node types, and Vitest turns CSS imports (even `?raw`) into empty strings.
-const fsModule: string = 'node:fs'
-const { readFileSync } = (await import(/* @vite-ignore */ fsModule)) as {
-  readFileSync(path: URL, encoding: 'utf8'): string
-}
-const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8')
-
-/** Hex custom properties of the top-level `:root` block (same parsing as theme.test.ts). */
-function rootTokens(): Map<string, string> {
-  const result = new Map<string, string>()
-  const blocks = /(^|\n)([^{}\n]+)\{([^{}]*)\}/g
-  for (const [, , head, body] of css.matchAll(blocks)) {
-    if (head.trim() !== ':root') continue
-    for (const [, name, value] of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
-      const v = value.trim()
-      if (/^#[0-9a-f]{6}$/i.test(v)) result.set(name, v.toLowerCase())
-    }
-  }
-  return result
-}
 
 const fixtures: Record<string, string> = import.meta.glob(
   '../model/__fixtures__/smoking.dag.yaml',
@@ -66,21 +43,6 @@ function balanced(xml: string): boolean {
   }
   return stack.length === 0
 }
-
-describe('EXPORT_PALETTE', () => {
-  it('equals the light (:root) tokens of index.css', () => {
-    const t = rootTokens()
-    expect(EXPORT_PALETTE.background).toBe('#ffffff')
-    expect(EXPORT_PALETTE.edge).toBe(t.get('--edge'))
-    for (const role of ROLES) {
-      expect(EXPORT_PALETTE.roles[role]).toEqual({
-        fill: t.get(`--role-${role}-fill`),
-        line: t.get(`--role-${role}-line`),
-        text: t.get(`--role-${role}-text`),
-      })
-    }
-  })
-})
 
 describe('svgSize', () => {
   it('is the bounding box plus the margin on each side', () => {
@@ -141,12 +103,14 @@ describe('toSvg', () => {
   it('draws edges before nodes, in the role colours', () => {
     const svg = toSvg(smoking())
     expect(svg.lastIndexOf('<line ')).toBeLessThan(svg.indexOf('<circle '))
-    const r = EXPORT_PALETTE.roles
+    const r = EXPORT_PALETTES.light.roles
     expect(svg).toContain(
       `fill="${r.exposure.fill}" stroke="${r.exposure.line}"`,
     )
     expect(svg).toContain(`fill="${r.latent.text}">Genetic</text>`)
-    expect(svg).toContain(`stroke="${EXPORT_PALETTE.edge}" stroke-width="1.5"`)
+    expect(svg).toContain(
+      `stroke="${EXPORT_PALETTES.light.edge}" stroke-width="1.5"`,
+    )
   })
 
   it('uses the canvas geometry: outline inside the circle, arrowhead tip 2 px before the rim', () => {
@@ -277,6 +241,9 @@ describe('imageFileName', () => {
     )
     expect(imageFileName('Smoking and birth weight', 'tikz')).toBe(
       'smoking-and-birth-weight.tex',
+    )
+    expect(imageFileName('Smoking and birth weight', 'pdf')).toBe(
+      'smoking-and-birth-weight.pdf',
     )
     expect(imageFileName(undefined, 'svg')).toBe('graph.svg')
   })

@@ -6,31 +6,25 @@
 import { edgeEndpoints, type Circle } from '@/lib/geometry'
 import type { GNode, Graph } from '@/model/graph'
 import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
-import { ROLES, type Role } from '@/model/schema'
+import { EXPORT_PALETTES, type ImageTheme } from '@/model/palette'
+import { ROLES } from '@/model/schema'
 import { fileSlug } from '@/model/yaml'
 
-export type ImageFormat = 'svg' | 'png' | 'tikz'
+export { EXPORT_PALETTES, type ImageTheme }
+
+export type ImageFormat = 'svg' | 'png' | 'pdf' | 'tikz'
 
 /**
- * The light theme's colours: the `:root` values of `--role-<role>-fill|line|text` and `--edge`
- * in `src/index.css` (checked by `imageExport.test.ts`), on a white background.
+ * Picture options (spec 4.11 "PDF, legend and dark theme"). Defaults: light, no legend. Accepted
+ * and ignored until phase 37 draws them.
  */
-export const EXPORT_PALETTE: {
-  background: string
-  edge: string
-  roles: Record<Role, { fill: string; line: string; text: string }>
-} = {
-  background: '#ffffff',
-  edge: '#64748b',
-  roles: {
-    exposure: { fill: '#e3f1e8', line: '#4a946a', text: '#24563a' },
-    outcome: { fill: '#e2eaf8', line: '#5b83cf', text: '#23407a' },
-    latent: { fill: '#f3f4f6', line: '#80868f', text: '#374151' },
-    adjusted: { fill: '#f8eedd', line: '#ad7a2c', text: '#6b4510' },
-    selected: { fill: '#efe7f7', line: '#9375c4', text: '#4c2f75' },
-    other: { fill: '#ffffff', line: '#7d8a9c', text: '#0f172a' },
-  },
+export interface ImageOptions {
+  theme?: ImageTheme
+  legend?: boolean
 }
+
+/** The light theme's colours (4.11 "Palette"); the theme option is drawn from phase 37. */
+const PALETTE = EXPORT_PALETTES.light
 
 /** Space around the nodes' bounding box, in px. */
 export const EXPORT_MARGIN = 24
@@ -114,7 +108,11 @@ function bounds(graph: Graph) {
 }
 
 /** Width and height of the image: the bounding box plus the margin on each side, rounded up. */
-export function svgSize(graph: Graph): { width: number; height: number } {
+export function svgSize(
+  graph: Graph,
+  opts: ImageOptions = {},
+): { width: number; height: number } {
+  void opts
   const b = bounds(graph)
   if (!b) return { width: 2 * EXPORT_MARGIN, height: 2 * EXPORT_MARGIN }
   return {
@@ -145,8 +143,8 @@ function svgEdge(
   const by = ty - ARROW_LENGTH * uy
   const px = (-uy * ARROW_WIDTH) / 2
   const py = (ux * ARROW_WIDTH) / 2
-  const line = `<line x1="${num(sx)}" y1="${num(sy)}" x2="${num(tx - back * ux)}" y2="${num(ty - back * uy)}" stroke="${EXPORT_PALETTE.edge}" stroke-width="${EDGE_WIDTH}"/>`
-  const head = `<path d="M${num(tx)},${num(ty)} L${num(bx + px)},${num(by + py)} L${num(bx - px)},${num(by - py)} Z" fill="${EXPORT_PALETTE.edge}"/>`
+  const line = `<line x1="${num(sx)}" y1="${num(sy)}" x2="${num(tx - back * ux)}" y2="${num(ty - back * uy)}" stroke="${PALETTE.edge}" stroke-width="${EDGE_WIDTH}"/>`
+  const head = `<path d="M${num(tx)},${num(ty)} L${num(bx + px)},${num(by + py)} L${num(bx - px)},${num(by - py)} Z" fill="${PALETTE.edge}"/>`
   return `${line}\n${head}`
 }
 
@@ -156,7 +154,7 @@ function svgEdge(
  */
 export function toSvg(
   graph: Graph,
-  opts: { fontDataUrl?: string } = {},
+  opts: ImageOptions & { fontDataUrl?: string } = {},
 ): string {
   const { width, height } = svgSize(graph)
   const b = bounds(graph)
@@ -174,7 +172,7 @@ export function toSvg(
     )
   }
   out.push(
-    `<rect width="${width}" height="${height}" fill="${EXPORT_PALETTE.background}"/>`,
+    `<rect width="${width}" height="${height}" fill="${PALETTE.background}"/>`,
   )
 
   for (const edge of graph.edges) {
@@ -189,7 +187,7 @@ export function toSvg(
   )
   for (const node of graph.nodes) {
     const c = circles.get(node.id)!
-    const colors = EXPORT_PALETTE.roles[node.role]
+    const colors = PALETTE.roles[node.role]
     const cx = c.cx - ox
     const cy = c.cy - oy
     out.push(
@@ -252,7 +250,8 @@ function htmlColor(hex: string): string {
  * The graph as a TikZ picture for a LaTeX document with `tikz` and `arrows.meta`. Coordinates
  * are canvas pixels (`x=0.75pt, y=-0.75pt`: 96 px per inch, y down); TikZ finds the rims itself.
  */
-export function toTikz(graph: Graph): string {
+export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
+  void opts
   const title = (graph.name ?? 'Graph').replace(/\s+/g, ' ')
   const out: string[] = [
     `% GraphCreator export: ${title}`,
@@ -261,7 +260,7 @@ export function toTikz(graph: Graph): string {
   const used = new Set(graph.nodes.map((n) => n.role))
   for (const role of ROLES) {
     if (!used.has(role)) continue
-    const colors = EXPORT_PALETTE.roles[role]
+    const colors = PALETTE.roles[role]
     const name = `gc${capitalize(role)}`
     out.push(
       `\\definecolor{${name}Fill}{HTML}{${htmlColor(colors.fill)}}`,
@@ -270,7 +269,7 @@ export function toTikz(graph: Graph): string {
     )
   }
   if (graph.edges.length > 0) {
-    out.push(`\\definecolor{gcEdge}{HTML}{${htmlColor(EXPORT_PALETTE.edge)}}`)
+    out.push(`\\definecolor{gcEdge}{HTML}{${htmlColor(PALETTE.edge)}}`)
   }
   out.push('\\begin{tikzpicture}[x=0.75pt, y=-0.75pt]')
 
@@ -308,10 +307,11 @@ export function toTikz(graph: Graph): string {
 const EXTENSIONS: Record<ImageFormat, string> = {
   svg: 'svg',
   png: 'png',
+  pdf: 'pdf',
   tikz: 'tex',
 }
 
-/** The download's file name: `<slug>.svg`, `<slug>.png` or `<slug>.tex`. */
+/** The download's file name: `<slug>.svg`, `<slug>.png`, `<slug>.pdf` or `<slug>.tex`. */
 export function imageFileName(
   graphName: string | undefined,
   format: ImageFormat,

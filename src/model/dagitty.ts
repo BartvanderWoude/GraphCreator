@@ -504,8 +504,13 @@ function quote(s: string): string {
  * Writes plain dagitty (spec 4.2), without GraphCreator metadata or the graph name: `dag {`, one
  * vertex line per node (`id [role,label="…",pos="x,y"]`, role omitted for `other`, label only when
  * the name differs from the id, pos in px ÷ 100 with 3 decimals), one edge line per edge, `}`.
+ * `details` (the GraphCreator `gc.*` attributes, spec 4.2) is accepted and ignored until phase 32.
  */
-export function toDagitty(graph: Graph): string {
+export function toDagitty(
+  graph: Graph,
+  opts: { details?: boolean } = {},
+): string {
+  void opts
   const ids = toDagittyIds(graph.nodes)
   const lines = ['dag {']
   for (const node of graph.nodes) {

@@ -3,9 +3,12 @@ import {
   ANALYSIS_DEFAULTS,
   ANALYSIS_KEY,
   ANALYSIS_KEYS,
+  DAGITTY_DETAILS_KEY,
   readAnalysisOn,
+  readDagittyDetails,
   useUiStore,
   writeAnalysisOn,
+  writeDagittyDetails,
 } from './uiStore'
 
 const ui = () => useUiStore.getState()
@@ -189,5 +192,40 @@ describe('readAnalysisOn and writeAnalysisOn', () => {
     expect(readAnalysisOn(storage)).toEqual(on)
     expect(() => writeAnalysisOn(null, on)).not.toThrow()
     expect(() => writeAnalysisOn(throwing, on)).not.toThrow()
+  })
+})
+
+describe('dagitty details choice', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('is off by default and for null, throwing or unknown storage', () => {
+    expect(ui().dagittyDetails).toBe(false)
+    expect(readDagittyDetails(null)).toBe(false)
+    expect(readDagittyDetails(throwing)).toBe(false)
+    expect(readDagittyDetails(memoryStorage())).toBe(false)
+    expect(
+      readDagittyDetails(memoryStorage({ [DAGITTY_DETAILS_KEY]: 'yes' })),
+    ).toBe(false)
+    expect(
+      readDagittyDetails(memoryStorage({ [DAGITTY_DETAILS_KEY]: '1' })),
+    ).toBe(true)
+  })
+
+  it('setDagittyDetails writes 1 and 0', () => {
+    const storage = memoryStorage()
+    vi.stubGlobal('window', { localStorage: storage })
+    ui().setDagittyDetails(true)
+    expect(ui().dagittyDetails).toBe(true)
+    expect(storage.data.get(DAGITTY_DETAILS_KEY)).toBe('1')
+    ui().setDagittyDetails(false)
+    expect(ui().dagittyDetails).toBe(false)
+    expect(storage.data.get(DAGITTY_DETAILS_KEY)).toBe('0')
+  })
+
+  it('writeDagittyDetails ignores null or throwing storage', () => {
+    expect(() => writeDagittyDetails(null, true)).not.toThrow()
+    expect(() => writeDagittyDetails(throwing, true)).not.toThrow()
   })
 })
