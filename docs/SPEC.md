@@ -2486,7 +2486,7 @@ Phases: 40. Parallel: single phase. Check after the wave: all checks; the browse
 
 Phases: 41. Parallel: single phase. Check after the wave: all checks.
 
-#### Phase 41: Lesson engine contracts [x]
+#### Phase 41: Lesson engine contracts [x] (9a10808)
 
 - **Goal:** the extended lesson engine exists (types, helpers, events, context, picks, progress), the tour runs on it unchanged for the user, and the 13 new lessons exist as stubs.
 - **Depends on:** phase 40.
@@ -2516,7 +2516,7 @@ Phases: 41. Parallel: single phase. Check after the wave: all checks.
 
 Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 
-#### Phase 42: Lesson panel additions [ ]
+#### Phase 42: Lesson panel additions [x]
 
 - **Goal:** the panel shows the Key idea box, pick feedback and Show answer, and an optional body (5.7.10 "Lesson panel").
 - **Depends on:** phase 41.
@@ -2526,6 +2526,11 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Tests:** covered end to end in phase 48; keep the existing e2e tests passing.
 - **Done when:** all checks pass.
 - **Out of scope:** the canvas pointer, the dialog.
+- **Details fixed in phase 42:**
+  - The feedback `role="status"` element stays mounted (empty) for the whole pick step, so a pick step has two status regions (callout and feedback); tests narrow `getByRole('status')`. An empty feedback block takes no space.
+  - Show answer sits after the status text, outside the live region, left-aligned.
+  - "Key idea" is written in sentence case and shown uppercase by CSS. Ctrl→⌘ applies to body and task only.
+  - A wrong click after the step is done is not recorded (phase 41), so the panel then shows "Try it" with no feedback.
 
 #### Phase 43: Canvas pointer [ ]
 

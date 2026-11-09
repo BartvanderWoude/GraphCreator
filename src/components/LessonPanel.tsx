@@ -1,4 +1,4 @@
-import { CircleCheck, X } from 'lucide-react'
+import { CircleCheck, Lightbulb, X } from 'lucide-react'
 import { cn } from 'cn'
 import { Button } from '@/components/ui/button'
 import { findLesson } from '@/lessons'
@@ -7,6 +7,20 @@ import { useGraphStore } from '@/store/graphStore'
 import { useLessonEvents } from '@/store/lessonEvents'
 import { lessonContext, useLessonStore } from '@/store/lessonStore'
 import { useUiStore } from '@/store/uiStore'
+
+/** Whether to show ⌘ for Ctrl: on a Mac, as the tool rail does (spec 5.1, 5.7.10). */
+function isMac(): boolean {
+  try {
+    return /Mac|iPhone|iPad/.test(navigator.userAgent)
+  } catch {
+    return false
+  }
+}
+
+/** A body or task as shown: every `Ctrl` becomes `⌘` on a Mac. */
+function forPlatform(text: string): string {
+  return isMac() ? text.replaceAll('Ctrl', '⌘') : text
+}
 
 /**
  * The docked lesson panel (spec 5.7.10), between the tool rail and the canvas. Renders nothing
@@ -18,6 +32,8 @@ export function LessonPanel() {
   const next = useLessonStore((s) => s.next)
   const back = useLessonStore((s) => s.back)
   const exit = useLessonStore((s) => s.exit)
+  const wrongPicks = useLessonStore((s) => s.wrongPicks)
+  const revealAnswer = useLessonStore((s) => s.revealAnswer)
   // The step's check reads these through lessonContext(); subscribing re-renders on each change.
   useGraphStore((s) => s.graph)
   useGraphStore((s) => s.selection)
@@ -33,6 +49,17 @@ export function LessonPanel() {
   const count = lesson.steps.length
   const last = index === count - 1
   const done = stepDone(step, lessonContext())
+  const { pick } = step
+  const lastWrong = wrongPicks.at(-1)
+  // Pick feedback (spec 5.7.10): the reveal once answered, else the hint for the last wrong pick.
+  const feedback = !pick
+    ? undefined
+    : done
+      ? pick.reveal
+      : lastWrong !== undefined
+        ? (pick.hints[lastWrong] ?? 'Not quite. Try again.')
+        : undefined
+  const canReveal = pick !== undefined && !done && wrongPicks.length >= 2
 
   return (
     <aside
@@ -59,8 +86,26 @@ export function LessonPanel() {
       >
         <div className="flex flex-col gap-2">
           <h2 className="text-lg leading-[1.3] font-semibold">{step.title}</h2>
-          <p className="leading-normal">{step.body}</p>
+          {step.body && (
+            <p className="leading-normal">{forPlatform(step.body)}</p>
+          )}
         </div>
+
+        {step.keyIdea && (
+          <div className="flex flex-col gap-2 rounded-lg border p-3 leading-normal">
+            <div className="flex items-center gap-2">
+              <Lightbulb
+                className="size-4 shrink-0 text-primary"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <p className="text-xs font-semibold tracking-[0.06em] text-accent-foreground uppercase">
+                Key idea
+              </p>
+            </div>
+            <p>{step.keyIdea}</p>
+          </div>
+        )}
 
         {step.task && (
           <div
@@ -75,7 +120,25 @@ export function LessonPanel() {
               strokeWidth={1.75}
               aria-hidden
             />
-            <span>{done ? 'Done.' : `Try it: ${step.task}`}</span>
+            <span>{done ? 'Done.' : `Try it: ${forPlatform(step.task)}`}</span>
+          </div>
+        )}
+
+        {pick && (
+          <div className="flex flex-col items-start gap-1 has-[[role=status]:empty]:-mt-4">
+            {/* Kept mounted for the whole step so screen readers announce each new text. */}
+            <p role="status" className="leading-normal">
+              {feedback}
+            </p>
+            {canReveal && (
+              <Button
+                variant="link"
+                className="h-auto px-0 py-0.5"
+                onClick={revealAnswer}
+              >
+                Show answer
+              </Button>
+            )}
           </div>
         )}
       </div>
