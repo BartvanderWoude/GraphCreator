@@ -559,6 +559,13 @@ export function toPdf(graph: Graph, opts?: ImageOptions): Uint8Array   // sceneT
   - Background: a filled rectangle. Edges: a stroked line (`w` = edge width) and a filled arrowhead triangle. Circles: four Bézier curves (κ = 0.5523), filled and stroked (`B`). The legend box: a rounded rectangle with Bézier corners.
   - Text: the standard font Helvetica (`/Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding`; no font is embedded). Each line is drawn with `BT /F1 <size> Tf 1 0 0 -1 <x> <y> Tm (<text>) Tj ET` (the `-1` undoes the page flip). Weight 500 also uses Helvetica. A centred line starts at `x − width / 2`, its width summed from Helvetica's AFM character widths (a 224-entry table for WinAnsi codes 32–255, taken from Adobe's core-font metrics, which may be redistributed) times `size / 1000`. Characters outside WinAnsi are written as `?`. `(`, `)` and `\` are escaped.
   - Colours are set with `rg`/`RG` from the scene's hex values.
+- **Details fixed in phase 38:**
+  - The widths come from Adobe's 1997 `Helvetica.afm` (Core 14 AFM files), mapped to WinAnsi codes as in the PDF reference, appendix D. Codes 128–159 are mapped from their Unicode characters (€, –, curly quotes); control characters also become `?`.
+  - A `/Title` with characters outside printable ASCII is written as a UTF-16BE hex string (`<FEFF…>`), so names such as "Größe β" keep their characters in the metadata. A blank title becomes `Graph`.
+  - Layout: a binary comment line after the header; objects 1 catalog, 2 pages, 3 page, 4 font, 5 content, 6 info; the trailer `/Size 7 /Root 1 0 R /Info 6 0 R`.
+  - Drawing order: background, edges, circles, texts, then the legend. Circle and legend paths are closed with `h`; a circle with `strokeWidth` 0 is only filled. The legend's corner radius is 4 px (at most half the box).
+  - Coordinates have at most two decimals and never `-0`; colour components three decimals; hex colours may be `#rgb` or `#rrggbb`.
+  - Checked with `pdfinfo`, `pdftotext`, `pdftoppm` and Ghostscript (`qpdf` and `mutool` are not installed).
 - **`toPdf` is pure** (no DOM), so the Export dialog downloads `new Blob([toPdf(…)], { type: 'application/pdf' })`.
 
 ### 4.12 Share links (`src/lib/shareLink.ts`, phase 23)
@@ -2267,7 +2274,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the three 4.15 examples are reproduced exactly for the 4.1 graph.
 - **Out of scope:** reading these formats.
 
-#### Phase 37: Image scene, legend and theme [x]
+#### Phase 37: Image scene, legend and theme [x] (5d9657a)
 
 - **Goal:** `imageScene` computes the picture with the legend and both themes, and SVG and TikZ are drawn from it.
 - **Depends on:** phase 31.
@@ -2278,7 +2285,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the light SVG without a legend is identical to before this phase for every valid fixture; a dark SVG with a legend looks right in the browser.
 - **Out of scope:** PDF drawing (phase 38); the dialog (phase 39); the analysis marking in images.
 
-#### Phase 38: PDF writer [ ]
+#### Phase 38: PDF writer [x]
 
 - **Goal:** `sceneToPdf` writes a valid vector PDF of a scene.
 - **Depends on:** phase 31.
