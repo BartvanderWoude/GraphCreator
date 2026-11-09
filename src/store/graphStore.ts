@@ -19,6 +19,7 @@ import {
 import { autoLayout } from '@/model/layout'
 import { nodeDiameter } from '@/model/nodeSize'
 import type { Result } from '@/model/result'
+import type { Role } from '@/model/schema'
 
 /** Most graphs kept on `past` and on `future` (spec 4.10). */
 export const HISTORY_LIMIT = 100
@@ -67,6 +68,12 @@ export interface GraphState {
   setGraphName(name: string): void
   /** `graph = autoLayout(graph)` */
   layout(): void
+  /**
+   * Makes `nodeIds` the adjusted set (spec 4.14, "Use this set"): each listed node whose role is
+   * `other` or `adjusted` becomes `adjusted`; every other `adjusted` node becomes `other`.
+   * Exposure, outcome, latent and selected nodes never change. One undo step.
+   */
+  setAdjustedSet(nodeIds: string[]): void
   /** Older graphs, most recent last; at most `HISTORY_LIMIT`. */
   past: Graph[]
   /** Graphs undone, most recent last; at most `HISTORY_LIMIT`. */
@@ -246,6 +253,20 @@ export const useGraphStore = create<GraphState>()((set, get) => {
 
     layout() {
       commit(autoLayout(get().graph))
+    },
+
+    setAdjustedSet(nodeIds) {
+      const wanted = new Set(nodeIds)
+      const graph = get().graph
+      let changed = false
+      const nodes = graph.nodes.map((node) => {
+        if (node.role !== 'other' && node.role !== 'adjusted') return node
+        const role: Role = wanted.has(node.id) ? 'adjusted' : 'other'
+        if (role === node.role) return node
+        changed = true
+        return { ...node, role }
+      })
+      if (changed) commit({ ...graph, nodes })
     },
 
     undo() {

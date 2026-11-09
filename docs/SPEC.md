@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09 and is not implemented yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; wave 13 (phase 24: contracts, d-separation, dagitty-R reference) is done, waves 14–15 are not. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -496,7 +496,7 @@ Pure TypeScript like the rest of `src/model/`: no React, Zustand or DOM. Every a
 | exposure | in X, the exposure set |
 | outcome | in Y, the outcome set |
 | latent | not observed: never part of an adjustment set, a separating set, an instrument or its conditioning set |
-| selected | S, always conditioned on (the data exist only for the selected), never listed inside a set |
+| selected | S: the data exist only for S = 1. Always conditioned on, never listed inside a set; sets are judged by the selection criterion below (as dagitty-R does) |
 | adjusted | Z, the user's own adjustment set; checked, never changed by the analysis (except by "Use this set", 4.14) |
 | other | an ordinary observed variable |
 
@@ -511,8 +511,9 @@ export function rolesOf(graph: Graph): Roles   // observed = every non-latent no
 export interface AdjustmentResult {
   sets: NodeSet[]          // minimal sufficient adjustment sets, S excluded; [] = none exists; [[]] = the empty set suffices
   truncated: boolean       // true when more than MAX_SETS exist; sets holds the first MAX_SETS
-  zSufficient: boolean     // Z ∪ S satisfies the adjustment criterion
+  zSufficient: boolean     // Z satisfies the adjustment criterion (with S: the selection criterion)
   zForbidden: NodeSet      // members of Z that lie on or after a proper causal path (Forb(X, Y)), for the report
+  selectionBias: boolean   // S is not empty and condition (c) or (d) of the selection criterion fails: no set can work
 }
 export type PathKind = 'causal' | 'biasing'
 export interface PathInfo { nodes: string[]; kind: PathKind; open: boolean }   // nodes from an exposure to an outcome
@@ -550,7 +551,7 @@ export function withoutEdges(graph: Graph, pred: (e: GEdge) => boolean): Graph  
 export function properCausalNodes(graph: Graph, xs: NodeSet, ys: NodeSet): Set<string>   // PCP(X, Y)
 export function forbidden(graph: Graph, xs: NodeSet, ys: NodeSet): Set<string>           // Forb(X, Y)
 export function properBackdoorGraph(graph: Graph, xs: NodeSet, ys: NodeSet): Graph
-export function isAdjustmentSet(graph: Graph, xs: NodeSet, ys: NodeSet, zs: NodeSet): boolean
+export function isAdjustmentSet(graph: Graph, xs: NodeSet, ys: NodeSet, zs: NodeSet, s?: NodeSet): boolean   // s defaults to []: the selection criterion when not empty
 export function minimalAdjustmentSets(graph: Graph, roles: Roles): { sets: NodeSet[]; truncated: boolean }
 export function adjustment(graph: Graph, roles: Roles): AdjustmentResult
 // src/model/analysis/paths.ts (phase 26)
@@ -563,20 +564,23 @@ export function instrumentalVariables(graph: Graph, roles: Roles): Instrument[] 
 export function analyze(graph: Graph): Analysis
 ```
 
-Phase 24 writes `types.ts`, `dsep.ts` and `index.ts` for real and the four other modules as **stubs** with the final signatures that return empty results (`adjustment` → `{ sets: [], truncated: false, zSufficient: false, zForbidden: [] }`, `classifyPaths` → no paths, `impliedIndependencies` → `[]`, `instrumentalVariables` → `[]` or `'needs-single'`; the helpers in `adjustment.ts` throw `Error('Not implemented')`), so the app works and the wave 14 phases can be built side by side.
+Phase 24 writes `types.ts`, `dsep.ts` and `index.ts` for real and the four other modules as **stubs** with the final signatures that return empty results (`adjustment` → `{ sets: [], truncated: false, zSufficient: false, zForbidden: [], selectionBias: false }`, `classifyPaths` → no paths, `impliedIndependencies` → `[]`, `instrumentalVariables` → `[]` or `'needs-single'`; the helpers in `adjustment.ts` throw `Error('Not implemented')`), so the app works and the wave 14 phases can be built side by side.
 
 **Algorithms.**
 
 - **d-separation (`reachable`, `dConnected`):** Bayes-Ball reachability (Shachter 1998; Koller & Friedman 2009, Algorithm 3.1). Let `A = ancestors(given)`. Search over pairs (node, direction), starting with (x, up) for every x in `from`. From (v, up) with v ∉ given: visit every parent as (p, up) and every child as (c, down). From (v, down): if v ∉ given, visit every child as (c, down); if v ∈ A, visit every parent as (p, up). `reachable` returns every visited node not in `given`, including the start nodes that are not in `given`. `dConnected` is true when the sets overlap outside `given`, or some y ∈ ys is in `reachable(xs, given)`. Linear in the size of the graph.
 - **Proper causal paths:** `G_{X̄}` is the graph with every edge into X removed and `G_{X̲}` the graph with every edge out of X removed. `PCP(X, Y) = (descendants_{G_{X̄}}(X) \ X) ∩ ancestors_{G_{X̲}}(Y)`. `Forb(X, Y) = descendants_G(PCP(X, Y)) ∪ X`. The proper back-door graph `G^pbd` removes every edge `x → w` with x ∈ X and w ∈ PCP(X, Y) (van der Zander, Liśkiewicz & Textor 2014).
-- **Adjustment criterion (`isAdjustmentSet`):** Z is an adjustment set for (X, Y) when Z ∩ Forb(X, Y) = ∅ and X and Y are d-separated by Z in `G^pbd` (Shpitser, VanderWeele & Robins 2010; Perković et al. 2018). The report and `zSufficient` test `Z ∪ S` (selected nodes are always conditioned on). If S meets Forb, no set is sufficient.
-- **Minimal sets (`minimalAdjustmentSets`):** the minimal sets W such that `W ∪ S` is an adjustment set, with W ⊆ R = observed \ (Forb(X, Y) ∪ Y ∪ S). "Minimal" means no proper subset of W works. Implementation: van der Zander, Liśkiewicz & Textor (2019), algorithms FindMinSep and ListMinSep (polynomial delay), run on `G^pbd` with I = S and R as above, written from the paper. Stop after `MAX_SETS` sets and set `truncated`. Sort the sets by size, then by graph order of their members. A test checks the result against brute force (every subset of R, for graphs with at most 12 nodes in R) and against `reference.json`.
+- **Adjustment criterion (`isAdjustmentSet(graph, xs, ys, zs, s = [])`):** without selected nodes, Z is an adjustment set for (X, Y) when Z ∩ Forb(X, Y) = ∅ and X and Y are d-separated by Z in `G^pbd` (Shpitser, VanderWeele & Robins 2010; Perković et al. 2018).
+- **Selection criterion (S not empty):** the data are a sample with S = 1 only, and the adjustment formula is `Σ_z P(y | x, z, S = 1) P(z | S = 1)`. Z is sufficient when all four hold (Correa, Tian & Bareinboim 2018, generalized adjustment without external data): (a) Z ∩ Forb(X, Y) = ∅; (b) X and Y are d-separated by Z ∪ S in `G^pbd`; (c) Y and S are d-separated by X in `G_{X̄}`; (d) every x ∈ X that is an ancestor of S is d-separated from Y (given nothing) in `G_{X̲}`. With S empty, (c) and (d) hold trivially and this is the criterion above. (c) and (d) do not depend on Z: when either fails, `selectionBias` is true and no set is sufficient. This matches dagitty-R 0.3.4's `isAdjustmentSet` with a `[selected]` node on 2,752 cases (300 seeded random DAGs with 5–8 nodes, every Z of up to two nodes), checked on 2026-11-09.
+- **Minimal sets (`minimalAdjustmentSets`):** the minimal sets W ⊆ R = observed \ (Forb(X, Y) ∪ Y ∪ S) that are sufficient (with S: by the selection criterion, so W ∪ S must separate in (b)). When `selectionBias` is true there are none. "Minimal" means no proper subset of W works. Implementation: van der Zander, Liśkiewicz & Textor (2019), algorithms FindMinSep and ListMinSep (polynomial delay), run on `G^pbd` with I = S and R as above, written from the paper; S is removed from each result. Stop after `MAX_SETS` sets and set `truncated`. Sort the sets by size, then by graph order of their members. A test checks the result against brute force (every subset of R, for graphs with at most 12 nodes in R) and against `reference.json`.
 - **Paths (`classifyPaths`):** every simple path in the skeleton (directions ignored) from some x ∈ X to some y ∈ Y whose inner nodes are in neither X nor Y. A path is **causal** when every edge points from the exposure end towards the outcome end, otherwise **biasing**. Given C = Z ∪ S, a path is **open** when every inner collider (→ v ←) is in `ancestors(C)` and no inner non-collider is in C; otherwise **closed**. Enumeration is a depth-first search that stops at `PATH_LIMIT + 1` paths: then `truncated: true` and `paths`, `causalEdges` and `biasingEdges` are empty. An edge on both an open causal and an open biasing path counts as biasing only.
 - **Implied independencies (`impliedIndependencies`):** for every unordered pair a, b of observed nodes that are not in S and not adjacent, in graph order (a's index, then b's), one minimal separating set: FindMinSep (as above) on `G` with I = S and R = observed \ ({a, b} ∪ S), and `given` is the set it returns (S is always conditioned on and is not listed). A pair with no separating set inside R is left out (its independence is not testable from the observed variables). If several minimal sets exist, any one that FindMinSep returns is fine; tests check validity and minimality, not the exact set.
 - **Instruments (`instrumentalVariables`):** only when |X| = |Y| = 1 (otherwise `'needs-single'`). Following van der Zander, Textor & Liśkiewicz (2015, "Efficiently finding conditional instruments for causal inference"): an observed node i ∉ {x, y} ∪ S is a conditional instrument given a set W of observed nodes when W ∩ `descendants_G(PCP({x}, {y}))` = ∅, i is d-connected to x given W ∪ S in G, and i is d-separated from y given W ∪ S in `G^pbd`. For each candidate i, W is the "nearest separator" of i and y in `G^pbd` relative to x as in the paper; if it yields a valid instrument, i is listed with that W (W = [] for an unconditional instrument). Sorted by graph order of i.
-- **`analyze`:** `rolesOf`, then `status`; with `'ok'` all four results, otherwise `adjustment`, `paths` and `instruments` are `null`, `null` and `'needs-single'`. Selected nodes that are also forbidden simply make every set insufficient.
+- **`analyze`:** `rolesOf`, then `status`; with `'ok'` all four results, otherwise `adjustment`, `paths` and `instruments` are `null`, `null` and `'needs-single'`.
 
-**Reference fixtures (phase 24).** `src/model/__fixtures__/analysis/` holds a gallery of dagitty files with roles: `confounding.dagitty.txt` (copied from the existing fixture), `m-bias.dagitty.txt` (copied), `mediation`, `collider`, `butterfly`, `confounding-by-indication`, `selection-bias` (with a `selected` node, written as dagitty's `[selected]`), `latent-confounder`, `two-exposures-two-outcomes`, `instrument` (Z → X → Y, U → X, U → Y, U latent) and `no-adjustment-possible`. `scripts/dagitty-reference.R` reads each file with `dagitty::dagitty()` and writes `reference.json`: per file, `adjustmentSets(g, type = "minimal", effect = "total")`, `isAdjustmentSet(g, adjustedNodes(g))`, `impliedConditionalIndependencies(g, type = "missing.edge")` as pairs and sets, `instrumentalVariables(g)` when there is one exposure and one outcome, and `paths(g, Z = adjustedNodes(g))` with open flags. Names, not ids, are written; tests map them through `parseDagitty`. The JSON is committed; CI never runs R. Install once with `Rscript -e 'install.packages("dagitty", lib = Sys.getenv("R_LIBS_USER"))'`. If dagitty-R treats selected or adjusted nodes differently from the table above, phase 24 stops and reports it.
+**Reference fixtures (phase 24).** `src/model/__fixtures__/analysis/` holds a gallery of dagitty files with roles: `confounding.dagitty.txt` (copied from the existing fixture), `m-bias.dagitty.txt` (copied), `mediation`, `collider`, `butterfly`, `confounding-by-indication`, `selection-bias` (with a `selected` node, written as dagitty's `[selected]`), `latent-confounder`, `two-exposures-two-outcomes`, `instrument` (Z → X → Y, U → X, U → Y, U latent) and `no-adjustment-possible`. The gallery also has `selection-confounder` (E → D, A → E, A → S, C → S, C → D, S selected; no set, `selectionBias`) and `selection-recoverable` (E → D, A → E, A → S, C → E, C → D, S selected; dagitty-R gives `{C}`). `scripts/dagitty-reference.R` reads each file with `dagitty::dagitty()` and writes `reference.json`: per file, `adjustmentSets(g0, type = "minimal", effect = "total")` where `g0` is `g` with the adjusted roles cleared (dagitty-R otherwise lists only sets containing every adjusted node, while GraphCreator lists them regardless of Z), `isAdjustmentSet(g, adjustedNodes(g))`, `impliedConditionalIndependencies(g, type = "missing.edge")` as pairs and sets (duplicates kept as dagitty gives them), `instrumentalVariables(g)` when there is one exposure and one outcome, and `paths(g, Z = c(adjustedNodes(g), selected nodes))` per (exposure, outcome) pair with open flags, keeping only paths whose inner nodes are neither exposures nor outcomes. A `random` section adds 100 seeded random DAGs (5–8 nodes, one exposure, one outcome, one selected node) with their minimal sets from `adjustmentSets`, for the selection criterion. Names, not ids, are written; tests map them through `parseDagitty`. The JSON is committed; CI never runs R. Install once with `Rscript -e 'install.packages("dagitty", lib = Sys.getenv("R_LIBS_USER"))'`; on a machine without libv8 or libnode, set `DOWNLOAD_STATIC_LIBV8=1` (V8's own suggestion), and the R package `curl` needs the `libcurl4-openssl-dev` headers.
+
+**Where GraphCreator differs from dagitty-R on purpose:** adjustment sets are listed regardless of the Adjusted nodes (above); implied independencies leave S out of the pairs and always condition on S, because all data have S = 1, whereas dagitty-R treats S as an ordinary node. So for gallery files with a selected node, the independency tests check validity and minimality themselves instead of comparing with `reference.json`.
 
 ### 4.14 Analysis state (`uiStore`, `graphStore`, `useAnalysis`; phase 24)
 
@@ -940,7 +944,7 @@ export function findLesson(id: string): Lesson | undefined
 - One adjustment line, by case:
   - Z empty and `zSufficient`: `No adjustment is needed, as implied by this DAG.`
   - Z not empty and `zSufficient`: `Your adjusted set (<Z names>) is sufficient, as implied by this DAG.`
-  - not `zSufficient`: `Your adjusted set (<Z names, or "empty">) is not sufficient, as implied by this DAG.`; then, when `zForbidden` is not empty, `<names> lie on or after a causal path from the exposure; adjusting for them can block or bias the effect.`; then, when `sets` is `[]`, `No set of observed variables is sufficient.`
+  - not `zSufficient`: `Your adjusted set (<Z names, or "empty">) is not sufficient, as implied by this DAG.`; then, when `zForbidden` is not empty, `<names> lie on or after a causal path from the exposure; adjusting for them can block or bias the effect.`; then, when `selectionBias` is true, `Selecting on <S names> biases the effect, and no adjustment set can remove that bias.`; otherwise, when `sets` is `[]`, `No set of observed variables is sufficient.`
 - When S is not empty: `Always conditioned on (selected): <S names>.`
 - `Latent: <names>.` or `Latent: none.`, followed by `Are there unmeasured common causes you should add?`
 
@@ -1083,6 +1087,9 @@ export function findLesson(id: string): Lesson | undefined
 | Use this set | A button per minimal set that sets the Adjusted roles, one undo step | Read-only panel | User's choice. |
 | Hover highlighting | Hovering or focusing a row puts the hover rim on its nodes | None | User's choice. |
 | Analysis spec location | SPEC.md 4.13–4.14, 5.8, waves 13–15; gallery in `src/model/__fixtures__/analysis/`; `scripts/dagitty-reference.R` | A separate `docs/ANALYSIS_SPEC.md` | User's choice. |
+| Adjusted nodes and the listed sets (phase 24) | Minimal sets are listed regardless of the Adjusted nodes; the reference clears adjusted roles before asking dagitty-R | dagitty-R's behaviour: only sets containing every Adjusted node | User's choice; fits "Use this set" and the separate sufficiency line. |
+| Selected nodes (phase 24) | The selection criterion of Correa, Tian & Bareinboim (2018), which matches dagitty-R exactly | "Z ∪ S is an adjustment set" (the first version of 4.13) | User's choice. With only S = 1 data the covariate distribution is also biased, so the first version was too optimistic (it called {C} sufficient in `selection-bias`). |
+| Independencies with selected nodes (phase 24) | Always condition on S and leave S out of the pairs | dagitty-R: S as an ordinary node | User's choice: only S = 1 data can be tested. Tests for those gallery files check validity instead of comparing with dagitty-R. |
 | Section 6 heading | Restored as "## 6. Project setup and conventions" | — | It was dropped by accident in 910cfc7; other sections refer to "section 6". |
 
 ## 8. Implementation phases
@@ -1553,11 +1560,11 @@ Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree
 - **Done when:** all checks pass; the browser checks for share links in the wave line work.
 - **Out of scope:** short links or any server; a QR code; read-only shared views; sharing several graphs.
 
-### Wave 13: Analysis contracts [ ]
+### Wave 13: Analysis contracts [x]
 
 Phases: 24. Parallel: single phase. Check after the wave: all checks; the app runs unchanged (no tab yet; the stubs return empty results).
 
-#### Phase 24: Analysis contracts and core [ ]
+#### Phase 24: Analysis contracts and core [x]
 
 - **Goal:** the analysis types, d-separation, the reference answers, the store additions and the UI contracts exist, so wave 14 can build the four algorithms, the canvas marking and the tab in parallel.
 - **Depends on:** phase 23.
@@ -1565,7 +1572,7 @@ Phases: 24. Parallel: single phase. Check after the wave: all checks; the app ru
 - **Contracts used:** `Graph`, `GNode`, `GEdge` (3.2), `parseDagitty` (4.2), the store rules of 4.6 and 4.10, `themeStore`'s storage helpers as the pattern for `readAnalysisOn` (4.9).
 - **Work:**
   - **`src/model/analysis/types.ts`, `dsep.ts`, `index.ts`:** as in 4.13, for real. **`adjustment.ts`, `paths.ts`, `independencies.ts`, `instruments.ts`:** the 4.13 signatures as stubs.
-  - **Reference:** install dagitty-R as in 4.13, write the gallery and `scripts/dagitty-reference.R`, run it and commit `reference.json`. Record the dagitty-R version in the JSON (`"dagitty": "<version>"`). Check the semantics table of 4.13 against dagitty-R's output (selected and adjusted nodes); if they differ, stop and report.
+  - **Reference:** install dagitty-R as in 4.13, write the gallery and `scripts/dagitty-reference.R`, run it and commit `reference.json`. Record the dagitty-R version in the JSON (`"dagitty": "<version>"`). Generate it exactly as 4.13 "Reference fixtures" says (adjusted roles cleared for `adjustmentSets`, selected nodes conditioned on in `paths`, the `random` section).
   - **`uiStore.ts`:** the 4.14 additions. **`graphStore.ts`:** `setAdjustedSet` (4.14).
   - **`useAnalysis.ts`:** as in 4.14. **`canvas/types.ts`:** the optional `highlighted` and `path` fields.
   - **`copy.ts`:** `ANALYSIS_TITLES: Record<AnalysisKey, string>` ("Report", "Adjustment sets", "Paths", "Instruments", "Independencies") and `ANALYSIS_TEXT`, an object with every fixed sentence of 5.8 (templates as functions taking names, e.g. `totalEffect(xs: string[], ys: string[])`), and `joinNames(names: string[])` ("A", "A and B", "A, B and C").
@@ -1586,7 +1593,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Contracts used:** `types.ts`, `dsep.ts` (4.13), `reference.json`.
 - **Work:** `properCausalNodes`, `forbidden`, `properBackdoorGraph`, `isAdjustmentSet`, `minimalAdjustmentSets` (FindMinSep and ListMinSep from van der Zander, Liśkiewicz & Textor 2019) and `adjustment`, as in 4.13. FindMinSep is exported too (`findMinSep(graph, xs, ys, include, restrict): NodeSet | null`), because phases 27 and 28 need it: they may copy it into their own module until phase 30 makes them import it from here.
 - **Tests:** `adjustment.test.ts` (section 9).
-- **Done when:** all checks pass; every gallery file matches `reference.json`; the brute-force comparison passes on all gallery files and on 200 random DAGs (seeded, 4–10 nodes).
+- **Done when:** all checks pass; every gallery file and every `random` entry matches `reference.json`; the brute-force comparison passes on all gallery files and on 200 random DAGs (seeded, 4–10 nodes).
 - **Out of scope:** direct effects; sets that are not minimal (DAGitty's "all" and "canonical" sets).
 
 #### Phase 26: Paths and canvas marking [ ]
@@ -1611,7 +1618,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 - **Contracts used:** 4.13, `dsep.ts`.
 - **Work:** as in 4.13. Until phase 25 lands, keep a private FindMinSep in this module (phase 30 replaces it with the import).
 - **Tests:** `independencies.test.ts` (section 9).
-- **Done when:** all checks pass; the pairs match `reference.json` on every gallery file.
+- **Done when:** all checks pass; the pairs match `reference.json` (without duplicates) on every gallery file without a selected node; on files with one, validity and minimality hold.
 - **Out of scope:** the "basis set" form of DAGitty; tests against data.
 
 #### Phase 28: Instrumental variables [ ]
@@ -1705,7 +1712,7 @@ Causal analysis (phases 24–30):
 - `src/store/uiStore.test.ts` (phase 24 addition): defaults; `setAnalysisOn` writes `graphcreator:analysis`; `readAnalysisOn` with null, throwing or malformed storage gives the defaults and keeps known keys from partial JSON; `setSidePanelTab` and `setHoverNodeIds`.
 - `src/store/graphStore.test.ts` (phase 24 addition): `setAdjustedSet` marks the given nodes, returns other adjusted nodes to `other`, never changes exposure, outcome, latent or selected nodes, is one undo step and records nothing when nothing changes.
 - `src/lib/copy.test.ts` (phase 24): `joinNames` for zero, one, two and three names; the 5.8 templates fill in names.
-- `src/model/analysis/adjustment.test.ts` (phase 25): `properCausalNodes`, `forbidden` and `properBackdoorGraph` on mediation; `isAdjustmentSet` on the textbook cases (confounder needed, mediator forbidden, collider opens M-bias); minimal sets equal `reference.json` for every gallery file (as sets of names, order-free); brute force over subsets equals `minimalAdjustmentSets` on the gallery and 200 seeded random DAGs; selected nodes are never listed and a selected forbidden node leaves no set; `truncated` at `MAX_SETS` on a generated graph with many sets.
+- `src/model/analysis/adjustment.test.ts` (phase 25): `properCausalNodes`, `forbidden` and `properBackdoorGraph` on mediation; `isAdjustmentSet` on the textbook cases (confounder needed, mediator forbidden, collider opens M-bias); minimal sets equal `reference.json` for every gallery file (as sets of names, order-free); brute force over subsets equals `minimalAdjustmentSets` on the gallery and 200 seeded random DAGs; selected nodes are never listed; `selection-bias` and `selection-confounder` give no set with `selectionBias` true, and `selection-recoverable` gives `C`; `isAdjustmentSet` and the minimal sets match the `random` section; `truncated` at `MAX_SETS` on a generated graph with many sets.
 - `src/model/analysis/paths.test.ts` (phase 26): the smoking graph gives one open causal and one open biasing path; adjusting SES closes the biasing path; M-bias's path is closed until Z is adjusted; an adjusted mediator closes the causal path; the edge lists follow "biasing wins"; inner exposure or outcome nodes end a path; a generated graph with more than `PATH_LIMIT` paths gives `truncated` and empty lists; open flags equal `reference.json`.
 - `src/model/analysis/independencies.test.ts` (phase 27): pairs equal `reference.json`; every `given` d-separates its pair and no proper subset does; latent and selected nodes never appear; adjacent pairs never appear.
 - `src/model/analysis/instruments.test.ts` (phase 28): the `instrument` gallery file gives Z unconditionally; a conditional instrument case gives the right `given`; the results equal `reference.json`; `'needs-single'` with two exposures.

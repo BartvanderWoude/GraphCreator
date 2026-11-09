@@ -1,4 +1,6 @@
+import { MAX_SETS, PATH_LIMIT, type PathKind } from '@/model/analysis/types'
 import type { Role, VarType } from '@/model/schema'
+import type { AnalysisKey } from '@/store/uiStore'
 
 /** Interface texts (spec 5.7.8). The store keeps the keys; the UI shows these labels. */
 
@@ -59,3 +61,86 @@ export const PANEL_HELP: {
     { action: 'Undo', how: 'Press Ctrl+Z' },
   ],
 }
+
+/** Section titles of the Analysis tab (spec 5.8). */
+export const ANALYSIS_TITLES: Record<AnalysisKey, string> = {
+  report: 'Report',
+  adjustment: 'Adjustment sets',
+  paths: 'Paths',
+  instruments: 'Instruments',
+  independencies: 'Independencies',
+}
+
+/** Names in a sentence: "A", "A and B", "A, B and C"; '' for none. */
+export function joinNames(names: string[]): string {
+  if (names.length <= 1) return names[0] ?? ''
+  return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+}
+
+/** A set of names: joined by ", ", or "(empty set)". */
+function setText(names: string[]): string {
+  return names.length === 0 ? '(empty set)' : names.join(', ')
+}
+
+/**
+ * The fixed texts of the Analysis tab (spec 5.8). Templates take node names (not ids), already
+ * in graph order.
+ */
+export const ANALYSIS_TEXT = {
+  /** Shown at the top when there is no exposure or no outcome. */
+  noExposureOrOutcome:
+    'Mark at least one exposure and one outcome to see the analysis.',
+  /** `aria-label` of a section's switch. */
+  switchLabel: (title: string) => `Show ${title.toLowerCase()}`,
+  /** The count next to a section title. */
+  count: (n: number) => `(${n})`,
+  /** A set of names, or "(empty set)". */
+  set: setText,
+  /** Link button that expands a long list. */
+  showAll: (n: number) => `Show all ${n}`,
+
+  // Report
+  totalEffect: (xs: string[], ys: string[]) =>
+    `Total effect of ${joinNames(xs)} on ${joinNames(ys)}.`,
+  noAdjustmentNeeded: 'No adjustment is needed, as implied by this DAG.',
+  zSufficient: (zs: string[]) =>
+    `Your adjusted set (${zs.join(', ')}) is sufficient, as implied by this DAG.`,
+  zNotSufficient: (zs: string[]) =>
+    `Your adjusted set (${zs.length === 0 ? 'empty' : zs.join(', ')}) is not sufficient, as implied by this DAG.`,
+  zForbidden: (names: string[]) =>
+    `${joinNames(names)} lie on or after a causal path from the exposure; adjusting for them can block or bias the effect.`,
+  selectionBias: (names: string[]) =>
+    `Selecting on ${joinNames(names)} biases the effect, and no adjustment set can remove that bias.`,
+  noSufficientSet: 'No set of observed variables is sufficient.',
+  selected: (names: string[]) =>
+    `Always conditioned on (selected): ${joinNames(names)}.`,
+  latent: (names: string[]) =>
+    names.length === 0 ? 'Latent: none.' : `Latent: ${joinNames(names)}.`,
+  unmeasuredQuestion: 'Are there unmeasured common causes you should add?',
+
+  // Adjustment sets
+  setsIntro: 'Minimal sufficient adjustment sets, as implied by this DAG:',
+  useThisSet: 'Use this set',
+  inUse: 'In use',
+  setsTruncated: `Showing the first ${MAX_SETS} sets.`,
+
+  // Paths
+  pathTag: (kind: PathKind, open: boolean) =>
+    `${kind} · ${open ? 'open' : 'closed'}`,
+  pathsTruncated: `There are more than ${PATH_LIMIT} paths, too many to list or highlight.`,
+  noPaths: 'No paths connect the exposure and the outcome.',
+
+  // Instruments
+  instrument: (name: string, given: string[]) =>
+    given.length === 0 ? name : `${name} | ${given.join(', ')}`,
+  instrumentsNeedSingle:
+    'Instruments need exactly one exposure and one outcome.',
+  noInstruments: 'No instruments, as implied by this DAG.',
+
+  // Independencies
+  independenciesIntro:
+    'Independencies implied by this DAG, which you can test in your data:',
+  independence: (a: string, b: string, given: string[]) =>
+    given.length === 0 ? `${a} ⫫ ${b}` : `${a} ⫫ ${b} | ${given.join(', ')}`,
+  noIndependencies: 'This DAG implies no testable independencies.',
+} as const

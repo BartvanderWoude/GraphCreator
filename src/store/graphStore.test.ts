@@ -282,6 +282,7 @@ describe('graphStore undo history', () => {
     ['removeSelection', () => store().removeSelection(['n3'], [])],
     ['setGraphName', () => store().setGraphName('Other name')],
     ['layout', () => store().layout()],
+    ['setAdjustedSet', () => store().setAdjustedSet(['n3'])],
   ]
 
   it.each(recording)(
@@ -524,5 +525,88 @@ describe('graphStore undo history', () => {
     expect(store()).toBe(before)
     expect(store().revision).toBe(0)
     expect(store().focusNameOf).toBe('n1')
+  })
+})
+
+describe('graphStore setAdjustedSet', () => {
+  /** One node of every role, plus a second `other` and an `adjusted` node. */
+  function rolesGraph(): Graph {
+    const roles = [
+      'exposure',
+      'outcome',
+      'latent',
+      'selected',
+      'other',
+      'other',
+      'adjusted',
+    ] as const
+    return {
+      nodes: roles.map((role, i) => ({
+        id: `n${i + 1}`,
+        name: `N${i + 1}`,
+        role,
+        pos: { x: i * 100, y: 0 },
+      })),
+      edges: [],
+    }
+  }
+  const rolesNow = () => store().graph.nodes.map((n) => n.role)
+
+  beforeEach(() => {
+    store().replaceGraph(rolesGraph())
+  })
+
+  it('marks the given nodes and returns other adjusted nodes to other', () => {
+    const before = store().graph
+    store().setAdjustedSet(['n5'])
+    expect(rolesNow()).toEqual([
+      'exposure',
+      'outcome',
+      'latent',
+      'selected',
+      'adjusted',
+      'other',
+      'other',
+    ])
+    expect(store().graph.nodes[5]).toBe(before.nodes[5])
+    expect(before.nodes[4].role).toBe('other')
+  })
+
+  it('never changes exposure, outcome, latent or selected nodes', () => {
+    store().setAdjustedSet(['n1', 'n2', 'n3', 'n4', 'n6'])
+    expect(rolesNow()).toEqual([
+      'exposure',
+      'outcome',
+      'latent',
+      'selected',
+      'other',
+      'adjusted',
+      'other',
+    ])
+    store().setAdjustedSet([])
+    expect(rolesNow().slice(0, 4)).toEqual([
+      'exposure',
+      'outcome',
+      'latent',
+      'selected',
+    ])
+    expect(rolesNow().filter((r) => r === 'adjusted')).toEqual([])
+  })
+
+  it('is one undo step', () => {
+    const before = store().graph
+    store().setAdjustedSet(['n5', 'n6'])
+    expect(store().past).toEqual([before])
+    expect(store().future).toEqual([])
+    store().undo()
+    expect(store().graph).toBe(before)
+  })
+
+  it('records nothing when nothing changes', () => {
+    const before = store().graph
+    store().setAdjustedSet(['n7'])
+    store().setAdjustedSet(['n7', 'n1', 'n3', 'unknown'])
+    expect(store().graph).toBe(before)
+    expect(store().past).toEqual([])
   })
 })
