@@ -4,6 +4,8 @@ Features deliberately left out of v1. Nothing here is designed yet. When one is 
 
 ## Causal analysis
 
+Specified in [SPEC.md](SPEC.md) 4.13–4.14 and 5.8 (waves 13–15, agreed 2026-11-09): the first four items below and an in-app Tennant report. Still deferred: an exportable report, alternative sets with a written rationale, and direct effects. Phase 30 trims this list.
+
 - Minimal sufficient adjustment sets (back-door criterion), written ourselves under MIT and cross-checked against dagitty-R on a gallery of known DAGs.
 - d-separation (e.g. Bayes-Ball) and testable implied conditional independencies.
 - Highlighting causal and biasing paths between exposure and outcome.

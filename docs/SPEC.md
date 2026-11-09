@@ -1,12 +1,12 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09 and is not implemented yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
 Epidemiologists draw causal DAGs (directed acyclic graphs) to reason about confounding and to report their assumptions. DAGitty is the standard tool, but it treats a DAG as a picture: nodes carry roles and positions, nothing more. GraphCreator is its own browser-based DAG editor in which the DAG is a **documented model**. Every variable can carry a type (categorical, ordinal, continuous, discrete), ordered levels, a description and a unit, and every edge can carry evidence and a note. Its native format is a versioned YAML file. It is compatible with DAGitty through import and export of the dagitty text format, but it is not a DAGitty clone.
 
-v1 delivers: drawing, typed variables and metadata, the YAML format, dagitty import/export and auto-layout. Causal analysis, simulation-code export and everything else listed in [IDEAS.md](IDEAS.md) come later.
+v1 delivers: drawing, typed variables and metadata, the YAML format, dagitty import/export and auto-layout. Causal analysis follows in waves 13–15 (4.13–4.14, 5.8). Simulation-code export and everything else listed in [IDEAS.md](IDEAS.md) come later.
 
 Constraints that hold for the whole project:
 
@@ -28,7 +28,8 @@ src/
     layout.ts            autoLayout (dagre)
     nodeSize.ts          wrapLabel / nodeDiameter: circle size from the name (5.7.6, phase 10)
     result.ts            Result / Issue types
-    __fixtures__/        .dag.yaml and .dagitty.txt fixture files for tests
+    analysis/            causal analysis: d-separation, adjustment sets, paths, independencies, instruments (4.13, phases 24–28)
+    __fixtures__/        .dag.yaml and .dagitty.txt fixture files for tests; analysis/ holds the analysis gallery and reference.json (phase 24)
   store/
     graphStore.ts        Zustand store wrapping the model operations (4.6), with undo history (4.10, phase 21)
     uiStore.ts           canvas tool, connect source, welcome dialog, autosave status (4.7, phase 10)
@@ -45,6 +46,7 @@ src/
     canvas/CircleNode.tsx, canvas/FloatingEdge.tsx, canvas/canvas.css     (phase 11)
     ExportDialog.tsx                                                      (phase 22)
     SharedGraphDialog.tsx                                                 (phase 23)
+    AnalysisPanel.tsx, useAnalysis.ts                                     (phases 24, 29)
     (Toolbar.tsx, DagNode.tsx: v1 parts, deleted in phase 16)
     ui/                  shadcn/ui generated components
   lib/download.ts        downloadText / downloadBlob helpers for Save and Export
@@ -55,6 +57,7 @@ src/
   lib/welcome.ts         first-visit flag for the welcome slides (phase 14)
   App.tsx                layout: top bar; tool rail, optional lesson panel, canvas, side panel (5.1)
 e2e/                     Playwright tests
+scripts/dagitty-reference.R   dev-time only: writes the analysis reference answers with dagitty-R (phase 24)
 ```
 
 Data flow: the UI calls store actions; store actions call pure functions in `src/model/` and replace `graph` with the returned value. React Flow's node and edge arrays are derived from `graph` on render; React Flow never owns the graph.
@@ -482,6 +485,141 @@ export function decodeShare(hash: string): Promise<Result<Graph> | null>  // nul
 
 Details fixed in phase 23: `shareLink.ts` also exports the message texts and `copyShareLink(graph)`, the Share action itself (clipboard and toasts), so `TopBar` only adds the button; any Share failure, encoding included, shows the clipboard error toast. Base64url uses `btoa`/`atob`; an empty payload, `=` padding, a length of 1 modulo 4, invalid UTF-8 and trailing bytes all count as damaged. "Stored graph empty" means no nodes (as `confirmReplace`), so a named graph without nodes is replaced without asking. A `#g=` fragment skips the automatic welcome even when the link is damaged, without marking the visitor as welcomed. The "with N warnings" toast has no Show button (the warnings badge lists them). The shared-graph dialog keeps the close (X) button, which counts as Keep my graph. The fit uses 300 ms, or 0 with reduced motion (5.7.5). `SharedGraphDialog.tsx` exports a function next to the component, with an `oxlint-disable-next-line react/only-export-components` comment.
 
+### 4.13 Causal analysis (`src/model/analysis/`, phases 24–28)
+
+Pure TypeScript like the rest of `src/model/`: no React, Zustand or DOM. Every algorithm is written here from the cited papers; no dagitty code (GPL) is read or copied. dagitty-R is used only at development time, as an outside oracle that produces the expected answers in `src/model/__fixtures__/analysis/reference.json` (phase 24).
+
+**Roles in the analysis.** All functions take node **ids** and return node ids; sets are `string[]` sorted in graph order (the order of `graph.nodes`).
+
+| Role | Meaning in the analysis |
+|---|---|
+| exposure | in X, the exposure set |
+| outcome | in Y, the outcome set |
+| latent | not observed: never part of an adjustment set, a separating set, an instrument or its conditioning set |
+| selected | S, always conditioned on (the data exist only for the selected), never listed inside a set |
+| adjusted | Z, the user's own adjustment set; checked, never changed by the analysis (except by "Use this set", 4.14) |
+| other | an ordinary observed variable |
+
+Only the **total effect** of X on Y is analysed, with X and Y as sets (the joint effect of all exposures on all outcomes, as in DAGitty). Direct effects are in IDEAS.md.
+
+```ts
+// src/model/analysis/types.ts
+export type NodeSet = string[]                 // node ids, graph order, no duplicates
+export interface Roles { x: NodeSet; y: NodeSet; s: NodeSet; z: NodeSet; latent: NodeSet; observed: NodeSet }
+export function rolesOf(graph: Graph): Roles   // observed = every non-latent node; all in graph order
+
+export interface AdjustmentResult {
+  sets: NodeSet[]          // minimal sufficient adjustment sets, S excluded; [] = none exists; [[]] = the empty set suffices
+  truncated: boolean       // true when more than MAX_SETS exist; sets holds the first MAX_SETS
+  zSufficient: boolean     // Z ∪ S satisfies the adjustment criterion
+  zForbidden: NodeSet      // members of Z that lie on or after a proper causal path (Forb(X, Y)), for the report
+}
+export type PathKind = 'causal' | 'biasing'
+export interface PathInfo { nodes: string[]; kind: PathKind; open: boolean }   // nodes from an exposure to an outcome
+export interface PathsResult {
+  paths: PathInfo[]        // sorted: causal before biasing, then by length, then by the names along the path
+  truncated: boolean       // more than PATH_LIMIT paths exist; paths is then empty and nothing is highlighted
+  causalEdges: string[]    // edge ids on at least one open causal path (and on no open biasing path)
+  biasingEdges: string[]   // edge ids on at least one open biasing path
+}
+export interface Independence { a: string; b: string; given: NodeSet }   // a before b in graph order
+export interface Instrument { instrument: string; given: NodeSet }
+export type AnalysisStatus = 'ok' | 'no-exposure-or-outcome'
+export interface Analysis {
+  status: AnalysisStatus   // 'no-exposure-or-outcome' when X or Y is empty; then only roles and independencies are filled
+  roles: Roles
+  adjustment: AdjustmentResult | null
+  paths: PathsResult | null
+  independencies: Independence[]                 // does not need X or Y
+  instruments: Instrument[] | 'needs-single'     // 'needs-single' unless |X| = |Y| = 1
+}
+export const MAX_SETS = 100
+export const PATH_LIMIT = 500
+```
+
+```ts
+// src/model/analysis/dsep.ts (phase 24)
+export function parents(graph: Graph, id: string): NodeSet
+export function children(graph: Graph, id: string): NodeSet
+export function ancestors(graph: Graph, ids: Iterable<string>): Set<string>     // includes ids themselves
+export function descendants(graph: Graph, ids: Iterable<string>): Set<string>   // includes ids themselves
+export function reachable(graph: Graph, from: Iterable<string>, given: Iterable<string>): Set<string>
+export function dConnected(graph: Graph, xs: Iterable<string>, ys: Iterable<string>, given: Iterable<string>): boolean
+export function withoutEdges(graph: Graph, pred: (e: GEdge) => boolean): Graph   // helper for the derived graphs below
+// src/model/analysis/adjustment.ts (phase 25)
+export function properCausalNodes(graph: Graph, xs: NodeSet, ys: NodeSet): Set<string>   // PCP(X, Y)
+export function forbidden(graph: Graph, xs: NodeSet, ys: NodeSet): Set<string>           // Forb(X, Y)
+export function properBackdoorGraph(graph: Graph, xs: NodeSet, ys: NodeSet): Graph
+export function isAdjustmentSet(graph: Graph, xs: NodeSet, ys: NodeSet, zs: NodeSet): boolean
+export function minimalAdjustmentSets(graph: Graph, roles: Roles): { sets: NodeSet[]; truncated: boolean }
+export function adjustment(graph: Graph, roles: Roles): AdjustmentResult
+// src/model/analysis/paths.ts (phase 26)
+export function classifyPaths(graph: Graph, roles: Roles): PathsResult
+// src/model/analysis/independencies.ts (phase 27)
+export function impliedIndependencies(graph: Graph, roles: Roles): Independence[]
+// src/model/analysis/instruments.ts (phase 28)
+export function instrumentalVariables(graph: Graph, roles: Roles): Instrument[] | 'needs-single'
+// src/model/analysis/index.ts (phase 24)
+export function analyze(graph: Graph): Analysis
+```
+
+Phase 24 writes `types.ts`, `dsep.ts` and `index.ts` for real and the four other modules as **stubs** with the final signatures that return empty results (`adjustment` → `{ sets: [], truncated: false, zSufficient: false, zForbidden: [] }`, `classifyPaths` → no paths, `impliedIndependencies` → `[]`, `instrumentalVariables` → `[]` or `'needs-single'`; the helpers in `adjustment.ts` throw `Error('Not implemented')`), so the app works and the wave 14 phases can be built side by side.
+
+**Algorithms.**
+
+- **d-separation (`reachable`, `dConnected`):** Bayes-Ball reachability (Shachter 1998; Koller & Friedman 2009, Algorithm 3.1). Let `A = ancestors(given)`. Search over pairs (node, direction), starting with (x, up) for every x in `from`. From (v, up) with v ∉ given: visit every parent as (p, up) and every child as (c, down). From (v, down): if v ∉ given, visit every child as (c, down); if v ∈ A, visit every parent as (p, up). `reachable` returns every visited node not in `given`, including the start nodes that are not in `given`. `dConnected` is true when the sets overlap outside `given`, or some y ∈ ys is in `reachable(xs, given)`. Linear in the size of the graph.
+- **Proper causal paths:** `G_{X̄}` is the graph with every edge into X removed and `G_{X̲}` the graph with every edge out of X removed. `PCP(X, Y) = (descendants_{G_{X̄}}(X) \ X) ∩ ancestors_{G_{X̲}}(Y)`. `Forb(X, Y) = descendants_G(PCP(X, Y)) ∪ X`. The proper back-door graph `G^pbd` removes every edge `x → w` with x ∈ X and w ∈ PCP(X, Y) (van der Zander, Liśkiewicz & Textor 2014).
+- **Adjustment criterion (`isAdjustmentSet`):** Z is an adjustment set for (X, Y) when Z ∩ Forb(X, Y) = ∅ and X and Y are d-separated by Z in `G^pbd` (Shpitser, VanderWeele & Robins 2010; Perković et al. 2018). The report and `zSufficient` test `Z ∪ S` (selected nodes are always conditioned on). If S meets Forb, no set is sufficient.
+- **Minimal sets (`minimalAdjustmentSets`):** the minimal sets W such that `W ∪ S` is an adjustment set, with W ⊆ R = observed \ (Forb(X, Y) ∪ Y ∪ S). "Minimal" means no proper subset of W works. Implementation: van der Zander, Liśkiewicz & Textor (2019), algorithms FindMinSep and ListMinSep (polynomial delay), run on `G^pbd` with I = S and R as above, written from the paper. Stop after `MAX_SETS` sets and set `truncated`. Sort the sets by size, then by graph order of their members. A test checks the result against brute force (every subset of R, for graphs with at most 12 nodes in R) and against `reference.json`.
+- **Paths (`classifyPaths`):** every simple path in the skeleton (directions ignored) from some x ∈ X to some y ∈ Y whose inner nodes are in neither X nor Y. A path is **causal** when every edge points from the exposure end towards the outcome end, otherwise **biasing**. Given C = Z ∪ S, a path is **open** when every inner collider (→ v ←) is in `ancestors(C)` and no inner non-collider is in C; otherwise **closed**. Enumeration is a depth-first search that stops at `PATH_LIMIT + 1` paths: then `truncated: true` and `paths`, `causalEdges` and `biasingEdges` are empty. An edge on both an open causal and an open biasing path counts as biasing only.
+- **Implied independencies (`impliedIndependencies`):** for every unordered pair a, b of observed nodes that are not in S and not adjacent, in graph order (a's index, then b's), one minimal separating set: FindMinSep (as above) on `G` with I = S and R = observed \ ({a, b} ∪ S), and `given` is the set it returns (S is always conditioned on and is not listed). A pair with no separating set inside R is left out (its independence is not testable from the observed variables). If several minimal sets exist, any one that FindMinSep returns is fine; tests check validity and minimality, not the exact set.
+- **Instruments (`instrumentalVariables`):** only when |X| = |Y| = 1 (otherwise `'needs-single'`). Following van der Zander, Textor & Liśkiewicz (2015, "Efficiently finding conditional instruments for causal inference"): an observed node i ∉ {x, y} ∪ S is a conditional instrument given a set W of observed nodes when W ∩ `descendants_G(PCP({x}, {y}))` = ∅, i is d-connected to x given W ∪ S in G, and i is d-separated from y given W ∪ S in `G^pbd`. For each candidate i, W is the "nearest separator" of i and y in `G^pbd` relative to x as in the paper; if it yields a valid instrument, i is listed with that W (W = [] for an unconditional instrument). Sorted by graph order of i.
+- **`analyze`:** `rolesOf`, then `status`; with `'ok'` all four results, otherwise `adjustment`, `paths` and `instruments` are `null`, `null` and `'needs-single'`. Selected nodes that are also forbidden simply make every set insufficient.
+
+**Reference fixtures (phase 24).** `src/model/__fixtures__/analysis/` holds a gallery of dagitty files with roles: `confounding.dagitty.txt` (copied from the existing fixture), `m-bias.dagitty.txt` (copied), `mediation`, `collider`, `butterfly`, `confounding-by-indication`, `selection-bias` (with a `selected` node, written as dagitty's `[selected]`), `latent-confounder`, `two-exposures-two-outcomes`, `instrument` (Z → X → Y, U → X, U → Y, U latent) and `no-adjustment-possible`. `scripts/dagitty-reference.R` reads each file with `dagitty::dagitty()` and writes `reference.json`: per file, `adjustmentSets(g, type = "minimal", effect = "total")`, `isAdjustmentSet(g, adjustedNodes(g))`, `impliedConditionalIndependencies(g, type = "missing.edge")` as pairs and sets, `instrumentalVariables(g)` when there is one exposure and one outcome, and `paths(g, Z = adjustedNodes(g))` with open flags. Names, not ids, are written; tests map them through `parseDagitty`. The JSON is committed; CI never runs R. Install once with `Rscript -e 'install.packages("dagitty", lib = Sys.getenv("R_LIBS_USER"))'`. If dagitty-R treats selected or adjusted nodes differently from the table above, phase 24 stops and reports it.
+
+### 4.14 Analysis state (`uiStore`, `graphStore`, `useAnalysis`; phase 24)
+
+Additions to `UiState` (4.7):
+
+```ts
+export type AnalysisKey = 'report' | 'adjustment' | 'paths' | 'instruments' | 'independencies'   // also the section order
+export const ANALYSIS_KEYS: readonly AnalysisKey[]
+export const ANALYSIS_KEY = 'graphcreator:analysis'
+export const ANALYSIS_DEFAULTS: Record<AnalysisKey, boolean>   // report and adjustment true, the rest false
+sidePanelTab: 'edit' | 'analysis'          // default 'edit'
+analysisOn: Record<AnalysisKey, boolean>   // initial value from readAnalysisOn(safeLocalStorage())
+hoverNodeIds: string[]                     // nodes a hovered or focused Analysis item points at; default []
+setSidePanelTab(tab: 'edit' | 'analysis'): void
+setAnalysisOn(key: AnalysisKey, on: boolean): void   // also writes all toggles with writeAnalysisOn
+setHoverNodeIds(ids: string[]): void
+export function readAnalysisOn(storage: Pick<Storage, 'getItem'> | null): Record<AnalysisKey, boolean>
+export function writeAnalysisOn(storage: Pick<Storage, 'setItem'> | null, on: Record<AnalysisKey, boolean>): void
+```
+
+`readAnalysisOn` parses the JSON object under `ANALYSIS_KEY` and takes each key's boolean when present, else the default; null storage, a throwing storage or bad JSON give `ANALYSIS_DEFAULTS`. `writeAnalysisOn` ignores null or throwing storage (as `themeStore`, 4.9). The toggles are a viewer preference: not part of the graph, the file or the undo history.
+
+Addition to `GraphState` (4.6, 4.10):
+
+```ts
+setAdjustedSet(nodeIds: string[]): void
+```
+
+Every node in `nodeIds` whose role is `other` or `adjusted` gets role `adjusted`; every other node with role `adjusted` gets role `other`. Exposure, outcome, latent and selected nodes are never changed. One undo step; a call that changes nothing records nothing (4.10 rules).
+
+`src/components/useAnalysis.ts`:
+
+```ts
+export function useAnalysis(): Analysis   // analyze(graph), memoised on the graph object (graphs are immutable)
+```
+
+`CircleNodeData` and `FloatingEdgeData` (`src/components/canvas/types.ts`) gain optional fields, so the phase 24 Canvas still typechecks:
+
+```ts
+CircleNodeData.highlighted?: boolean        // in uiStore.hoverNodeIds: shows the hover rim (5.7.7)
+FloatingEdgeData.path?: 'causal' | 'biasing'   // only while analysisOn.paths and the paths are not truncated
+```
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -504,7 +642,7 @@ Details fixed in phase 23: `shareLink.ts` also exports the message texts and `co
 - **Tool rail** (`ToolRail`, `role="toolbar"`, `aria-label="Canvas tools"`, `aria-orientation="vertical"`, 56 px wide): icon-only buttons, each with an accessible name, `aria-keyshortcuts` and a tooltip "Name  Key": Select (V), Add node (N), Connect (C), a divider, Auto-layout (L), Fit view (F), Zoom in (+), Zoom out (−), a divider, Undo (`Undo2` icon, Ctrl+Z) and Redo (`Redo2` icon, Ctrl+Shift+Z) (phase 21). The active tool is solid teal. Undo and Redo are disabled when `past` or `future` is empty. Their tooltips read "Undo  Ctrl+Z" and "Redo  Ctrl+Shift+Z", with ⌘ in place of Ctrl on a Mac (`/Mac|iPhone|iPad/` in `navigator.userAgent`); their `aria-keyshortcuts` are `Control+Z Meta+Z` and `Control+Shift+Z Meta+Shift+Z Control+Y`.
 - **Lesson panel:** only while a lesson runs (5.7.10); 300 px, between the rail and the canvas.
 - **Canvas:** React Flow, fills the remaining space, teal-tinted background (`--canvas`), no dot grid, no minimap, no React Flow attribution, no React Flow `<Controls>` (the rail has zoom and fit). The saved indicator sits in the bottom-right corner (5.2).
-- **Side panel:** fixed width (320 px). Shows NodeEditor or EdgeEditor for the single selected item. With nothing selected it shows a cheat sheet (exact text in 5.7.8): add a node, connect, delete, select several, undo.
+- **Side panel:** fixed width (320 px). Shows NodeEditor or EdgeEditor for the single selected item. With nothing selected it shows a cheat sheet (exact text in 5.7.8): add a node, connect, delete, select several, undo. From phase 29 the panel has two tabs at the top, **Edit** (all of the above) and **Analysis** (5.8).
 
 ### 5.2 Canvas interactions
 
@@ -692,6 +830,10 @@ Pure and deterministic (no DOM), so `autoLayout` and the store can use it.
 | Edge | default | 1.5 px `--edge`, closed arrowhead 9 px |
 | Edge | hover | 2 px `--edge-hover`; interaction width 12 px |
 | Edge | selected | 2.5 px `--primary`, arrowhead in `--primary` |
+| Edge | on an open causal path (phase 26) | 3 px solid `--edge-hover`, arrowhead in `--edge-hover`; `data-path="causal"` |
+| Edge | on an open biasing path (phase 26) | 2 px `--edge-hover`, dashed `5 3`, arrowhead in `--edge-hover`; `data-path="biasing"` |
+| Edge | selected and on a path | the selected colour with the path's width and dash |
+| Circle | highlighted from the Analysis tab (phase 26) | the hover rim, as in the hover row |
 | Connection line | while dragging | 1.75 px `--primary`, dashed `6 4` |
 | Evidence chip | edge has evidence | 20 px high, `--background`, 1 px `--input` border, `rounded-sm`, `Bookmark` 10 px and the count in Plex Mono 11 px |
 
@@ -782,6 +924,43 @@ export function findLesson(id: string): Lesson | undefined
 - Back (ghost) and Next (primary; disabled until done; reads "Finish" on the last step).
 
 **Running a lesson** (4.8): the user's graph is set aside and the practice graph loaded with `replaceGraph`. Autosave pauses (`autosave` status `paused`, phase 16). Leaving the lesson by Finish or close restores the user's graph; the practice graph is discarded.
+
+### 5.8 Analysis tab (`AnalysisPanel.tsx`, phases 26 and 29)
+
+**Tabs.** The side panel starts with a tab list (shadcn `tabs`, `aria-label="Side panel view"`) holding **Edit** and **Analysis**, bound to `uiStore.sidePanelTab`. Edit shows today's content (5.1, 5.3). Whenever the store's `selection` changes to a node or edge, the tab switches to Edit (`SidePanel` watches `selection`; this covers canvas clicks, new nodes, double-click rename and IssuesDialog). Clicking empty canvas leaves the tab as it is. The tab is not remembered across reloads.
+
+**Layout.** The Analysis tab is a column of five sections in the order of `ANALYSIS_KEYS`: Report, Adjustment sets, Paths, Instruments, Independencies. Each section header has the title (15 px, semibold, as the editor headings), an optional count in Plex Mono 13 px muted (`(3)`), and on the right a shadcn `switch` with `aria-label="Show <title, lower case>"` bound to `analysisOn`. A switched-off section shows only its header. Sections are separated by a 1 px `--border` line and 16 px of space.
+
+**Empty state.** With no exposure or no outcome (`status: 'no-exposure-or-outcome'`), a muted line at the top reads `Mark at least one exposure and one outcome to see the analysis.` Report, Adjustment sets, Paths and Instruments then show only their headers; Independencies still works.
+
+**Names.** Sets are written as names joined by `, ` (graph order); the empty set is written `(empty set)`. Lists of names in sentences use "A", "A and B", "A, B and C".
+
+**Report** (Tennant et al. 2021; in the app only, not exported):
+- `Total effect of <X names> on <Y names>.`
+- One adjustment line, by case:
+  - Z empty and `zSufficient`: `No adjustment is needed, as implied by this DAG.`
+  - Z not empty and `zSufficient`: `Your adjusted set (<Z names>) is sufficient, as implied by this DAG.`
+  - not `zSufficient`: `Your adjusted set (<Z names, or "empty">) is not sufficient, as implied by this DAG.`; then, when `zForbidden` is not empty, `<names> lie on or after a causal path from the exposure; adjusting for them can block or bias the effect.`; then, when `sets` is `[]`, `No set of observed variables is sufficient.`
+- When S is not empty: `Always conditioned on (selected): <S names>.`
+- `Latent: <names>.` or `Latent: none.`, followed by `Are there unmeasured common causes you should add?`
+
+**Adjustment sets:** count = number of sets. Intro line `Minimal sufficient adjustment sets, as implied by this DAG:`. One row per set: the names, and on the right a small ghost button **Use this set** (calls `setAdjustedSet`); a set equal to the current Z shows the muted label `In use` instead. With `sets` `[]`: `No set of observed variables is sufficient.` With `truncated`: a muted line `Showing the first 100 sets.`
+
+**Paths:** count = number of paths. One row per path: the names joined by ` → ` or ` ← ` following the edge directions (e.g. `Maternal smoking ← SES → Birth weight`), and a muted tag `causal · open`, `biasing · open`, `causal · closed` or `biasing · closed`. With the switch on, the canvas marks edges on open paths (5.7.7); with it off, nothing is marked. With `truncated`: `There are more than 500 paths, too many to list or highlight.` With no paths: `No paths connect the exposure and the outcome.`
+
+**Instruments:** count = number of instruments. One row per instrument: `<name>` or `<name> | <given names>`. With `'needs-single'`: `Instruments need exactly one exposure and one outcome.` With none: `No instruments, as implied by this DAG.`
+
+**Independencies:** count = number of independencies. One row per item in Plex Mono: `A ⫫ B` or `A ⫫ B | C, D` (U+2AEB). Intro line `Independencies implied by this DAG, which you can test in your data:`. With none: `This DAG implies no testable independencies.`
+
+**Long lists.** Paths, Instruments and Independencies show the first 20 rows, then a link button `Show all <n>` that expands the list (local component state, reset when the tab is left).
+
+**Hover.** Pointing at a row or focusing it (each row is focusable, `tabIndex=0`) calls `setHoverNodeIds` with the row's nodes (the set, the path, or the instrument with its conditioning set); leaving or blurring calls `setHoverNodeIds([])`, as does leaving the tab. Those circles show the hover rim (5.7.7).
+
+**Accessibility.** Rows are a `<ul>` per section with `aria-label` = the section title. The canvas path marking is not colour-only: width and dashes carry it.
+
+**During a lesson** the tab analyses the practice graph like any other graph.
+
+## 6. Project setup and conventions
 
 
 - Scripts in `package.json`: `dev`, `build` (`tsc -b && vite build`), `preview`, `lint` (`oxlint`), `typecheck` (`tsc -b`; the tsconfigs set `noEmit`), `test` (`vitest run`), `test:watch` (`vitest`), `test:e2e` (`playwright test`), `format` (`prettier --write .`).
@@ -887,6 +1066,24 @@ export function findLesson(id: string): Lesson | undefined
 | Share link format (wave 12) | `#g=` + base64url of deflate-raw `toYaml` text, via the browser's `CompressionStream` | `lz-string`; uncompressed base64; a query parameter | No dependency; the fragment is never sent to a server. |
 | Opening a share link (wave 12) | Replace at once when the stored graph is empty or the same; otherwise ask ("Keep my graph" / "Open shared graph"); the fragment is removed after reading | Always replace; always ask; keep the fragment | The same rule as New and Open: never lose a graph without asking. |
 | Wave 12 file sharing | Phases 22 and 23 both add one button to `TopBar.tsx`, at fixed places; the conflict is resolved when phase 23 lands | A fourth integration phase; one phase owning both buttons | Two small additions do not justify an extra phase. The single exception to disjoint file ownership. |
+| Analysis scope (2026-11-09) | Adjustment sets, path highlighting, implied independencies, instruments and an in-app Tennant report | A subset first | User's choice. |
+| Tennant report | Shown in the Analysis tab only | Exportable summary; stored estimand and alternative sets with rationale | User's choice ("not exportable yet"); the rest needs file-format changes and stays in IDEAS.md. |
+| Analysis placement | Edit and Analysis tabs in the side panel; each section has its own switch | A separate dialog; design rounds | User's choice. |
+| Several exposures or outcomes | Treated as sets (joint total effect), as in DAGitty; instruments need exactly one of each | Require exactly one of each | User's choice; matches imported files and the "multiple exposures allowed" decision. |
+| Effect type | Total effect only | Also direct effects | Keeps the first round small; direct effects go to IDEAS.md. |
+| Reference answers | dagitty-R as a dev-time oracle writing committed `reference.json`, plus brute-force checks | Hand-worked examples only | User's choice. No GPL code enters the app; CI does not need R. |
+| Path look on the canvas | Line style only: causal 3 px solid, biasing 2 px dashed, both in `--edge-hover` | DAGitty green/red; teal and coral; green and magenta | User's choice. Red is reserved for errors and teal for selection; no new colour tokens. |
+| Section switches | A switch in each section header; off collapses to the header | A checklist on top; an accordion with one highlight switch | User's choice. |
+| Tab on selection | Selecting a node or edge switches to Edit | Stay on Analysis | User's choice. |
+| Closed biasing paths | Drawn as normal edges | Thin dotted | User's choice: adjusting visibly removes the dashes. |
+| Default switches | Report and Adjustment sets on, the rest off; remembered in `graphcreator:analysis` | All on; all off | User's choice. |
+| Section order | Report, Adjustment sets, Paths, Instruments, Independencies | Sets first, report last | User's choice. |
+| Paths in the panel | A list with kind and state, 20 rows then "Show all" | Counts only | User's choice. |
+| Independence notation | `A ⫫ B \| C, D` | Words | User's choice. |
+| Use this set | A button per minimal set that sets the Adjusted roles, one undo step | Read-only panel | User's choice. |
+| Hover highlighting | Hovering or focusing a row puts the hover rim on its nodes | None | User's choice. |
+| Analysis spec location | SPEC.md 4.13–4.14, 5.8, waves 13–15; gallery in `src/model/__fixtures__/analysis/`; `scripts/dagitty-reference.R` | A separate `docs/ANALYSIS_SPEC.md` | User's choice. |
+| Section 6 heading | Restored as "## 6. Project setup and conventions" | — | It was dropped by accident in 910cfc7; other sections refer to "section 6". |
 
 ## 8. Implementation phases
 
@@ -896,7 +1093,7 @@ General rules for every phase:
 
 - Read the whole spec first; sections 3–7 and the decisions table are binding.
 - Only create or change the files the phase owns. All other files are read-only for it. Code against the contracts of earlier phases; don't change them.
-- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`). If another is needed, stop and report it.
+- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`; phase 24 adds `tabs` and `switch`). If another is needed, stop and report it.
 - Don't add npm dependencies; everything needed is installed (section 6). The only exception is phase 10, which swaps the font packages (5.7.3).
 - "All checks" means `npm run typecheck`, `npm run lint`, `npm test` and `npm run test:e2e`.
 
@@ -927,6 +1124,13 @@ General rules for every phase:
 | 21 | Undo and redo | 20 | 12 | `src/store/graphStore.ts` (+ test), `src/components/Canvas.tsx`, `SidePanel.tsx`, `ToolRail.tsx`, `useToolShortcuts.ts`, `src/lib/copy.ts`, `e2e/undo.spec.ts` |
 | 22 | Image export | 20 | 12 | `src/lib/imageExport.ts` (+ test), `src/lib/download.ts`, `src/components/ExportDialog.tsx`, `TopBar.tsx` (the Export… button and dialog only), `e2e/export.spec.ts` |
 | 23 | Share links | 20 | 12 | `src/lib/shareLink.ts` (+ test), `src/components/SharedGraphDialog.tsx`, `src/main.tsx`, `src/App.tsx`, `TopBar.tsx` (the Share button only), `e2e/share.spec.ts` |
+| 24 | Analysis contracts and core | 23 | 13 | `src/model/analysis/*` (types, dsep and index real, the other four as stubs; tests for the real ones), `src/model/__fixtures__/analysis/*`, `scripts/dagitty-reference.R`, `src/store/uiStore.ts` (+ test), `src/store/graphStore.ts` (+ test), `src/components/useAnalysis.ts`, `src/components/canvas/types.ts`, `src/lib/copy.ts` (+ `copy.test.ts`), `src/components/ui/{tabs,switch}.tsx` |
+| 25 | Adjustment sets | 24 | 14 | `src/model/analysis/adjustment.ts`, `adjustment.test.ts` |
+| 26 | Paths and canvas marking | 24 | 14 | `src/model/analysis/paths.ts`, `paths.test.ts`, `src/components/Canvas.tsx`, `canvas/FloatingEdge.tsx`, `canvas/CircleNode.tsx`, `canvas/canvas.css` |
+| 27 | Implied independencies | 24 | 14 | `src/model/analysis/independencies.ts`, `independencies.test.ts` |
+| 28 | Instrumental variables | 24 | 14 | `src/model/analysis/instruments.ts`, `instruments.test.ts` |
+| 29 | Analysis tab | 24 | 14 | `src/components/SidePanel.tsx`, `src/components/AnalysisPanel.tsx` |
+| 30 | Analysis integration and end-to-end tests | 25, 26, 27, 28, 29 | 15 | `e2e/analysis.spec.ts`, fixes in any file of phases 24–29, this spec's Status line and Open issues, `docs/IDEAS.md` |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -1300,7 +1504,7 @@ Phases: 19, 20 (done one after the other; both touch `TopBar.tsx`). Check after 
 - **Done when:** all checks pass; Save shows the GraphCreator text and its Download gives `<slug>.dag.yaml`.
 - **Out of scope:** a keyboard shortcut for Save.
 
-### Wave 12: Undo, image export and share links [ ]
+### Wave 12: Undo, image export and share links [x]
 
 Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree); they share only `TopBar.tsx`, as described under the task graph. Land them in the order 21, 22, 23. Check after the wave: all checks; in the browser undo and redo by keys and rail buttons (including a multi-node drag and an undo while the node stays selected), the Export dialog's three formats and downloads, and a share link copied, opened in a new tab over a different stored graph, and opened again over an empty one. Parallel e2e runs need `CI=1` and a lock, because the worktrees share port 4173: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
@@ -1334,7 +1538,7 @@ Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree
 - **Done when:** all checks pass; the three downloads open correctly in a browser (SVG, PNG) and the TikZ text compiles in a LaTeX document with `tikz` and `arrows.meta` (checked by hand when LaTeX is available; otherwise say so).
 - **Out of scope:** a legend; a dark-theme export; exporting only the selection; PDF; remembering the format.
 
-#### Phase 23: Share links [ ]
+#### Phase 23: Share links [x] (ff89d72)
 
 - **Goal:** Share copies a link that recreates the graph when opened, without any server.
 - **Depends on:** phase 20.
@@ -1348,6 +1552,103 @@ Phases: 21, 22, 23. Parallel: all three (one sub agent each, in its own worktree
 - **Tests:** `shareLink.test.ts` and `e2e/share.spec.ts` (section 9).
 - **Done when:** all checks pass; the browser checks for share links in the wave line work.
 - **Out of scope:** short links or any server; a QR code; read-only shared views; sharing several graphs.
+
+### Wave 13: Analysis contracts [ ]
+
+Phases: 24. Parallel: single phase. Check after the wave: all checks; the app runs unchanged (no tab yet; the stubs return empty results).
+
+#### Phase 24: Analysis contracts and core [ ]
+
+- **Goal:** the analysis types, d-separation, the reference answers, the store additions and the UI contracts exist, so wave 14 can build the four algorithms, the canvas marking and the tab in parallel.
+- **Depends on:** phase 23.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `Graph`, `GNode`, `GEdge` (3.2), `parseDagitty` (4.2), the store rules of 4.6 and 4.10, `themeStore`'s storage helpers as the pattern for `readAnalysisOn` (4.9).
+- **Work:**
+  - **`src/model/analysis/types.ts`, `dsep.ts`, `index.ts`:** as in 4.13, for real. **`adjustment.ts`, `paths.ts`, `independencies.ts`, `instruments.ts`:** the 4.13 signatures as stubs.
+  - **Reference:** install dagitty-R as in 4.13, write the gallery and `scripts/dagitty-reference.R`, run it and commit `reference.json`. Record the dagitty-R version in the JSON (`"dagitty": "<version>"`). Check the semantics table of 4.13 against dagitty-R's output (selected and adjusted nodes); if they differ, stop and report.
+  - **`uiStore.ts`:** the 4.14 additions. **`graphStore.ts`:** `setAdjustedSet` (4.14).
+  - **`useAnalysis.ts`:** as in 4.14. **`canvas/types.ts`:** the optional `highlighted` and `path` fields.
+  - **`copy.ts`:** `ANALYSIS_TITLES: Record<AnalysisKey, string>` ("Report", "Adjustment sets", "Paths", "Instruments", "Independencies") and `ANALYSIS_TEXT`, an object with every fixed sentence of 5.8 (templates as functions taking names, e.g. `totalEffect(xs: string[], ys: string[])`), and `joinNames(names: string[])` ("A", "A and B", "A, B and C").
+  - **shadcn:** `npx shadcn@latest add tabs switch` (both use the installed `radix-ui` package; no new dependency). Restyle nothing beyond the Calm teal tokens: the switch is `--primary` when on.
+- **Tests:** `src/model/analysis/dsep.test.ts`, `index.test.ts`, the `uiStore.test.ts` and `graphStore.test.ts` additions, `copy.ts` `joinNames` cases in `src/lib/copy.test.ts` (section 9).
+- **Done when:** all checks pass; `reference.json` covers every gallery file; `dsep.test.ts` agrees with the reference's d-separation facts (each implied independence is d-separated, each adjacent pair is not).
+- **Out of scope:** the four algorithms, the tab, the canvas marking.
+
+### Wave 14: Analysis parts [ ]
+
+Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own worktree); their files are disjoint. Land them in the order 25, 26, 27, 28, 29. Check after the wave: all checks; in the browser, `smoking.dag.yaml` shows the Analysis tab with real results. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
+
+#### Phase 25: Adjustment sets [ ]
+
+- **Goal:** `adjustment.ts` computes the adjustment criterion, the minimal sufficient sets and the report fields.
+- **Depends on:** phase 24.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `types.ts`, `dsep.ts` (4.13), `reference.json`.
+- **Work:** `properCausalNodes`, `forbidden`, `properBackdoorGraph`, `isAdjustmentSet`, `minimalAdjustmentSets` (FindMinSep and ListMinSep from van der Zander, Liśkiewicz & Textor 2019) and `adjustment`, as in 4.13. FindMinSep is exported too (`findMinSep(graph, xs, ys, include, restrict): NodeSet | null`), because phases 27 and 28 need it: they may copy it into their own module until phase 30 makes them import it from here.
+- **Tests:** `adjustment.test.ts` (section 9).
+- **Done when:** all checks pass; every gallery file matches `reference.json`; the brute-force comparison passes on all gallery files and on 200 random DAGs (seeded, 4–10 nodes).
+- **Out of scope:** direct effects; sets that are not minimal (DAGitty's "all" and "canonical" sets).
+
+#### Phase 26: Paths and canvas marking [ ]
+
+- **Goal:** `classifyPaths` lists and classifies the paths, and the canvas marks edges on open paths and circles hovered from the panel.
+- **Depends on:** phase 24.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.13, 4.14 (`useAnalysis`, `analysisOn.paths`, `hoverNodeIds`, the optional data fields), 5.7.7.
+- **Work:**
+  - **`paths.ts`:** as in 4.13.
+  - **`Canvas.tsx`:** fills `data.path` from `useAnalysis().paths` while `analysisOn.paths` is on and the result is not truncated, and `data.highlighted` from `hoverNodeIds`. The comparison that keeps unchanged React Flow objects also compares the new fields.
+  - **`FloatingEdge.tsx`, `canvas.css`:** the two path looks of 5.7.7 and `data-path` on the edge's path element. **`CircleNode.tsx`:** `highlighted` shows the hover rim.
+- **Tests:** `paths.test.ts` (section 9).
+- **Done when:** all checks pass; in the browser, setting `analysisOn.paths` from the devtools marks the smoking graph's edges (the tab does not exist yet in this branch).
+- **Out of scope:** the panel list (phase 29); image export of the marking.
+
+#### Phase 27: Implied independencies [ ]
+
+- **Goal:** `impliedIndependencies` lists the testable independencies.
+- **Depends on:** phase 24.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.13, `dsep.ts`.
+- **Work:** as in 4.13. Until phase 25 lands, keep a private FindMinSep in this module (phase 30 replaces it with the import).
+- **Tests:** `independencies.test.ts` (section 9).
+- **Done when:** all checks pass; the pairs match `reference.json` on every gallery file.
+- **Out of scope:** the "basis set" form of DAGitty; tests against data.
+
+#### Phase 28: Instrumental variables [ ]
+
+- **Goal:** `instrumentalVariables` finds unconditional and conditional instruments.
+- **Depends on:** phase 24.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.13, `dsep.ts`.
+- **Work:** as in 4.13 (van der Zander, Textor & Liśkiewicz 2015). A private FindMinSep or nearest-separator helper may live here until phase 30.
+- **Tests:** `instruments.test.ts` (section 9).
+- **Done when:** all checks pass; the instruments match `reference.json` on every gallery file with one exposure and one outcome.
+- **Out of scope:** instruments for several exposures or outcomes.
+
+#### Phase 29: Analysis tab [ ]
+
+- **Goal:** the side panel has Edit and Analysis tabs, and the Analysis tab shows the five sections of 5.8 with their switches, rows, Use this set, Show all and hover.
+- **Depends on:** phase 24.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.14 (`uiStore`, `setAdjustedSet`, `useAnalysis`), `copy.ts` texts, the shadcn `tabs` and `switch`.
+- **Work:** `SidePanel.tsx` gets the tabs and the switch-to-Edit rule; `AnalysisPanel.tsx` (`export function AnalysisPanel()`, no props) renders 5.8. It is coded against the stubs: with them, every section shows its "none" text. To check the real look before wave 14 lands, a local, uncommitted change may make the stubs return sample data.
+- **Tests:** none of its own (components have no unit tests); `e2e/analysis.spec.ts` follows in phase 30. The existing e2e tests must still pass (the Edit tab is the default, so the editor and cheat sheet are where they were).
+- **Done when:** all checks pass; in the browser the tabs switch, the switches persist across a reload, and selecting a node returns to Edit.
+- **Out of scope:** the algorithms; the canvas marking (phase 26).
+
+### Wave 15: Analysis integration [ ]
+
+Phases: 30. Parallel: single phase. Check after the wave: all checks; the browser checks in phase 30.
+
+#### Phase 30: Analysis integration and end-to-end tests [ ]
+
+- **Goal:** the analysis works end to end and the spec, IDEAS.md and memory reflect it.
+- **Depends on:** phases 25–29.
+- **Owns files:** see the task graph row.
+- **Work:** replace the private FindMinSep copies in phases 27 and 28 with the import from `adjustment.ts`; fix integration problems; write `e2e/analysis.spec.ts`; update the Status line, the Open issues and `docs/IDEAS.md` (remove the built items; keep the exportable summary, alternative sets with rationale, direct effects and the estimand field).
+- **Tests:** `e2e/analysis.spec.ts` (section 9).
+- **Done when:** all checks pass; in the browser (both themes) an M-bias graph shows `(empty set)` as sufficient and adjusting the collider Z makes the path through Z dashed and the report say "not sufficient"; Use this set and undo work.
+- **Out of scope:** an exportable report; analysis in exported images.
 
 ## 9. Tests
 
@@ -1397,6 +1698,19 @@ Wave 12 (phases 21–23):
 - `src/lib/shareLink.test.ts` (phase 23): `decodeShare(SHARE_PREFIX + await encodeShare(g))` returns a graph whose `toYaml` equals `g`'s for `smoking.dag.yaml` and the empty graph; the payload uses only `A–Z a–z 0–9 - _`; `shareUrl` uses the given base; a hash without the prefix gives null; a damaged or truncated payload gives the exact damaged-link message; a valid payload of invalid YAML gives `parseYaml`'s errors.
 - `e2e/share.spec.ts` (phase 23, with clipboard permissions granted): Share copies a URL starting with the page URL and `#g=` and toasts; opening that URL in a fresh context (empty storage) shows the graph, the toast, no welcome slides and no fragment in the address bar; opening it over a different stored graph shows the dialog, Keep my graph keeps the stored graph and Open shared graph replaces it; a damaged link shows the error toast and keeps the stored graph; a reload after opening does not ask again.
 
+Causal analysis (phases 24–30):
+
+- `src/model/analysis/dsep.test.ts` (phase 24): `ancestors` and `descendants` include the start nodes; chain, fork and collider cases of `dConnected` with and without conditioning, including conditioning on a collider's descendant; `reachable` from several start nodes; agreement with the gallery's reference independencies (each listed pair is d-separated by its set) and adjacency (adjacent pairs are always d-connected).
+- `src/model/analysis/index.test.ts` (phase 24): `rolesOf` sorts by graph order and leaves latent nodes out of `observed`; `analyze` gives `'no-exposure-or-outcome'` with null results when X or Y is empty and `'needs-single'` with two exposures; an empty graph does not throw.
+- `src/store/uiStore.test.ts` (phase 24 addition): defaults; `setAnalysisOn` writes `graphcreator:analysis`; `readAnalysisOn` with null, throwing or malformed storage gives the defaults and keeps known keys from partial JSON; `setSidePanelTab` and `setHoverNodeIds`.
+- `src/store/graphStore.test.ts` (phase 24 addition): `setAdjustedSet` marks the given nodes, returns other adjusted nodes to `other`, never changes exposure, outcome, latent or selected nodes, is one undo step and records nothing when nothing changes.
+- `src/lib/copy.test.ts` (phase 24): `joinNames` for zero, one, two and three names; the 5.8 templates fill in names.
+- `src/model/analysis/adjustment.test.ts` (phase 25): `properCausalNodes`, `forbidden` and `properBackdoorGraph` on mediation; `isAdjustmentSet` on the textbook cases (confounder needed, mediator forbidden, collider opens M-bias); minimal sets equal `reference.json` for every gallery file (as sets of names, order-free); brute force over subsets equals `minimalAdjustmentSets` on the gallery and 200 seeded random DAGs; selected nodes are never listed and a selected forbidden node leaves no set; `truncated` at `MAX_SETS` on a generated graph with many sets.
+- `src/model/analysis/paths.test.ts` (phase 26): the smoking graph gives one open causal and one open biasing path; adjusting SES closes the biasing path; M-bias's path is closed until Z is adjusted; an adjusted mediator closes the causal path; the edge lists follow "biasing wins"; inner exposure or outcome nodes end a path; a generated graph with more than `PATH_LIMIT` paths gives `truncated` and empty lists; open flags equal `reference.json`.
+- `src/model/analysis/independencies.test.ts` (phase 27): pairs equal `reference.json`; every `given` d-separates its pair and no proper subset does; latent and selected nodes never appear; adjacent pairs never appear.
+- `src/model/analysis/instruments.test.ts` (phase 28): the `instrument` gallery file gives Z unconditionally; a conditional instrument case gives the right `given`; the results equal `reference.json`; `'needs-single'` with two exposures.
+- `e2e/analysis.spec.ts` (phase 30): with `smoking.dag.yaml` open, the Analysis tab shows `Total effect of Maternal smoking on Birth weight.`, the set `SES` and "not sufficient"; Use this set marks SES as Adjusted (its circle's `data-role`), the report turns "sufficient", and Ctrl+Z undoes it; switching Paths on gives `data-path="causal"` and `data-path="biasing"` edges, and adjusting SES removes the biasing one; hovering the SES row shows the rim on the SES circle; switching Report off hides its text, and the switch states survive a reload; clicking a node switches to Edit; a pasted dagitty graph with two exposures shows the instruments message; with no exposure the empty-state line shows.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
@@ -1407,4 +1721,6 @@ Wave 12 (phases 21–23):
 - **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.
 - **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
 - **Share links and hosting:** a link names the address it was made on, so links made on a local or preview build only open there. Once a host and domain are chosen, links should be made on that domain.
+- **Analysis reference:** `reference.json` was made with one dagitty-R version (recorded in the file). If a later dagitty-R gives different answers, decide case by case which is right before regenerating it.
+- **Analysis on large graphs:** the analysis runs on every change in the main thread. If large graphs feel slow, compute it lazily per switched-on section or in a Web Worker.
 - Everything in [IDEAS.md](IDEAS.md).
