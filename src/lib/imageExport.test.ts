@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parseGraphText } from '@/model/fileFormat'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
 import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
 import { parseYaml } from '@/model/yaml'
@@ -229,6 +230,156 @@ describe('toTikz', () => {
       '% GraphCreator export: Graph',
     )
   })
+})
+
+describe('theme and legend', () => {
+  it('draws the dark theme in the dark background and role colours', () => {
+    const svg = toSvg(smoking(), { theme: 'dark' })
+    const { width, height } = svgSize(smoking())
+    const dark = EXPORT_PALETTES.dark
+    expect(svg).toContain(
+      `<rect width="${width}" height="${height}" fill="${dark.background}"/>`,
+    )
+    expect(svg).toContain(
+      `fill="${dark.roles.exposure.fill}" stroke="${dark.roles.exposure.line}"`,
+    )
+    expect(svg).toContain(`fill="${dark.roles.latent.text}">Genetic</text>`)
+    expect(svg).toContain(`stroke="${dark.edge}" stroke-width="1.5"`)
+    expect(svg).not.toContain(EXPORT_PALETTES.light.roles.exposure.fill)
+    // Only the colours change.
+    const shapes = (text: string) => text.replace(/#[0-9a-f]{6}/g, '#')
+    expect(shapes(svg)).toBe(shapes(toSvg(smoking())))
+  })
+
+  it('draws the legend box, a swatch and a label per role in use', () => {
+    const g = smoking()
+    const svg = toSvg(g, { legend: true })
+    const light = EXPORT_PALETTES.light
+    const { width, height } = svgSize(g, { legend: true })
+    expect(svg).toContain(`width="${width}" height="${height}"`)
+    expect(count(svg, /<rect /g)).toBe(2)
+    expect(svg).toMatch(
+      new RegExp(
+        `<rect x="[\\d.]+" y="[\\d.]+" width="96" height="96" rx="4" fill="${light.background}" stroke="${light.border}" stroke-width="1"/>`,
+      ),
+    )
+    // Four nodes and four swatches; the labels are 12 px, weight 400, in the text colour.
+    expect(count(svg, /<circle /g)).toBe(8)
+    expect(svg).toContain('font-size="12" font-weight="400">')
+    for (const label of ['Exposure', 'Outcome', 'Latent', 'Other']) {
+      expect(svg).toContain(`fill="${light.foreground}">${label}</text>`)
+    }
+    expect(svg).not.toContain('>Adjusted</text>')
+    expect(svg.indexOf('<rect x=')).toBeGreaterThan(
+      svg.lastIndexOf('>Genetic</text>'),
+    )
+    expect(balanced(svg)).toBe(true)
+    // Dark: the box takes the dark background and border.
+    const dark = toSvg(g, { theme: 'dark', legend: true })
+    expect(dark).toContain(
+      `fill="${EXPORT_PALETTES.dark.background}" stroke="${EXPORT_PALETTES.dark.border}" stroke-width="1"/>`,
+    )
+    expect(dark).toContain(
+      `fill="${EXPORT_PALETTES.dark.foreground}">Exposure</text>`,
+    )
+  })
+
+  it('adds the legend to TikZ only with the option, in the light colours', () => {
+    const g = smoking()
+    const plain = toTikz(g)
+    expect(toTikz(g, { legend: false })).toBe(plain)
+    expect(plain).not.toContain('gcBorder')
+    const tikz = toTikz(g, { legend: true })
+    expect(tikz).toContain('\\definecolor{gcBorder}{HTML}{E2E8F0}')
+    expect(tikz).toContain('\\definecolor{gcText}{HTML}{0F172A}')
+    expect(tikz.indexOf('gcText}')).toBeLessThan(
+      tikz.indexOf('\\begin{tikzpicture}'),
+    )
+    expect(
+      count(
+        tikz,
+        /^\\draw\[gcBorder, fill=white, rounded corners=3pt\] \([-\d.]+,[-\d.]+\) rectangle \([-\d.]+,[-\d.]+\);$/gm,
+      ),
+    ).toBe(1)
+    expect(
+      count(
+        tikz,
+        /^\\node\[circle, draw=gc\w+Line, fill=gc\w+Fill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt\] at \([-\d.]+,[-\d.]+\) \{\};$/gm,
+      ),
+    ).toBe(4)
+    for (const label of ['Exposure', 'Outcome', 'Latent', 'Other']) {
+      expect(tikz).toContain(`text=gcText, font=\\sffamily\\footnotesize] at (`)
+      expect(tikz).toContain(`) {${label}};`)
+    }
+    // Without the legend lines, the picture is the plain one.
+    const without = tikz
+      .split('\n')
+      .filter((line) => !/gcBorder|gcText|minimum size=7.5pt/.test(line))
+      .join('\n')
+    expect(without).toBe(plain)
+  })
+
+  it('puts the TikZ legend where the scene puts it, in canvas coordinates', () => {
+    // Two nodes: A (exposure) at (-10, -20) and B (other) at (390, 280); one legend row each.
+    const g: Graph = {
+      nodes: [
+        { id: 'n1', name: 'A', role: 'exposure', pos: { x: -10, y: -20 } },
+        node('n2', 'B', 390, 280),
+      ],
+      edges: [],
+    }
+    // Top-right corner of the bounding box (-10, -20)–(454, 344): x 358–454, y -20–36.
+    const tikz = toTikz(g, { legend: true })
+    expect(tikz).toContain(
+      '\\draw[gcBorder, fill=white, rounded corners=3pt] (358,-20) rectangle (454,36);',
+    )
+    expect(tikz).toContain(
+      '\\node[circle, draw=gcExposureLine, fill=gcExposureFill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt] at (371,-2) {};',
+    )
+    expect(tikz).toContain(
+      '\\node[anchor=west, inner sep=0pt, text=gcText, font=\\sffamily\\footnotesize] at (384,-2) {Exposure};',
+    )
+    expect(tikz).toContain('at (384,18) {Other};')
+  })
+})
+
+const allFixtures: Record<string, string> = import.meta.glob(
+  '../model/__fixtures__/**/*.{yaml,txt}',
+  { query: '?raw', import: 'default', eager: true },
+)
+
+/** Every fixture that parses, by a file-system-safe name (`analysis-collider.dagitty.txt`). */
+function validFixtures(): [string, Graph][] {
+  const out: [string, Graph][] = []
+  for (const [path, text] of Object.entries(allFixtures)) {
+    const name = path.replace('../model/__fixtures__/', '')
+    const result = parseGraphText(text, name.split('/').pop())
+    if (result.ok) out.push([name.replace(/\//g, '-'), result.value])
+  }
+  return out
+}
+
+describe('toSvg snapshots', () => {
+  // Stored at the start of phase 37 from the phase 22 writer: the light SVG without a legend
+  // must stay byte-identical now that it is drawn from the scene.
+  it('finds the valid fixtures', () => {
+    expect(validFixtures().length).toBeGreaterThan(10)
+  })
+
+  for (const [name, graph] of validFixtures()) {
+    it(`draws ${name} as before phase 37`, async () => {
+      await expect(toSvg(graph)).toMatchFileSnapshot(
+        `./__snapshots__/imageExport/${name}.svg`,
+      )
+      await expect(
+        toSvg(graph, {
+          theme: 'light',
+          legend: false,
+          fontDataUrl: 'data:font/woff2;base64,AAAA',
+        }),
+      ).toMatchFileSnapshot(`./__snapshots__/imageExport/${name}.font.svg`)
+    })
+  }
 })
 
 describe('imageFileName', () => {

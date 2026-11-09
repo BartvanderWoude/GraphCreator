@@ -545,8 +545,14 @@ export function toPdf(graph: Graph, opts?: ImageOptions): Uint8Array   // sceneT
 - **Legend** (`legend: true`). A box listing only the roles in use, in `ROLES` order, one row each: a swatch circle (diameter `LEGEND.swatch`, the role's fill and a 1.5 px line in the role's line colour) and the `ROLE_LABELS` text (`LEGEND.font` px, weight 400, `foreground` colour, anchor start, `LEGEND.gap` px right of the swatch). The box is `LEGEND.width` wide and `2 × padding + n × row` tall, with a 1 px `border`-coloured outline, 4 px corner radius and the `background` fill. There is no title.
   - **Placement, best free corner.** The box is tried in the top-right, top-left, bottom-right and bottom-left corner of the drawing area (the nodes' bounding box, so the box sits inside the margin like the nodes). A corner is free when the box grown by 8 px on every side overlaps no circle (as its bounding square) and crosses no edge segment. The first free corner wins.
   - **Beside.** When no corner is free, the image grows to the right: the box sits `LEGEND.beside` px right of the nodes' bounding box, top-aligned with it, and the width grows by `LEGEND.beside + LEGEND.width`. The `corner` is `'beside'`.
-  - A one-node graph always has a free corner unless the box is taller than the circle's square; then the box goes beside. `svgSize` includes the legend.
+  - Because the corners lie inside the nodes' bounding box, a graph whose box is narrower or shorter than the legend (a one-node graph, for example) always puts it beside. Beside, the height also grows when the legend is taller than the drawing: `height = max(height, ceil(legend height + 2 × EXPORT_MARGIN))`. `svgSize` includes the legend. A graph without nodes has no legend.
   - **TikZ legend:** at the scene's legend position (light palette), a `\draw[gcBorder, fill=white, rounded corners=3pt]` rectangle, one `\node[circle, draw=gc<Role>Line, fill=gc<Role>Fill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt]` swatch and one `\node[anchor=west, font=\sffamily\footnotesize]` label per row; `gcBorder` and `gcText` join the `\definecolor` lines. Without `legend` the TikZ output is unchanged.
+- **Details fixed in phase 37:**
+  - A circle blocks a corner by its full canvas square; boxes that only touch do not overlap. An edge blocks a corner when the segment from its start to the arrowhead tip touches, crosses or lies inside the grown box (Liang–Barsky clipping).
+  - Row `i`'s middle is `y + padding + (i + 0.5) × row`. The swatch is centred at `x + padding + swatch / 2` with radius `swatch / 2 − 0.75`, so its 1.5 px line stays inside. The label starts at `x + padding + swatch + gap` with its baseline at `middle + 0.375 × font` (the node text's rule).
+  - SVG: the legend comes after the nodes in its own `<g>` (12 px, weight 400): a `<rect … rx="4">` with a 1 px centred border, then a `<circle>` and a `<text>` per row. The light SVG without a legend is byte-identical to phase 22's, checked against stored snapshots in `src/lib/__snapshots__/imageExport/`.
+  - TikZ: `gcBorder` and `gcText` follow `gcEdge`; the legend comes after the edges; each label is `\node[anchor=west, inner sep=0pt, text=gcText, font=\sffamily\footnotesize]` at the row middle.
+  - `EXPORT_MARGIN` now lives in `imageScene.ts` and is re-exported by `imageExport.ts`. Scene numbers are unrounded; the writers round.
 - **PDF** (`sceneToPdf`): a hand-written PDF 1.4 file, no dependency. It is built as text with byte offsets counted for the `xref` table (the content is ASCII plus WinAnsi bytes, one byte per character).
   - Objects: catalog, pages, one page, the font, the content stream, and an `/Info` dictionary with `/Title (<graph name or Graph>)` and `/Producer (GraphCreator)`. The content stream is not compressed.
   - The page's `/MediaBox` is `[0 0 <width × 0.75> <height × 0.75>]` (CSS pixels to points, 96 to 72 per inch). The stream starts with `0.75 0 0 -0.75 0 <height × 0.75> cm`, so scene coordinates are used directly.
@@ -2250,7 +2256,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example shape is reproduced for the 4.1 graph; the round trip holds on every valid fixture.
 - **Out of scope:** networkx's adjacency and tree formats; multigraphs.
 
-#### Phase 36: bnlearn, Tetrad and Mermaid [x]
+#### Phase 36: bnlearn, Tetrad and Mermaid [x] (dbae502)
 
 - **Goal:** `toBnlearn`, `toTetrad` and `toMermaid` as in 4.15.
 - **Depends on:** phase 31.
@@ -2261,7 +2267,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the three 4.15 examples are reproduced exactly for the 4.1 graph.
 - **Out of scope:** reading these formats.
 
-#### Phase 37: Image scene, legend and theme [ ]
+#### Phase 37: Image scene, legend and theme [x]
 
 - **Goal:** `imageScene` computes the picture with the legend and both themes, and SVG and TikZ are drawn from it.
 - **Depends on:** phase 31.
@@ -2504,6 +2510,7 @@ Import and export (phases 31–40):
 - **Analysis reference:** `reference.json` was made with one dagitty-R version (recorded in the file). If a later dagitty-R gives different answers, decide case by case which is right before regenerating it.
 - **Analysis on large graphs:** the analysis runs on every change in the main thread. If large graphs feel slow, compute it lazily per switched-on section or in a Web Worker.
 - **PDF text:** the PDF uses the standard Helvetica font without embedding it, so characters outside WinAnsi (Greek letters, for example) appear as `?`, and the text looks slightly different from the canvas's IBM Plex Sans. Embedding a TrueType subset of IBM Plex Sans would fix both, at the cost of a font file in the bundle.
+- **Legend label weight:** the legend asks for weight 400, but only IBM Plex Sans 500 is embedded, so with the embedded font the labels render at 500. Embedding the 400 face (about 30 kB more) would fix it.
 - **Formats without positions or roles:** Mermaid lays the graph out itself, and bnlearn and Tetrad keep only the structure, Tetrad dropping the latent role as well. The dialog notes say so.
 - **Real-tool reference:** `src/model/__fixtures__/formats/reference.json` was made with the tool versions recorded in it. If a later networkx, pydot, causal-learn, bnlearn or dagitty reads the samples differently, decide case by case before regenerating.
 - Everything in [IDEAS.md](IDEAS.md).

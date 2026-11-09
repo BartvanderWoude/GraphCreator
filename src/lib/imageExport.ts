@@ -1,51 +1,38 @@
 /**
- * Image export (spec 4.11, phase 22): SVG, PNG and TikZ drawn from the graph data with the
- * canvas geometry, not captured from the DOM, so the result does not depend on zoom, selection
- * or theme. Everything but `svgToPng` is pure.
+ * Image export (spec 4.11, phases 22 and 37): SVG, PNG and TikZ drawn from the graph's scene
+ * (`imageScene`), which is built from the graph data with the canvas geometry rather than
+ * captured from the DOM, so the result does not depend on zoom or selection. Everything but
+ * `svgToPng` is pure.
  */
-import { edgeEndpoints, type Circle } from '@/lib/geometry'
+import {
+  EXPORT_MARGIN,
+  imageScene,
+  type SceneCircle,
+  type SceneText,
+} from '@/lib/imageScene'
 import type { GNode, Graph } from '@/model/graph'
 import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES, type ImageTheme } from '@/model/palette'
 import { ROLES } from '@/model/schema'
 import { fileSlug } from '@/model/yaml'
 
-export { EXPORT_PALETTES, type ImageTheme }
+export { EXPORT_MARGIN, EXPORT_PALETTES, type ImageTheme }
 
 export type ImageFormat = 'svg' | 'png' | 'pdf' | 'tikz'
 
-/**
- * Picture options (spec 4.11 "PDF, legend and dark theme"). Defaults: light, no legend. Accepted
- * and ignored until phase 37 draws them.
- */
+/** Picture options (spec 4.11 "PDF, legend and dark theme"). Defaults: light, no legend. */
 export interface ImageOptions {
   theme?: ImageTheme
   legend?: boolean
 }
 
-/** The light theme's colours (4.11 "Palette"); the theme option is drawn from phase 37. */
+/** TikZ is always drawn in the light theme's colours: LaTeX documents are printed on white. */
 const PALETTE = EXPORT_PALETTES.light
 
-/** Space around the nodes' bounding box, in px. */
-export const EXPORT_MARGIN = 24
-
-/** Circle outline, edge stroke and arrowhead, as on the canvas (5.7.7, `FloatingEdge`). */
-const OUTLINE_WIDTH = 2
-const EDGE_WIDTH = 1.5
-const EDGE_GAP = 2
-const ARROW_LENGTH = 9
-const ARROW_WIDTH = 9
-/** How far the line runs into the arrowhead, so no seam shows between them. */
-const ARROW_OVERLAP = 1
-/** Node text (5.7.3): 13 px, weight 500, 16 px line pitch. */
-const FONT_SIZE = 13
-const LINE_PITCH = 16
-/**
- * Baseline below the middle of a 16 px line box for 13 px IBM Plex Sans (ascent 1.025 em,
- * descent 0.275 em), so the SVG text sits where the canvas's CSS puts it.
- */
-const BASELINE_OFFSET = 4.875
 const FONT_FAMILY = "'IBM Plex Sans', system-ui, sans-serif"
+/** The legend box's corner radius and outline width, in px. */
+const LEGEND_RADIUS = 4
+const LEGEND_LINE = 1
 
 /** A number for SVG or TikZ: at most two decimals, no trailing zeros, never `-0`. */
 function num(n: number): string {
@@ -84,68 +71,31 @@ function escapeLatex(text: string): string {
   return text.replace(/[\\{}$&#^_~%]/g, (c) => LATEX_ESCAPES[c])
 }
 
-/** The circle a node occupies on the canvas: centred on `pos + d/2`, radius `d/2`. */
-function circleOf(node: GNode): Circle {
-  const d = nodeDiameter(node.name)
-  return { cx: node.pos.x + d / 2, cy: node.pos.y + d / 2, r: d / 2 }
-}
-
-/** The nodes' bounding box, or null for a graph without nodes. */
-function bounds(graph: Graph) {
-  if (graph.nodes.length === 0) return null
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-  for (const node of graph.nodes) {
-    const d = nodeDiameter(node.name)
-    minX = Math.min(minX, node.pos.x)
-    minY = Math.min(minY, node.pos.y)
-    maxX = Math.max(maxX, node.pos.x + d)
-    maxY = Math.max(maxY, node.pos.y + d)
-  }
-  return { minX, minY, maxX, maxY }
-}
-
-/** Width and height of the image: the bounding box plus the margin on each side, rounded up. */
+/**
+ * Width and height of the image: the nodes' bounding box plus the margin on each side, rounded
+ * up, widened (and if needed heightened) by a legend placed beside the graph.
+ */
 export function svgSize(
   graph: Graph,
   opts: ImageOptions = {},
 ): { width: number; height: number } {
-  void opts
-  const b = bounds(graph)
-  if (!b) return { width: 2 * EXPORT_MARGIN, height: 2 * EXPORT_MARGIN }
-  return {
-    width: Math.ceil(b.maxX - b.minX + 2 * EXPORT_MARGIN),
-    height: Math.ceil(b.maxY - b.minY + 2 * EXPORT_MARGIN),
-  }
+  const { width, height } = imageScene(graph, opts)
+  return { width, height }
 }
 
-/** The edge as a line plus a closed arrowhead whose tip is the end point; null without direction. */
-function svgEdge(
-  source: Circle,
-  target: Circle,
-  ox: number,
-  oy: number,
-): string | null {
-  const ends = edgeEndpoints(source, target, EDGE_GAP)
-  if (!ends) return null
-  const sx = ends.sx - ox
-  const sy = ends.sy - oy
-  const tx = ends.tx - ox
-  const ty = ends.ty - oy
-  const length = Math.hypot(tx - sx, ty - sy)
-  const ux = length > 0 ? (tx - sx) / length : 0
-  const uy = length > 0 ? (ty - sy) / length : 0
-  const back = Math.min(ARROW_LENGTH - ARROW_OVERLAP, length)
-  // Base of the arrowhead, and the perpendicular half-width.
-  const bx = tx - ARROW_LENGTH * ux
-  const by = ty - ARROW_LENGTH * uy
-  const px = (-uy * ARROW_WIDTH) / 2
-  const py = (ux * ARROW_WIDTH) / 2
-  const line = `<line x1="${num(sx)}" y1="${num(sy)}" x2="${num(tx - back * ux)}" y2="${num(ty - back * uy)}" stroke="${PALETTE.edge}" stroke-width="${EDGE_WIDTH}"/>`
-  const head = `<path d="M${num(tx)},${num(ty)} L${num(bx + px)},${num(by + py)} L${num(bx - px)},${num(by - py)} Z" fill="${PALETTE.edge}"/>`
-  return `${line}\n${head}`
+function svgCircle(c: SceneCircle): string {
+  return `<circle cx="${num(c.cx)}" cy="${num(c.cy)}" r="${num(c.r)}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${num(c.strokeWidth)}"/>`
+}
+
+/** A line of text; the font attributes come from the enclosing `<g>`. */
+function svgText(t: SceneText): string {
+  return `<text x="${num(t.x)}" y="${num(t.y)}" fill="${t.color}">${escapeXml(t.text)}</text>`
+}
+
+/** The `<g>` opening tag carrying a group of texts' font attributes. */
+function svgFontGroup(t: Pick<SceneText, 'size' | 'weight' | 'anchor'>) {
+  const anchor = t.anchor === 'middle' ? ' text-anchor="middle"' : ''
+  return `<g font-family="${FONT_FAMILY}" font-size="${t.size}" font-weight="${t.weight}"${anchor}>`
 }
 
 /**
@@ -156,15 +106,12 @@ export function toSvg(
   graph: Graph,
   opts: ImageOptions & { fontDataUrl?: string } = {},
 ): string {
-  const { width, height } = svgSize(graph)
-  const b = bounds(graph)
-  const ox = (b?.minX ?? 0) - EXPORT_MARGIN
-  const oy = (b?.minY ?? 0) - EXPORT_MARGIN
-  const circles = new Map(graph.nodes.map((n) => [n.id, circleOf(n)]))
+  const scene = imageScene(graph, opts)
+  const { width, height } = scene
 
   const out: string[] = [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
-    `<title>${escapeXml(graph.name ?? 'Graph')}</title>`,
+    `<title>${escapeXml(scene.title)}</title>`,
   ]
   if (opts.fontDataUrl) {
     out.push(
@@ -172,36 +119,45 @@ export function toSvg(
     )
   }
   out.push(
-    `<rect width="${width}" height="${height}" fill="${PALETTE.background}"/>`,
+    `<rect width="${width}" height="${height}" fill="${scene.background}"/>`,
   )
 
-  for (const edge of graph.edges) {
-    const s = circles.get(edge.source)
-    const t = circles.get(edge.target)
-    const drawn = s && t ? svgEdge(s, t, ox, oy) : null
-    if (drawn) out.push(drawn)
-  }
-
-  out.push(
-    `<g font-family="${FONT_FAMILY}" font-size="${FONT_SIZE}" font-weight="500" text-anchor="middle">`,
-  )
-  for (const node of graph.nodes) {
-    const c = circles.get(node.id)!
-    const colors = PALETTE.roles[node.role]
-    const cx = c.cx - ox
-    const cy = c.cy - oy
+  for (const e of scene.edges) {
+    const [tip, left, right] = e.head
     out.push(
-      `<circle cx="${num(cx)}" cy="${num(cy)}" r="${num(c.r - OUTLINE_WIDTH / 2)}" fill="${colors.fill}" stroke="${colors.line}" stroke-width="${OUTLINE_WIDTH}"/>`,
+      `<line x1="${num(e.x1)}" y1="${num(e.y1)}" x2="${num(e.x2)}" y2="${num(e.y2)}" stroke="${e.color}" stroke-width="${num(e.width)}"/>`,
+      `<path d="M${num(tip[0])},${num(tip[1])} L${num(left[0])},${num(left[1])} L${num(right[0])},${num(right[1])} Z" fill="${e.color}"/>`,
     )
-    const lines = wrapLabel(node.name).lines
-    lines.forEach((line, i) => {
-      const middle = cy + (i - (lines.length - 1) / 2) * LINE_PITCH
-      out.push(
-        `<text x="${num(cx)}" y="${num(middle + BASELINE_OFFSET)}" fill="${colors.text}">${escapeXml(line)}</text>`,
-      )
-    })
   }
-  out.push('</g>', '</svg>')
+
+  // Each circle is followed by its name lines; the scene keeps both in node order.
+  const lineCounts = new Map(
+    graph.nodes.map((n) => [n.id, wrapLabel(n.name).lines.length]),
+  )
+  out.push(
+    svgFontGroup(scene.texts[0] ?? { size: 13, weight: 500, anchor: 'middle' }),
+  )
+  let next = 0
+  scene.circles.forEach((c, i) => {
+    out.push(svgCircle(c))
+    const count = lineCounts.get(scene.nodeIds[i]) ?? 0
+    for (const t of scene.texts.slice(next, next + count)) out.push(svgText(t))
+    next += count
+  })
+  out.push('</g>')
+
+  const legend = scene.legend
+  if (legend) {
+    out.push(
+      svgFontGroup(legend.items[0].text),
+      `<rect x="${num(legend.x)}" y="${num(legend.y)}" width="${num(legend.width)}" height="${num(legend.height)}" rx="${LEGEND_RADIUS}" fill="${legend.background}" stroke="${legend.border}" stroke-width="${LEGEND_LINE}"/>`,
+    )
+    for (const item of legend.items) {
+      out.push(svgCircle(item.swatch), svgText(item.text))
+    }
+    out.push('</g>')
+  }
+  out.push('</svg>')
   return out.join('\n') + '\n'
 }
 
@@ -246,12 +202,20 @@ function htmlColor(hex: string): string {
   return hex.slice(1).toUpperCase()
 }
 
+/** The node's centre on the canvas, which is where TikZ puts it. */
+function canvasCentre(node: GNode): { x: number; y: number } {
+  const d = nodeDiameter(node.name)
+  return { x: node.pos.x + d / 2, y: node.pos.y + d / 2 }
+}
+
 /**
  * The graph as a TikZ picture for a LaTeX document with `tikz` and `arrows.meta`. Coordinates
  * are canvas pixels (`x=0.75pt, y=-0.75pt`: 96 px per inch, y down); TikZ finds the rims itself.
+ * With `legend`, the scene's legend box is drawn where the scene places it. Always light.
  */
 export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
-  void opts
+  const scene = imageScene(graph, { theme: 'light', legend: opts.legend })
+  const legend = scene.legend
   const title = (graph.name ?? 'Graph').replace(/\s+/g, ' ')
   const out: string[] = [
     `% GraphCreator export: ${title}`,
@@ -271,6 +235,12 @@ export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
   if (graph.edges.length > 0) {
     out.push(`\\definecolor{gcEdge}{HTML}{${htmlColor(PALETTE.edge)}}`)
   }
+  if (legend) {
+    out.push(
+      `\\definecolor{gcBorder}{HTML}{${htmlColor(legend.border)}}`,
+      `\\definecolor{gcText}{HTML}{${htmlColor(legend.items[0].text.color)}}`,
+    )
+  }
   out.push('\\begin{tikzpicture}[x=0.75pt, y=-0.75pt]')
 
   const ids = new Map<string, string>()
@@ -278,7 +248,7 @@ export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
     const id = `v${i + 1}`
     ids.set(node.id, id)
     const d = nodeDiameter(node.name)
-    const c = circleOf(node)
+    const c = canvasCentre(node)
     const name = `gc${capitalize(node.role)}`
     // `{}` keeps `\\` from reading a line that starts with `[` or `*` as its own argument.
     const text = wrapLabel(node.name)
@@ -289,7 +259,7 @@ export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
       )
       .join('\\\\')
     out.push(
-      `\\node[circle, draw=${name}Line, fill=${name}Fill, text=${name}Text, line width=1.5pt, minimum size=${num(0.75 * d)}pt, inner sep=0pt, align=center, font=\\sffamily\\small] (${id}) at (${num(c.cx)},${num(c.cy)}) {${text}};`,
+      `\\node[circle, draw=${name}Line, fill=${name}Fill, text=${name}Text, line width=1.5pt, minimum size=${num(0.75 * d)}pt, inner sep=0pt, align=center, font=\\sffamily\\small] (${id}) at (${num(c.x)},${num(c.y)}) {${text}};`,
     )
   })
   for (const edge of graph.edges) {
@@ -299,6 +269,23 @@ export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
     out.push(
       `\\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcEdge, shorten >=1.5pt] (${s}) -- (${t});`,
     )
+  }
+
+  if (legend) {
+    // Scene coordinates start at the bounding box minus the margin; TikZ uses canvas ones.
+    const ox = Math.min(...graph.nodes.map((n) => n.pos.x)) - EXPORT_MARGIN
+    const oy = Math.min(...graph.nodes.map((n) => n.pos.y)) - EXPORT_MARGIN
+    const at = (x: number, y: number) => `(${num(x + ox)},${num(y + oy)})`
+    out.push(
+      `\\draw[gcBorder, fill=white, rounded corners=3pt] ${at(legend.x, legend.y)} rectangle ${at(legend.x + legend.width, legend.y + legend.height)};`,
+    )
+    for (const { role, swatch, text } of legend.items) {
+      const name = `gc${capitalize(role)}`
+      out.push(
+        `\\node[circle, draw=${name}Line, fill=${name}Fill, line width=1.125pt, minimum size=${num(0.75 * 2 * (swatch.r + swatch.strokeWidth / 2))}pt, inner sep=0pt] at ${at(swatch.cx, swatch.cy)} {};`,
+        `\\node[anchor=west, inner sep=0pt, text=gcText, font=\\sffamily\\footnotesize] at ${at(text.x, swatch.cy)} {${escapeLatex(text.text)}};`,
+      )
+    }
   }
   out.push('\\end{tikzpicture}')
   return out.join('\n') + '\n'

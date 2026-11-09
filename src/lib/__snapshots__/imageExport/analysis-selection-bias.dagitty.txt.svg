@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="232" viewBox="0 0 412 232">
+<title>Graph</title>
+<rect width="412" height="232" fill="#ffffff"/>
+<line x1="88" y1="56" x2="314" y2="56" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,56 L313,60.5 L313,51.5 Z" fill="#64748b"/>
+<line x1="80.99" y1="75.99" x2="173.2" y2="149.76" stroke="#64748b" stroke-width="1.5"/>
+<path d="M179.45,154.76 L169.61,152.65 L175.23,145.62 Z" fill="#64748b"/>
+<line x1="324" y1="176" x2="248" y2="176" stroke="#64748b" stroke-width="1.5"/>
+<path d="M240,176 L249,171.5 L249,180.5 Z" fill="#64748b"/>
+<line x1="356" y1="144" x2="356" y2="98" stroke="#64748b" stroke-width="1.5"/>
+<path d="M356,90 L360.5,99 L351.5,99 Z" fill="#64748b"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
+<circle cx="56" cy="56" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="56" y="60.88" fill="#24563a">E</text>
+<circle cx="356" cy="56" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="356" y="60.88" fill="#23407a">D</text>
+<circle cx="206" cy="176" r="31" fill="#efe7f7" stroke="#9375c4" stroke-width="2"/>
+<text x="206" y="180.88" fill="#4c2f75">S</text>
+<circle cx="356" cy="176" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="356" y="180.88" fill="#0f172a">C</text>
+</g>
+</svg>

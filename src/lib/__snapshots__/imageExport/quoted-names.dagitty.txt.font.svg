@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="352" viewBox="0 0 420 352">
+<title>Graph</title>
+<style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
+<rect width="420" height="352" fill="#ffffff"/>
+<line x1="107.99" y1="185.14" x2="314.01" y2="180.94" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322.01,180.78 L313.1,185.46 L312.92,176.46 Z" fill="#64748b"/>
+<line x1="182.48" y1="118.57" x2="111" y2="159.95" stroke="#64748b" stroke-width="1.5"/>
+<path d="M104.08,163.95 L109.61,155.55 L114.12,163.34 Z" fill="#64748b"/>
+<line x1="287.25" y1="125" x2="323.31" y2="152.26" stroke="#64748b" stroke-width="1.5"/>
+<path d="M329.69,157.08 L319.8,155.24 L325.22,148.06 Z" fill="#64748b"/>
+<line x1="231.56" y1="276.75" x2="323.26" y2="207.68" stroke="#64748b" stroke-width="1.5"/>
+<path d="M329.65,202.86 L325.17,211.87 L319.75,204.68 Z" fill="#64748b"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
+<circle cx="66" cy="186" r="41" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="66" y="182.88" fill="#24563a">Maternal</text>
+<text x="66" y="198.88" fill="#24563a">smoking</text>
+<circle cx="360" cy="180" r="35" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="360" y="176.88" fill="#23407a">Birth</text>
+<text x="360" y="192.88" fill="#23407a">weight</text>
+<circle cx="237" cy="87" r="62" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="237" y="83.88" fill="#0f172a">Socio-economic</text>
+<text x="237" y="99.88" fill="#0f172a">status</text>
+<circle cx="206" cy="296" r="31" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
+<text x="206" y="292.88" fill="#374151">say</text>
+<text x="206" y="308.88" fill="#374151">&quot;hi&quot;</text>
+</g>
+</svg>
