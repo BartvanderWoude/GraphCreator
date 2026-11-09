@@ -1,4 +1,5 @@
 import type { Graph } from '../graph'
+import { properCausalNodes } from './adjustment'
 import { ancestors, dConnected, descendants, withoutEdges } from './dsep'
 import type { Instrument, NodeSet, Roles } from './types'
 
@@ -21,7 +22,7 @@ export function instrumentalVariables(
   const [x] = roles.x
   const [y] = roles.y
   const selected = new Set(roles.s)
-  const pcp = properCausalNodes(graph, x, y)
+  const pcp = properCausalNodes(graph, [x], [y])
   const forbidden = descendants(graph, [...pcp, y])
   const pbd = withoutEdges(graph, (e) => e.source === x && pcp.has(e.target))
   // The paper's M, the nodes a separator may use: observed, not in S (always conditioned on
@@ -43,25 +44,6 @@ export function instrumentalVariables(
     result.push({ instrument: i, given: inGraphOrder(graph, w) })
   }
   return result
-}
-
-/**
- * PCP({x}, {y}) of spec 4.13: the descendants of x other than x in `G` without the edges into x,
- * that are ancestors of y in `G` without the edges out of x.
- * (Private until phase 30 imports `properCausalNodes` from `adjustment.ts`.)
- */
-function properCausalNodes(graph: Graph, x: string, y: string): Set<string> {
-  const down = descendants(
-    withoutEdges(graph, (e) => e.target === x),
-    [x],
-  )
-  const up = ancestors(
-    withoutEdges(graph, (e) => e.source === x),
-    [y],
-  )
-  const pcp = new Set<string>()
-  for (const v of down) if (v !== x && up.has(v)) pcp.add(v)
-  return pcp
 }
 
 /**

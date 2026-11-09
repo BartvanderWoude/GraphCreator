@@ -377,10 +377,11 @@ describe('gallery against dagitty-R', () => {
     },
   )
 
-  it('selection-bias and selection-confounder: no set, selectionBias', () => {
+  it('selection-bias, selection-confounder and selection-on-exposure: no set, selectionBias', () => {
     for (const file of [
       'selection-bias.dagitty.txt',
       'selection-confounder.dagitty.txt',
+      'selection-on-exposure.dagitty.txt',
     ]) {
       const { graph } = load(gallery[`../__fixtures__/analysis/${file}`])
       const result = adjustment(graph, rolesOf(graph))

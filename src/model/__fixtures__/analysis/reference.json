@@ -633,6 +633,57 @@
         }
       ]
     },
+    "selection-on-exposure.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [
+        "S"
+      ],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "C",
+          "b": "S",
+          "given": [
+            "E"
+          ]
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "E"
+          ]
+        }
+      ],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- C -> D",
+          "nodes": [
+            "E",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
     "selection-recoverable.dagitty.txt": {
       "exposures": [
         "E"

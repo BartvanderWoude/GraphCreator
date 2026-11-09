@@ -197,7 +197,7 @@ function load(text: string): { graph: Graph; id: (name: string) => string } {
 describe('dagitty-R reference', () => {
   it('records the dagitty version and covers every gallery file', () => {
     expect(reference.dagitty).toMatch(/^\d+\.\d+/)
-    expect(galleryFiles).toHaveLength(13)
+    expect(galleryFiles).toHaveLength(14)
     expect(Object.keys(reference.graphs).sort()).toEqual(
       galleryFiles.map(([file]) => file).sort(),
     )
