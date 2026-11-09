@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import plexSans500 from '@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-500-normal.woff2?inline'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -21,42 +22,50 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { downloadBlob, downloadText } from '@/lib/download'
 import {
+  EXPORT_PALETTES,
   imageFileName,
   svgSize,
   svgToPng,
   toSvg,
   toTikz,
   type ImageFormat,
+  type ImageTheme,
 } from '@/lib/imageExport'
+import { toPdf } from '@/lib/pdfExport'
+import type { Graph } from '@/model/graph'
 import { useGraphStore } from '@/store/graphStore'
 
 const FORMATS: { value: ImageFormat; label: string }[] = [
   { value: 'svg', label: 'SVG' },
   { value: 'png', label: 'PNG' },
+  { value: 'pdf', label: 'PDF' },
   { value: 'tikz', label: 'TikZ' },
+]
+
+const THEMES: { value: ImageTheme; label: string }[] = [
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
 ]
 
 const SCALES = [1, 2, 3] as const
 type Scale = (typeof SCALES)[number]
 
-/** What the dialog shows, computed from the store's graph when it opens (spec 5.4). */
-interface Snapshot {
-  empty: boolean
-  name: string | undefined
+/** CSS pixels to PDF points (96 to 72 per inch, spec 4.11 "PDF"). */
+const POINTS_PER_PIXEL = 0.75
+
+/** What the dialog shows for the graph read when it opened and the current Theme and Legend. */
+interface Picture {
   svg: string
   tikz: string
   width: number
   height: number
 }
 
-function snapshot(): Snapshot {
-  const graph = useGraphStore.getState().graph
-  const { width, height } = svgSize(graph)
+function picture(graph: Graph, theme: ImageTheme, legend: boolean): Picture {
+  const { width, height } = svgSize(graph, { theme, legend })
   return {
-    empty: graph.nodes.length === 0,
-    name: graph.name,
-    svg: toSvg(graph, { fontDataUrl: plexSans500 }),
-    tikz: toTikz(graph),
+    svg: toSvg(graph, { theme, legend, fontDataUrl: plexSans500 }),
+    tikz: toTikz(graph, { legend }),
     width,
     height,
   }
@@ -67,8 +76,10 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * Exports the graph as an SVG, PNG or TikZ image (spec 4.11, 5.4 "Export…"). The picture is
- * drawn from the graph data in the light palette, with the IBM Plex Sans font embedded.
+ * Exports the graph as an SVG, PNG, PDF or TikZ image (spec 4.11, 5.4 "Export…"). The picture is
+ * drawn from the graph data in the chosen theme (TikZ is always light), optionally with a legend
+ * of the roles in use, and with the IBM Plex Sans font embedded in SVG and PNG. Format, Theme,
+ * Scale and Legend keep their choice while the page is open.
  */
 export function ExportDialog({
   open,
@@ -78,17 +89,24 @@ export function ExportDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const [format, setFormat] = useState<ImageFormat>('svg')
+  const [theme, setTheme] = useState<ImageTheme>('light')
+  const [legend, setLegend] = useState(false)
   const [scale, setScale] = useState<Scale>(2)
-  const [data, setData] = useState<Snapshot | null>(null)
+  const [graph, setGraph] = useState<Graph | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
 
   // Read the graph each time the dialog opens, not on every change while it is open.
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) setData(snapshot())
+    if (open) setGraph(useGraphStore.getState().graph)
   }
 
-  const disabled = !data || data.empty
+  const empty = !graph || graph.nodes.length === 0
+  const data = useMemo(
+    () => (graph && !empty ? picture(graph, theme, legend) : null),
+    [graph, empty, theme, legend],
+  )
+  const disabled = data === null
 
   async function copyText() {
     if (!data) return
@@ -105,12 +123,22 @@ export function ExportDialog({
   }
 
   async function download() {
-    if (!data) return
-    const filename = imageFileName(data.name, format)
+    if (!graph || !data) return
+    const filename = imageFileName(graph.name, format)
     try {
       if (format === 'svg') downloadText(filename, data.svg, 'image/svg+xml')
       else if (format === 'tikz')
         downloadText(filename, data.tikz, 'text/x-tex')
+      else if (format === 'pdf')
+        downloadBlob(
+          filename,
+          new Blob(
+            [toPdf(graph, { theme, legend }) as Uint8Array<ArrayBuffer>],
+            {
+              type: 'application/pdf',
+            },
+          ),
+        )
       else downloadBlob(filename, await svgToPng(data.svg, scale))
     } catch (e) {
       toast.error(
@@ -127,8 +155,8 @@ export function ExportDialog({
         <DialogHeader>
           <DialogTitle>Export image</DialogTitle>
           <DialogDescription>
-            The image shows names, roles (by color) and arrows. Types, levels
-            and evidence are not included.
+            The image shows names, roles (by color) and arrows, with an optional
+            legend. Types, levels and evidence are not included.
           </DialogDescription>
         </DialogHeader>
 
@@ -155,40 +183,76 @@ export function ExportDialog({
               </SelectContent>
             </Select>
           </div>
-          {format === 'png' && (
-            <>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="export-scale">Scale</Label>
-                <Select
-                  value={String(scale)}
-                  onValueChange={(value) => setScale(Number(value) as Scale)}
+          {format !== 'tikz' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="export-theme">Theme</Label>
+              <Select
+                value={theme}
+                onValueChange={(value) => setTheme(value as ImageTheme)}
+              >
+                <SelectTrigger
+                  id="export-theme"
+                  aria-label="Theme"
+                  className="w-28 rounded-md"
                 >
-                  <SelectTrigger
-                    id="export-scale"
-                    aria-label="Scale"
-                    className="w-24 rounded-md"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SCALES.map((s) => (
-                      <SelectItem key={s} value={String(s)}>
-                        {s}×
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {data && !data.empty && (
-                <p className="pb-1.5 text-[13px] text-muted-foreground">
-                  {data.width * scale} × {data.height * scale} pixels
-                </p>
-              )}
-            </>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {THEMES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {format === 'png' && (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="export-scale">Scale</Label>
+              <Select
+                value={String(scale)}
+                onValueChange={(value) => setScale(Number(value) as Scale)}
+              >
+                <SelectTrigger
+                  id="export-scale"
+                  aria-label="Scale"
+                  className="w-24 rounded-md"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SCALES.map((s) => (
+                    <SelectItem key={s} value={String(s)}>
+                      {s}×
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="flex h-8 items-center gap-2">
+            <Checkbox
+              id="export-legend"
+              checked={legend}
+              onCheckedChange={(checked) => setLegend(checked === true)}
+            />
+            <Label htmlFor="export-legend">Legend</Label>
+          </div>
+          {data && format === 'png' && (
+            <p className="pb-1.5 text-[13px] text-muted-foreground">
+              {data.width * scale} × {data.height * scale} pixels
+            </p>
+          )}
+          {data && format === 'pdf' && (
+            <p className="pb-1.5 text-[13px] text-muted-foreground">
+              {Math.round(data.width * POINTS_PER_PIXEL)} ×{' '}
+              {Math.round(data.height * POINTS_PER_PIXEL)} points
+            </p>
           )}
         </div>
 
-        {!data || data.empty ? (
+        {!data ? (
           <p className="flex min-h-32 items-center justify-center rounded-md border border-dashed px-4 text-center text-sm text-muted-foreground">
             There is nothing to export yet. Add a node first.
           </p>
@@ -202,7 +266,11 @@ export function ExportDialog({
             onFocus={(e) => e.currentTarget.select()}
           />
         ) : (
-          <div className="flex max-h-96 items-center justify-center overflow-hidden rounded-md border bg-white p-4">
+          // The area takes the image's own background, so a dark image has no white frame.
+          <div
+            className="flex max-h-96 items-center justify-center overflow-hidden rounded-md border p-4"
+            style={{ backgroundColor: EXPORT_PALETTES[theme].background }}
+          >
             <img
               alt="Preview of the image"
               src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(data.svg)}`}
@@ -212,7 +280,7 @@ export function ExportDialog({
         )}
 
         <DialogFooter showCloseButton>
-          {format !== 'png' && (
+          {format !== 'png' && format !== 'pdf' && (
             <Button
               variant="outline"
               disabled={disabled}

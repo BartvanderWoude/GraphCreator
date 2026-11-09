@@ -55,7 +55,7 @@ test('with no nodes there is nothing to export', async ({ page }) => {
   await button(page, 'Export…').click()
   const dialog = exportDialog(page)
   await expect(dialog).toContainText(
-    'The image shows names, roles (by color) and arrows. Types, levels and evidence are not included.',
+    'The image shows names, roles (by color) and arrows, with an optional legend. Types, levels and evidence are not included.',
   )
   await expect(dialog.getByRole('combobox', { name: 'Format' })).toHaveText(
     'SVG',

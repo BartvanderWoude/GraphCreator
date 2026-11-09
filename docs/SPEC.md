@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; wave 16 (phase 31, the contracts) is done; next: wave 17. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done; next: wave 18 (phase 40, the real-tool reference and end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -1157,6 +1157,12 @@ Details fixed in phase 36:
     - **PDF:** shows the SVG preview and the line `<width × 0.75> × <height × 0.75> points` (rounded). It has no Copy button. Download saves `<slug>.pdf` (`application/pdf`) from `toPdf(graph, { theme, legend })`.
     - The preview area keeps its border. A dark image brings its own dark background.
     - The description becomes "The image shows names, roles (by color) and arrows, with an optional legend. Types, levels and evidence are not included."
+- **Details fixed in phase 39:**
+  - `CodeDialog` takes only `open`, `onOpenChange` and `format`; it reads the graph once each time it opens. `TopBar` keeps the last format apart from the open state, so the title does not change while the dialog closes.
+  - If a writer throws, `CodeDialog` shows `Could not export the graph: …` (`role="alert"`) and disables Copy and Download, replacing `TopBar`'s old toast.
+  - The details checkbox sits directly under the textarea, labelled "Include GraphCreator details".
+  - The Export controls are in the order Format, Theme, Scale (PNG), Legend, then the pixel or points line. The preview area takes the theme's background colour and keeps its border. A failed PDF toasts `Could not download the file: …`, as SVG and TikZ do.
+  - `e2e/export.spec.ts` was updated in this phase for the new description.
 - **4.7 addition (phase 31):** `uiStore` gains `DAGITTY_DETAILS_KEY = 'graphcreator:dagitty-details'`, `dagittyDetails: boolean` (initial value from `readDagittyDetails(safeLocalStorage())`), `setDagittyDetails(on: boolean)` (which also writes), `readDagittyDetails(storage)` (true only for the stored text `'1'`; null or throwing storage gives false) and `writeDagittyDetails(storage, on)` (writes `'1'` or `'0'`, and ignores null or throwing storage). These follow the pattern of `readAnalysisOn` (4.14).
 - **Share (phase 23):** builds `shareUrl(graph)` and writes it with `navigator.clipboard.writeText`. On success it toasts `Link copied. The graph is stored in the link itself, not on a server.`; when the link is longer than `SHARE_LONG` the toast's description adds `The link is long and may not work in every app. Save as GraphCreator to share a file instead.` When the clipboard fails it shows the error toast `Could not copy the link to the clipboard.` There is no dialog.
 - **Opening a share link (phase 23):** `main.tsx` checks `location.hash` after the autosave restore and before the first render. With `#g=…` it removes the fragment at once with `history.replaceState` (so a reload or the autosaved page never applies the link again), does not open the welcome slides automatically on this load, and passes the decoded result to `offerSharedGraph` (exported by `SharedGraphDialog.tsx`, which `App` mounts inside the `ReactFlowProvider`):
@@ -2207,7 +2213,7 @@ Phases: 31. Parallel: single phase. Check after the wave: all checks. The app ru
 - **Done when:** all checks pass; detection sends the GML, DOT and JSON samples of section 9 to the right parser, and every existing YAML and dagitty fixture still goes where it went.
 - **Out of scope:** the writers, the parsers, the scene and PDF drawing, the dialogs.
 
-### Wave 17: Export parts [ ]
+### Wave 17: Export parts [x]
 
 Phases: 32, 33, 34, 35, 36, 37, 38, 39. Parallel: all eight, one sub agent each in its own worktree; their files are disjoint. Land them in the order 32, 33, 34, 35, 36, 37, 38, 39.
 
@@ -2285,7 +2291,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the light SVG without a legend is identical to before this phase for every valid fixture; a dark SVG with a legend looks right in the browser.
 - **Out of scope:** PDF drawing (phase 38); the dialog (phase 39); the analysis marking in images.
 
-#### Phase 38: PDF writer [x]
+#### Phase 38: PDF writer [x] (645c91a)
 
 - **Goal:** `sceneToPdf` writes a valid vector PDF of a scene.
 - **Depends on:** phase 31.
@@ -2296,7 +2302,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; a PDF of a hand-built scene opens in the browser's PDF viewer and in `pdftotext` or `qpdf --check` when available (otherwise say so).
 - **Out of scope:** embedded fonts; compression; several pages.
 
-#### Phase 39: Export and format dialogs [ ]
+#### Phase 39: Export and format dialogs [x]
 
 - **Goal:** the Save as… menu, `CodeDialog`, the Export dialog and the Open dialog work as in 5.4 "Import and export additions".
 - **Depends on:** phase 31.

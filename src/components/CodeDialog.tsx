@@ -1,5 +1,7 @@
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
   DialogContent,
@@ -8,9 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { downloadText } from '@/lib/download'
-import { EXPORT_FILES, type ExportFormat } from '@/model/fileFormat'
+import {
+  EXPORT_FILES,
+  exportFileName,
+  exportText,
+  type ExportFormat,
+} from '@/model/fileFormat'
+import type { Graph } from '@/model/graph'
+import { useGraphStore } from '@/store/graphStore'
+import { useUiStore } from '@/store/uiStore'
 
 /** Each format's dialog texts (spec 5.4); file names and MIME types are in `EXPORT_FILES`. */
 const COPY: Record<
@@ -62,29 +73,52 @@ const COPY: Record<
 }
 
 /**
- * Shows the graph as GraphCreator YAML or dagitty text, with Copy and Download buttons (spec
- * 5.4, Save's "Save as…" menu). The caller computes `text` (`toYaml` or `toDagitty`) and
- * `filename` (`<slug>.dag.yaml` or `<slug>.dagitty.txt`) when opening it.
+ * Shows the graph as text in one of the `ExportFormat`s, with Copy and Download buttons (spec
+ * 5.4, Save and its "Save as…" menu). The text and file name are computed from the store's graph
+ * when the dialog opens. Save as dagitty adds the "Include GraphCreator details" checkbox, whose
+ * choice is kept in `uiStore.dagittyDetails`.
  */
 export function CodeDialog({
   open,
   onOpenChange,
   format,
-  text,
-  filename,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   format: ExportFormat
-  text: string
-  filename: string
 }) {
+  const details = useUiStore((s) => s.dagittyDetails)
+  const setDetails = useUiStore((s) => s.setDagittyDetails)
+  const [graph, setGraph] = useState<Graph | null>(null)
+  const [wasOpen, setWasOpen] = useState(false)
+
+  // Read the graph each time the dialog opens, not on every change while it is open.
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) setGraph(useGraphStore.getState().graph)
+  }
+
   const copy = COPY[format]
+  const label = EXPORT_FILES[format].label
+  const withDetails = format === 'dagitty' && details
+  const output = useMemo(() => {
+    if (!graph) return { text: '', filename: '', error: null }
+    try {
+      return {
+        text: exportText(graph, format, { details: withDetails }),
+        filename: exportFileName(graph.name, format),
+        error: null,
+      }
+    } catch (e) {
+      return { text: '', filename: '', error: errorMessage(e) }
+    }
+  }, [graph, format, withDetails])
+  const failed = output.error !== null
 
   async function copyText() {
     try {
-      await navigator.clipboard.writeText(text)
-      toast(`Copied ${copy.code} to the clipboard.`)
+      await navigator.clipboard.writeText(output.text)
+      toast(`Copied ${label} code to the clipboard.`)
     } catch {
       toast.error(
         'Could not copy to the clipboard. Select the text and copy it instead.',
@@ -94,11 +128,9 @@ export function CodeDialog({
 
   function download() {
     try {
-      downloadText(filename, text, EXPORT_FILES[format].mime)
+      downloadText(output.filename, output.text, EXPORT_FILES[format].mime)
     } catch (e) {
-      toast.error(
-        `Could not download the file: ${e instanceof Error ? e.message : String(e)}`,
-      )
+      toast.error(`Could not download the file: ${errorMessage(e)}`)
     }
   }
 
@@ -107,23 +139,52 @@ export function CodeDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>{copy.title}</DialogTitle>
-          <DialogDescription>{copy.note}</DialogDescription>
+          <DialogDescription>
+            {withDetails && copy.detailsNote ? copy.detailsNote : copy.note}
+          </DialogDescription>
         </DialogHeader>
         <Textarea
           aria-label={copy.code}
           readOnly
-          value={text}
+          value={output.text}
           spellCheck={false}
           className="max-h-96 min-h-48 font-mono text-xs md:text-xs"
           onFocus={(e) => e.currentTarget.select()}
         />
+        {format === 'dagitty' && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="dagitty-details"
+              checked={details}
+              onCheckedChange={(checked) => setDetails(checked === true)}
+            />
+            <Label htmlFor="dagitty-details">
+              Include GraphCreator details
+            </Label>
+          </div>
+        )}
+        {failed && (
+          <p role="alert" className="text-sm text-destructive">
+            Could not export the graph: {output.error}
+          </p>
+        )}
         <DialogFooter showCloseButton>
-          <Button variant="outline" onClick={() => void copyText()}>
+          <Button
+            variant="outline"
+            disabled={failed}
+            onClick={() => void copyText()}
+          >
             Copy
           </Button>
-          <Button onClick={download}>Download</Button>
+          <Button disabled={failed} onClick={download}>
+            Download
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
+}
+
+function errorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e)
 }

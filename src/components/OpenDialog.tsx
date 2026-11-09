@@ -15,8 +15,8 @@ import type { Graph } from '@/model/graph'
 import type { Issue } from '@/model/result'
 
 /**
- * Opens a graph from pasted text or a file, in GraphCreator YAML or dagitty; the format is
- * recognised with `detectFormat` (spec 5.4). Errors are listed inside the dialog and nothing
+ * Opens a graph from pasted text or a file, in GraphCreator YAML, dagitty, GML, DOT or networkx
+ * JSON; the format is recognised with `detectFormat` (spec 4.15, 5.4). Errors are listed inside the dialog and nothing
  * changes; on success `onOpen` gets the graph and its warnings, and the caller confirms,
  * replaces the graph and closes the dialog.
  */
@@ -77,8 +77,8 @@ export function OpenDialog({
         <DialogHeader>
           <DialogTitle>Open a graph</DialogTitle>
           <DialogDescription>
-            Paste GraphCreator or dagitty code, or open a file. Opening replaces
-            the current graph.
+            Paste GraphCreator, dagitty, GML, DOT or networkx JSON code, or open
+            a file. Opening replaces the current graph.
           </DialogDescription>
         </DialogHeader>
         <Textarea

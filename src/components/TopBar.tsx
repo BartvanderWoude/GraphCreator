@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactElement } from 'react'
+import { Fragment, useMemo, useRef, useState, type ReactElement } from 'react'
 import {
   ChevronDown,
   CircleHelp,
@@ -30,6 +30,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -40,12 +41,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { toDagitty } from '@/model/dagitty'
-import type { GraphFormat } from '@/model/fileFormat'
+import {
+  EXPORT_FILES,
+  EXPORT_FORMATS,
+  type ExportFormat,
+} from '@/model/fileFormat'
 import { emptyGraph, type Graph } from '@/model/graph'
 import type { Issue } from '@/model/result'
 import { validateGraph } from '@/model/validate'
-import { fileSlug, toYaml } from '@/model/yaml'
 import { useGraphStore } from '@/store/graphStore'
 import { useLessonStore } from '@/store/lessonStore'
 import { useThemeStore } from '@/store/themeStore'
@@ -58,10 +61,6 @@ type IssuesView =
 const LESSON_LOCK = 'Not available during a lesson.'
 
 const ICON = { className: 'size-4', strokeWidth: 1.75, 'aria-hidden': true }
-
-function errorMessage(e: unknown): string {
-  return e instanceof Error ? e.message : String(e)
-}
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
@@ -177,11 +176,9 @@ export function TopBar() {
   } | null>(null)
   const [openOpen, setOpenOpen] = useState(false)
   const [openKey, setOpenKey] = useState(0)
-  const [codeView, setCodeView] = useState<{
-    format: GraphFormat
-    text: string
-    filename: string
-  } | null>(null)
+  // The format outlives the open state, so the title does not change while the dialog closes.
+  const [codeOpen, setCodeOpen] = useState(false)
+  const [codeFormat, setCodeFormat] = useState<ExportFormat>('yaml')
   const [exportOpen, setExportOpen] = useState(false)
 
   /** Runs `action` right away for an empty graph, otherwise after the New confirmation. */
@@ -212,19 +209,13 @@ export function TopBar() {
     confirmReplace('New graph', () => replaceGraph(emptyGraph()))
   }
 
-  /** Opens the code dialog for `format`: Save and "Save as…" → GraphCreator… use 'yaml' (spec 5.4). */
-  function openCode(format: GraphFormat) {
-    try {
-      const g = useGraphStore.getState().graph
-      const slug = fileSlug(g.name)
-      setCodeView(
-        format === 'yaml'
-          ? { format, text: toYaml(g), filename: `${slug}.dag.yaml` }
-          : { format, text: toDagitty(g), filename: `${slug}.dagitty.txt` },
-      )
-    } catch (e) {
-      toast.error(`Could not export the graph: ${errorMessage(e)}`)
-    }
+  /**
+   * Opens the code dialog for `format`, which computes its own text: Save and "Save as…" →
+   * GraphCreator… use 'yaml' (spec 5.4).
+   */
+  function openCode(format: ExportFormat) {
+    setCodeFormat(format)
+    setCodeOpen(true)
   }
 
   function openGraph(opened: Graph, openWarnings: Issue[]) {
@@ -315,12 +306,14 @@ export function TopBar() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem onSelect={() => openCode('yaml')}>
-                GraphCreator…
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => openCode('dagitty')}>
-                dagitty…
-              </DropdownMenuItem>
+              {EXPORT_FORMATS.map((format) => (
+                <Fragment key={format}>
+                  <DropdownMenuItem onSelect={() => openCode(format)}>
+                    {EXPORT_FILES[format].label}…
+                  </DropdownMenuItem>
+                  {format === 'dagitty' && <DropdownMenuSeparator />}
+                </Fragment>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -378,13 +371,9 @@ export function TopBar() {
           onOpen={openGraph}
         />
         <CodeDialog
-          open={codeView !== null}
-          onOpenChange={(open) => {
-            if (!open) setCodeView(null)
-          }}
-          format={codeView?.format ?? 'yaml'}
-          text={codeView?.text ?? ''}
-          filename={codeView?.filename ?? ''}
+          open={codeOpen}
+          onOpenChange={setCodeOpen}
+          format={codeFormat}
         />
         <ExportDialog open={exportOpen} onOpenChange={setExportOpen} />
         <Dialog
