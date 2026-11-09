@@ -43,10 +43,11 @@ The lesson engine and the tour ("Drawing your first DAG") are specified in SPEC.
 
 ## Import and export
 
-- More image export: PDF, a legend of the role colours, a dark-theme image (SVG, PNG and TikZ are in SPEC.md wave 12).
-- Optional toggle to embed GraphCreator metadata (types, levels, description, unit, evidence) as dagitty attributes.
-- More formats: GML, DOT, networkx node-link JSON, bnlearn modelstring, Tetrad text, Mermaid.
+PDF export, the legend, the dark-theme image, dagitty details and the GML, DOT, networkx JSON, bnlearn, Tetrad and Mermaid formats are designed in [SPEC.md](SPEC.md) 4.2, 4.11, 4.15 and 5.4 (waves 16–18). Still deferred:
+
 - A versioned JSON Schema for the YAML format.
+- Opening bnlearn, Tetrad and Mermaid; GraphML.
+- A PDF with an embedded font (IBM Plex Sans), so names outside WinAnsi print correctly.
 
 ## Project and community
 

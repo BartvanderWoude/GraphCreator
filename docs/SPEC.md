@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09 and is not implemented yet; next: wave 16. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -249,9 +249,9 @@ Details fixed in phase 5:
 - The parser unescapes `\"` and `\\` and keeps other backslashes; `toDagitty` escapes `\` as well as `"`.
 - The graph name in `dag Name {` is ignored. A graph-type word is a header only when `{` (or a name and `{`) follows, so `dag -> graph` is an edge. A newline or `;` separates statements; one statement may span lines. Negative attribute values and an empty `[]` are accepted. Without spaces, `o->b` is read as a circle-mark edge (so a node named `o` needs spaces, which `toDagitty` writes anyway).
 
-#### `toDagitty(graph: Graph): string`
+#### `toDagitty(graph: Graph, opts?: { details?: boolean }): string`
 
-Plain dagitty; no GraphCreator metadata (types, levels, description, unit, evidence, note are not written).
+Plain dagitty; no GraphCreator metadata (types, levels, description, unit, evidence, note are not written). From phase 32, `details: true` adds them as `gc.*` attributes ("GraphCreator details in dagitty" below); the default (`false`) gives exactly the output described here.
 
 ```
 dag {
@@ -274,11 +274,33 @@ Genetic_factors -> Birth_weight
 
 Maps node id → dagitty id: replace whitespace runs with `_`, then every character outside `[0-9A-Za-z_.]` with `_`; empty result → `node`. Assign in node order; on collision append `_2`, `_3`, … (the first keeps the plain id). Each Unicode code point becomes one `_`. Exported ids always match dagitty's bareword pattern, so no quoting is needed on export.
 
-Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design.
+Round trip: `parseDagitty(toDagitty(g))` gives the same names (via `label`), roles, edges and positions (within 0.1 px) as `g`; metadata is lost by design. With `details: true` the metadata survives too: `toYaml(parseDagitty(toDagitty(g, { details: true })).value)` equals `toYaml(g)` up to positions within 0.1 px.
+
+#### GraphCreator details in dagitty (phase 32)
+
+dagitty allows any `key=value` attribute on nodes and edges, and dagitty-R (0.3.4, checked on 2026-11-09) keeps unknown ones and writes them back unchanged, so the GraphCreator metadata can travel inside a dagitty file. The attribute names carry the prefix `gc.` (a valid dagitty bareword), so they cannot clash with dagitty's own attributes.
+
+```
+dag {
+Maternal_smoking [exposure,label="Maternal smoking",pos="0.000,0.000",gc.var_type="categorical",gc.levels="never;former;current",gc.description="Self-reported during pregnancy"]
+Birth_weight [outcome,label="Birth weight",pos="3.000,0.000",gc.var_type="continuous",gc.unit="g"]
+SES [pos="1.500,-1.200",gc.var_type="ordinal",gc.levels="low;mid;high"]
+Genetic_factors [latent,label="Genetic factors",pos="1.500,1.200"]
+SES -> Maternal_smoking [gc.evidence="PMID:123;doi:10.1000/xyz",gc.note="Well established"]
+Maternal_smoking -> Birth_weight
+SES -> Birth_weight
+Genetic_factors -> Birth_weight
+}
+```
+
+- **Node attributes**, after role, `label` and `pos`, in this order and only when set: `gc.var_type`, `gc.levels`, `gc.description`, `gc.unit`. **Edge attributes**, in `[…]` after the edge, only when set: `gc.evidence`, `gc.note`. An edge without either has no `[…]`.
+- **Lists** (`levels`, `evidence`) are one string with the items separated by `;`. Inside an item, `\` is written `\\` and `;` is written `\;` (`encodeList`, 4.15). The result is then escaped as any dagitty string (`\` → `\\`, `"` → `\"`). An empty list is not written.
+- **Reading:** `parseDagitty` always reads the six `gc.*` keys, with or without the option, and gives no warning for them. `gc.var_type` must be one of `VAR_TYPES` (else the error `Line N: gc.var_type must be one of categorical, ordinal, continuous, discrete.`); `levels` and `unit` follow the rules of 3.2, checked by `validateGraph` as for YAML. An empty `gc.*` value counts as absent. Any other `gc.*` key gets the usual ignored-attribute warning. `gc.evidence` and `gc.note` on an edge written as a chain or group (`a -> b -> c [gc.note="x"]`) apply to every edge of the statement.
+- The plain `toDagitty` example above stays the default output (phase 39 adds the checkbox, 5.4).
 
 #### `detectFormat(text, fileName?)` and `parseGraphText(text, fileName?)` (`src/model/fileFormat.ts`, phase 18)
 
-Open (5.4) takes either format. `detectFormat` returns `'yaml'` when the file name ends in `.yaml`/`.yml`, or when a line starts with one of the file's top-level keys (`schema:`, `name:`, `nodes:`, `edges:`); otherwise `'dagitty'` (dagitty's `dag { … }` header is optional, so it cannot be required). `parseGraphText` calls `parseYaml` or `parseDagitty` accordingly and returns its `Result<Graph>` unchanged.
+Open (5.4) takes either format. `detectFormat` returns `'yaml'` when the file name ends in `.yaml`/`.yml`, or when a line starts with one of the file's top-level keys (`schema:`, `name:`, `nodes:`, `edges:`); otherwise `'dagitty'` (dagitty's `dag { … }` header is optional, so it cannot be required). `parseGraphText` calls `parseYaml` or `parseDagitty` accordingly and returns its `Result<Graph>` unchanged. Phase 31 adds GML, DOT and networkx JSON (4.15 "Detection").
 
 ### 4.3 Graph operations (`src/model/graph.ts`, `src/model/cycle.ts`)
 
@@ -469,6 +491,63 @@ The picture is built from the graph data with the canvas geometry, not by captur
 
 Details fixed in phase 22: each wrapped line is its own `<text>` inside one `<g>` carrying the font attributes, with its baseline 4.875 px below the middle of its 16 px line (from IBM Plex Sans's ascent and descent, matching the CSS layout; no `dominant-baseline`). Numbers have at most two decimals; an edge between coincident centres is skipped. In TikZ the `\definecolor` lines come before `\begin{tikzpicture}`, colours are upper-case hex, `\`, `^` and `~` become `\textbackslash{}`, `\textasciicircum{}` and `\textasciitilde{}`, and a wrapped line starting with `[` or `*` gets a leading `{}` so `\\` does not read it as an argument. TikZ centres the 1.5 pt stroke on the circle, so circles are about 0.75 pt wider than on the canvas. SVG Copy copies the downloaded text, embedded font included (about 32 kB). Format and Scale keep their choice while the page is open. Format and Scale also have visible labels. Failed SVG and TikZ downloads toast `Could not download the file: …` as `CodeDialog` does.
 
+#### PDF, legend and dark theme (phases 31, 37, 38)
+
+Changes to the interface above (phase 31 fixes the signatures; the old calls keep working because every option is optional):
+
+```ts
+// src/lib/imageExport.ts
+export type ImageFormat = 'svg' | 'png' | 'pdf' | 'tikz'
+export type ImageTheme = 'light' | 'dark'
+export interface ImageOptions { theme?: ImageTheme; legend?: boolean }      // defaults: 'light', false
+export function toSvg(graph: Graph, opts?: ImageOptions & { fontDataUrl?: string }): string
+export function svgSize(graph: Graph, opts?: ImageOptions): { width: number; height: number }
+export function toTikz(graph: Graph, opts?: { legend?: boolean }): string   // always the light palette
+export function imageFileName(graphName: string | undefined, format: ImageFormat): string   // adds `.pdf`
+
+// src/model/palette.ts (moved here from imageExport.ts, so src/model writers can use it)
+export interface ExportPalette {
+  background: string; foreground: string; border: string; edge: string
+  roles: Record<Role, { fill: string; line: string; text: string }>
+}
+export const EXPORT_PALETTES: Record<ImageTheme, ExportPalette>   // ImageTheme is defined here and re-exported by imageExport.ts
+
+// src/lib/imageScene.ts
+export const LEGEND = { width: 96, padding: 8, row: 20, swatch: 10, gap: 8, beside: 16, font: 12 } as const
+export type LegendCorner = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'beside'
+export interface SceneCircle { cx: number; cy: number; r: number; fill: string; stroke: string; strokeWidth: number }
+export interface SceneText { x: number; y: number; text: string; size: number; weight: 400 | 500; color: string; anchor: 'middle' | 'start' }   // y is the baseline
+export interface SceneEdge { x1: number; y1: number; x2: number; y2: number; color: string; width: number; head: [[number, number], [number, number], [number, number]] }
+export interface SceneLegend { x: number; y: number; width: number; height: number; corner: LegendCorner; background: string; border: string; items: { role: Role; label: string; swatch: SceneCircle; text: SceneText }[] }
+export interface Scene {
+  title: string; width: number; height: number; background: string
+  edges: SceneEdge[]; circles: SceneCircle[]; texts: SceneText[]   // in drawing order; texts are the wrapped name lines
+  nodeIds: string[]                // circles[i] belongs to graph node nodeIds[i]
+  legend: SceneLegend | null
+}
+export function imageScene(graph: Graph, opts?: ImageOptions): Scene
+
+// src/lib/pdfExport.ts
+export function sceneToPdf(scene: Scene): Uint8Array
+export function toPdf(graph: Graph, opts?: ImageOptions): Uint8Array   // sceneToPdf(imageScene(graph, opts))
+```
+
+- **One scene for every format.** `imageScene` holds everything 4.11 "Geometry" describes, in image coordinates (the top-left of the image is 0,0; y grows downward): the circles, the edges with their three-point arrowheads, the wrapped name lines with their baselines, the legend and the size. `toSvg` and `sceneToPdf` only draw a scene; PNG goes through the SVG as before; `toTikz` uses the scene's node centres, its colours and its legend box. Phase 37 rewrites `toSvg` on top of the scene; the SVG for `{ theme: 'light', legend: false }` stays identical to the phase 22 output (the existing tests keep passing).
+- **Palettes.** `EXPORT_PALETTES.light` is the `:root` values of `--background`, `--foreground`, `--border`, `--edge` and the role tokens from `src/index.css`; `EXPORT_PALETTES.dark` is the same tokens from `.dark`. The light background stays `#ffffff` (equal to `:root --background`); the dark one is `#0e1513`. `src/model/palette.test.ts` checks every literal against `index.css` (moved from `imageExport.test.ts`, with the same parsing as `theme.test.ts`). The DOT and Mermaid writers (4.15) use `EXPORT_PALETTES.light`.
+- **Theme.** `theme: 'dark'` swaps the palette: background, edge colour and role colours. Nothing else changes (sizes, fonts, positions). TikZ has no theme: LaTeX documents are printed on white.
+- **Legend** (`legend: true`). A box listing only the roles in use, in `ROLES` order, one row each: a swatch circle (diameter `LEGEND.swatch`, the role's fill and a 1.5 px line in the role's line colour) and the `ROLE_LABELS` text (`LEGEND.font` px, weight 400, `foreground` colour, anchor start, `LEGEND.gap` px right of the swatch). The box is `LEGEND.width` wide and `2 × padding + n × row` tall, with a 1 px `border`-coloured outline, 4 px corner radius and the `background` fill. There is no title.
+  - **Placement, best free corner.** The box is tried in the top-right, top-left, bottom-right and bottom-left corner of the drawing area (the nodes' bounding box, so the box sits inside the margin like the nodes). A corner is free when the box grown by 8 px on every side overlaps no circle (as its bounding square) and crosses no edge segment. The first free corner wins.
+  - **Beside.** When no corner is free, the image grows to the right: the box sits `LEGEND.beside` px right of the nodes' bounding box, top-aligned with it, and the width grows by `LEGEND.beside + LEGEND.width`. The `corner` is `'beside'`.
+  - A one-node graph always has a free corner unless the box is taller than the circle's square; then the box goes beside. `svgSize` includes the legend.
+  - **TikZ legend:** at the scene's legend position (light palette), a `\draw[gcBorder, fill=white, rounded corners=3pt]` rectangle, one `\node[circle, draw=gc<Role>Line, fill=gc<Role>Fill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt]` swatch and one `\node[anchor=west, font=\sffamily\footnotesize]` label per row; `gcBorder` and `gcText` join the `\definecolor` lines. Without `legend` the TikZ output is unchanged.
+- **PDF** (`sceneToPdf`): a hand-written PDF 1.4 file, no dependency. It is built as text with byte offsets counted for the `xref` table (the content is ASCII plus WinAnsi bytes, one byte per character).
+  - Objects: catalog, pages, one page, the font, the content stream, and an `/Info` dictionary with `/Title (<graph name or Graph>)` and `/Producer (GraphCreator)`. The content stream is not compressed.
+  - The page's `/MediaBox` is `[0 0 <width × 0.75> <height × 0.75>]` (CSS pixels to points, 96 to 72 per inch). The stream starts with `0.75 0 0 -0.75 0 <height × 0.75> cm`, so scene coordinates are used directly.
+  - Background: a filled rectangle. Edges: a stroked line (`w` = edge width) and a filled arrowhead triangle. Circles: four Bézier curves (κ = 0.5523), filled and stroked (`B`). The legend box: a rounded rectangle with Bézier corners.
+  - Text: the standard font Helvetica (`/Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding`; no font is embedded). Each line is drawn with `BT /F1 <size> Tf 1 0 0 -1 <x> <y> Tm (<text>) Tj ET` (the `-1` undoes the page flip). Weight 500 also uses Helvetica. A centred line starts at `x − width / 2`, its width summed from Helvetica's AFM character widths (a 224-entry table for WinAnsi codes 32–255, taken from Adobe's core-font metrics, which may be redistributed) times `size / 1000`. Characters outside WinAnsi are written as `?`. `(`, `)` and `\` are escaped.
+  - Colours are set with `rg`/`RG` from the scene's hex values.
+- **`toPdf` is pure** (no DOM), so the Export dialog downloads `new Blob([toPdf(…)], { type: 'application/pdf' })`.
+
 ### 4.12 Share links (`src/lib/shareLink.ts`, phase 23)
 
 ```ts
@@ -632,6 +711,327 @@ CircleNodeData.highlighted?: boolean        // in uiStore.hoverNodeIds: shows th
 FloatingEdgeData.path?: 'causal' | 'biasing'   // only while analysisOn.paths and the paths are not truncated
 ```
 
+### 4.15 Exchange formats (`src/model/`, phases 31–36)
+
+Six more text formats, so a graph can go to the tools epidemiologists and data scientists use. Each lives in its own pure module in `src/model/`. GraphCreator opens GML, DOT and networkx JSON, as well as writing them. bnlearn, Tetrad and Mermaid are export only.
+
+| Format | Module | Writes | Opens | Used by | Carries |
+|---|---|---|---|---|---|
+| GML | `gml.ts` | `toGml` | `parseGml` | DoWhy (its recommended input), networkx, yEd, Gephi | everything |
+| DOT | `dot.ts` | `toDot` | `parseDot` | Graphviz, DoWhy, pydot | everything, plus role colours |
+| networkx JSON | `networkx.ts` | `toNetworkx` | `parseNetworkx` | networkx (`node_link_graph`), Python generally | everything |
+| bnlearn | `bnlearn.ts` | `toBnlearn` | — | R `bnlearn::model2network` | structure only |
+| Tetrad | `tetrad.ts` | `toTetrad` | — | Tetrad, causal-learn (`txt2generalgraph`) | structure only |
+| Mermaid | `mermaid.ts` | `toMermaid` | — | Markdown, GitHub, Notion | names, edges, role colours |
+
+**Node ids.** Every format except Mermaid names nodes by the same safe ids as dagitty export (`toDagittyIds`, 4.2: `Maternal smoking` → `Maternal_smoking`). They are valid R and Python names, so they can match the column names of a data set: DoWhy, bnlearn and networkx look nodes up by these names. Where a format can carry more, the full name is kept as well (GML and JSON `name`, DOT `label`). Mermaid uses `v1, v2, …` in graph order, because some words (`end`, `graph`) are reserved there.
+
+**Numbers** are written with at most two decimals and never as `-0`, as in 4.11. Every writer ends its output with a newline and skips edges whose endpoints are missing, as `toYaml` does.
+
+#### Shared parts (`src/model/exchange.ts`, phase 31)
+
+```ts
+/** A node read from GML, DOT or networkx JSON, before checking. Fields are as written in the file. */
+export interface ExchangeNode {
+  key: string                       // the format's own node id (GML id, DOT id, JSON id), as text
+  name: string                      // name ?? label ?? key, trimmed
+  role?: unknown; varType?: unknown; levels?: unknown; description?: unknown; unit?: unknown
+  centre?: { x: number; y: number } // canvas px, y down, the centre of the circle
+  line?: number
+}
+export interface ExchangeEdge { source: string; target: string; evidence?: unknown; note?: unknown; line?: number }   // source/target are node keys
+export function buildGraph(
+  input: { name?: string; nodes: ExchangeNode[]; edges: ExchangeEdge[] },
+  warnings: Issue[],               // the parser's own warnings (ignored attributes), kept first
+): Result<Graph>
+export function encodeList(items: string[]): string    // ';'-joined; '\' → '\\', ';' → '\;' inside items
+export function decodeList(text: string): string[]     // the reverse; empty items are dropped; a lone trailing '\' is kept
+export function ignoredAttribute(format: string, key: string, line?: number): Issue
+// message: Ignored <format> attribute "<key>" (not used by GraphCreator).
+```
+
+`buildGraph` turns the parsed nodes and edges into a `Graph`, so the three parsers share one set of checks and messages:
+
+1. **Field types.** A node's `role` must be one of `ROLES` (`Node "SES": role must be one of exposure, outcome, latent, adjusted, selected, other.`). `var_type` must be one of `VAR_TYPES` (`Node "SES": var_type must be one of categorical, ordinal, continuous, discrete.`). `levels` and `evidence` must be lists of text, or one text, which counts as a one-item list (`Node "SES": levels must be a list of text.`). `description`, `unit` and `note` must be text. Numbers are accepted where text is expected and turned into text. Empty or whitespace-only text counts as absent (3.2).
+2. **Edges.** An edge must name existing node keys: `The edge from "A" to "B" refers to "B", but there is no node with that id.`, with `line` when known. A duplicate edge is merged silently, keeping the first edge's evidence and note (dagitty does the same).
+3. **Graph.** Nodes and edges get fresh internal ids, in file order. A node's `pos` is `centre − nodeDiameter(name) / 2` (the top-left of its square, 3.2). If any node lacks `centre`, `autoLayout` runs on the whole graph and adds the YAML warning `Some nodes had no position, so the graph was laid out automatically.`
+4. **Checks.** `validateGraph` (4.4) supplies the errors: empty and duplicate names, `levels` or `unit` on the wrong type, self-edges and cycles. If there are any, the result is `{ ok: false, errors }` with every problem from steps 1–4, and nothing is loaded. Otherwise the warnings are the parser's own, then `validateGraph`'s.
+
+#### Formats and files (`src/model/fileFormat.ts`, phase 31)
+
+```ts
+export type GraphFormat = 'yaml' | 'dagitty' | 'gml' | 'dot' | 'networkx'   // what Open reads
+export type ExportFormat = GraphFormat | 'bnlearn' | 'tetrad' | 'mermaid'    // what Save as… writes
+export const EXPORT_FORMATS: readonly ExportFormat[]   // the menu order: yaml, dagitty, gml, dot, networkx, bnlearn, tetrad, mermaid
+export const EXPORT_FILES: Record<ExportFormat, { label: string; extension: string; mime: string }>
+export function exportText(graph: Graph, format: ExportFormat, opts?: { details?: boolean }): string   // details: dagitty only
+export function exportFileName(graphName: string | undefined, format: ExportFormat): string           // `${fileSlug(name)}${extension}`
+```
+
+| Format | `label` | `extension` | `mime` |
+|---|---|---|---|
+| `yaml` | GraphCreator | `.dag.yaml` | `application/yaml` |
+| `dagitty` | dagitty | `.dagitty.txt` | `text/plain` |
+| `gml` | GML | `.gml` | `text/plain` |
+| `dot` | DOT | `.dot` | `text/vnd.graphviz` |
+| `networkx` | networkx JSON | `.json` | `application/json` |
+| `bnlearn` | bnlearn | `.bnlearn.txt` | `text/plain` |
+| `tetrad` | Tetrad | `.tetrad.txt` | `text/plain` |
+| `mermaid` | Mermaid | `.mmd` | `text/plain` |
+
+**Detection.** `detectFormat` (phase 31) decides in this order:
+
+1. **File name:**
+   - `.yaml`/`.yml` → `yaml`;
+   - `.gml` → `gml`;
+   - `.dot`/`.gv` → `dot`;
+   - `.json` → `networkx`.
+2. **Text that starts with `{`,** after leading whitespace, and that `JSON.parse` reads as an object with a `nodes` array → `networkx`. Text that starts with `{` but is not such JSON goes on to the next rules: a headerless dagitty file may start with a group, `{a b} -> c`.
+3. **The first token is `graph` followed by `[`,** after any leading `#` comment lines → `gml`.
+4. **The first word is `digraph` or `strict digraph`,** after any leading `//`, `/* */` or `#` comments → `dot`. dagitty's own `graph {` header still goes to dagitty, which rejects it with its own message.
+5. **Otherwise,** the phase 18 rules: YAML keys → `yaml`, else `dagitty`.
+
+`parseGraphText` dispatches to the matching parser. Up to phase 18, `digraph` text went to `parseDagitty` and got its "graph type" error; now it is read as DOT.
+
+#### GML (`gml.ts`, phase 33)
+
+```ts
+export function toGml(graph: Graph): string
+export function parseGml(text: string): Result<Graph>
+```
+
+The 4.1 example graph becomes the following. The rest of the nodes and edges follow the same pattern.
+
+```
+graph [
+  directed 1
+  name "Smoking and birth weight"
+  node [
+    id 0
+    label "Maternal_smoking"
+    name "Maternal smoking"
+    role "exposure"
+    var_type "categorical"
+    levels "never"
+    levels "former"
+    levels "current"
+    description "Self-reported during pregnancy"
+    graphics [
+      x 42
+      y 42
+    ]
+  ]
+  node [
+    id 2
+    label "SES"
+    name "SES"
+    var_type "ordinal"
+    levels "low"
+    levels "mid"
+    levels "high"
+    graphics [
+      x 182
+      y -88
+    ]
+  ]
+  edge [
+    source 2
+    target 0
+    evidence "PMID:123"
+    evidence "doi:10.1000/xyz"
+    note "Well established"
+  ]
+]
+```
+
+- **Writing.**
+  - `directed 1` comes first, then `name` when the graph has one.
+  - One `node [ … ]` per node, in graph order. `id` is the 0-based index. `label` is the safe id: networkx's `parse_gml`, which DoWhy uses, names nodes by `label`. `name` is the full name and is always written.
+  - Then `role` (not written when `other`), `var_type`, one `levels` line per level, `description` and `unit`, each only when set.
+  - Then `graphics [ x y ]` with the circle's centre in canvas pixels, y down (as yEd and Gephi read it).
+  - One `edge [ … ]` per edge with `source` and `target` (node ids), one `evidence` line per item, and `note`.
+  - Two-space indentation.
+  - Strings are in double quotes. `"` and `&` are written `&#34;` and `&#38;`, and characters beyond ASCII as `&#<decimal>;`, exactly as networkx's `write_gml` does.
+- **Reading.**
+  - The grammar is GML's: `key value` pairs, where a value is an integer, a real, a quoted string or a list `[ … ]`, and `#` starts a comment to the end of the line.
+  - The text must contain one top-level `graph [ … ]`. A missing graph gives `This text is not a GML graph (graph [ … ] is missing).`
+  - `directed` must be `1`. Otherwise: `This GML graph is not directed. GraphCreator reads directed graphs (directed 1) only.`
+  - `multigraph 1` gives `GML multigraphs are not supported.`
+  - The graph's `name`, or else its `label`, becomes the graph name.
+  - Nodes: `id` is required and its text is the node key. The name is `name`, else `label`, else the id. The other keys are as written above, and repeated keys form a list. The centre comes from `graphics`' `x` and `y`. Other keys inside `graphics` are ignored silently.
+  - Edges: `source`, `target`, `evidence`, `note`. `id`, `label` and `graphics` are ignored silently.
+  - Character references (`&#34;`, `&#x22;`, `&quot;`, `&amp;`, `&lt;`, `&gt;`, `&apos;`) are decoded.
+  - Any other key gives `ignoredAttribute('GML', key, line)`, once per key.
+  - Syntax errors stop at the first one, with `Line N:` messages in the dagitty style (4.2 "Details fixed in phase 5").
+- **Round trip:** `toYaml(parseGml(toGml(g)).value)` equals `toYaml(g)` up to positions within 0.1 px.
+
+#### DOT (`dot.ts`, phase 34)
+
+```ts
+export function toDot(graph: Graph): string
+export function parseDot(text: string): Result<Graph>
+```
+
+```
+digraph "Smoking and birth weight" {
+  node [shape=circle, style=filled, fontname="Helvetica"]
+  edge [color="#64748b"]
+  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="31.5,-31.5!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="252,-27!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="136.5,66!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  Genetic_factors [label="Genetic factors", gc_role="latent", pos="141.75,-119.25!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  SES -> Maternal_smoking [gc_evidence="PMID:123;doi:10.1000/xyz", gc_note="Well established"]
+  Maternal_smoking -> Birth_weight
+  SES -> Birth_weight
+  Genetic_factors -> Birth_weight
+}
+```
+
+- **Writing.**
+  - The header is `digraph "<name>" {`, or `digraph {` without a name.
+  - Then the `node` and `edge` default lines shown above. The edge colour is `EXPORT_PALETTES.light.edge`.
+  - One node line per node, in graph order: the safe id, then in this order `label` (only when the name differs from the id), `gc_role` (not written when `other`), `gc_var_type`, `gc_levels` (`encodeList`), `gc_description`, `gc_unit`, `pos`, and the role's `fillcolor`, `color` and `fontcolor` from `EXPORT_PALETTES.light`.
+  - `pos` is the circle's centre in points with y up, as Graphviz uses it: `x × 0.75, −y × 0.75`, with `!` so `neato -n` keeps it.
+  - One edge line per edge, with `[gc_evidence=…, gc_note=…]` only when set.
+  - The attribute names use `_` rather than dagitty's `.`, because a DOT name with a dot would need quotes.
+  - Every value is quoted, with `\` and `"` escaped by a backslash.
+- **Reading.** A subset of the Graphviz grammar:
+  - Header: `[strict] digraph [id] {`. `graph {` and `--` are errors with the dagitty wording: `Line N: undirected edges (--) are not supported yet. GraphCreator v1 supports directed edges only.` and `Line N: undirected graphs (graph { … }) are not supported. GraphCreator reads directed graphs (digraph) only.`
+  - Node statements: `id [attrs]`.
+  - Edge statements: `operand (-> operand)+ [attrs]`, where an operand is an id or a group `{ … }` / `subgraph [id] { … }`. Groups expand as in dagitty (4.2), and nodes inside a subgraph are created as usual.
+  - Attribute statements (`graph|node|edge [attrs]`) and `id = id` graph attributes are read and ignored silently, except the graph's `label`, which becomes the graph name when the header has no id.
+  - Ids: bare words (`[A-Za-z_\u0080-￿][A-Za-z0-9_\u0080-￿]*`), numerals, and double-quoted strings with `\"` and `\\` escapes. `"a" + "b"` concatenation is supported.
+  - Comments: `//`, `/* */`, and lines starting with `#`.
+  - HTML strings (`<…>`) and ports (`a:n`) are errors: `Line N: HTML labels (<…>) are not supported.` and `Line N: ports (a:n) are not supported.`
+  - A node is created when its id first appears. The name is `label`, else the id; a `label` of `\N` means the id.
+  - The `gc_*` keys are read as metadata, with `gc_levels` and `gc_evidence` passed through `decodeList`.
+  - `pos="x,y"` or `"x,y!"` gives the centre `(x / 0.75, −y / 0.75)`.
+  - These styling keys are ignored silently: `shape`, `style`, `color`, `fillcolor`, `fontcolor`, `fontname`, `fontsize`, `width`, `height`, `fixedsize`, `penwidth`, `arrowhead`, `arrowsize`, `xlabel`, and `pos` on edges.
+  - Any other key gives `ignoredAttribute('DOT', key, line)`.
+- **Round trip:** as for GML.
+
+#### networkx JSON (`networkx.ts`, phase 35)
+
+```ts
+export function toNetworkx(graph: Graph): string
+export function parseNetworkx(text: string): Result<Graph>
+```
+
+```json
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {
+    "name": "Smoking and birth weight"
+  },
+  "nodes": [
+    {
+      "id": "Maternal_smoking",
+      "name": "Maternal smoking",
+      "role": "exposure",
+      "var_type": "categorical",
+      "levels": ["never", "former", "current"],
+      "description": "Self-reported during pregnancy",
+      "pos": [42, 42]
+    }
+  ],
+  "edges": [
+    {
+      "source": "SES",
+      "target": "Maternal_smoking",
+      "evidence": ["PMID:123", "doi:10.1000/xyz"],
+      "note": "Well established"
+    }
+  ]
+}
+```
+
+- **Writing.**
+  - The node-link format of networkx's `node_link_data`.
+  - `edges` is used as the key, which is networkx 3.7's default. Python reads it with `nx.node_link_graph(data, edges="edges")`, which works from networkx 3.4.
+  - Node keys, in this order: `id` (the safe id), `name` (always), `role` (not written when `other`), `var_type`, `levels`, `description`, `unit`, `pos`. `pos` is the circle's centre in canvas pixels, y down. Edge keys: `source`, `target`, `evidence` (only when not empty), `note`.
+  - `graph` is `{}` without a name.
+  - Written with `JSON.stringify(data, null, 2)` and a newline. Short arrays of strings and numbers (`levels`, `evidence`, `pos`) are put back on one line, as above. This is a post-processing step that joins an array whose items are all strings or numbers.
+- **Reading.**
+  - The text must parse as JSON (else `The file is not valid JSON: <parser message>.`) and be an object with a `nodes` array (else `This JSON is not a networkx graph (it has no "nodes" list).`).
+  - `"directed"` must be `true` (else `This networkx graph is not directed. GraphCreator reads directed graphs only.`).
+  - `"multigraph": true` gives `networkx multigraphs are not supported.`
+  - Edges are read from `edges`, or else `links` (the key before networkx 3.4). Neither present means no edges.
+  - `graph.name` becomes the graph name.
+  - Nodes: `id` (a string or number, used as text) is required. The name is `name`, else `label`, else the id. The metadata keys are as written above. `pos` must be two numbers.
+  - Other keys on nodes, on edges or in `graph` give `ignoredAttribute('networkx', key)`, once per key.
+- **Round trip:** as for GML.
+
+#### bnlearn (`bnlearn.ts`, phase 36)
+
+```ts
+export function toBnlearn(graph: Graph): string
+```
+
+The model string of `bnlearn::modelstring`: one `[node]` or `[node|parent1:parent2]` per node, in graph order, with the parents in graph order and safe ids throughout, all on one line. For the 4.1 graph:
+
+```
+[Maternal_smoking|SES][Birth_weight|Maternal_smoking:SES:Genetic_factors][SES][Genetic_factors]
+```
+
+It is read in R with `bnlearn::model2network("…")`. Roles, types and positions are lost; the dialog note says so. Safe ids never contain `[`, `]`, `|` or `:`.
+
+#### Tetrad (`tetrad.ts`, phase 36)
+
+```ts
+export function toTetrad(graph: Graph): string
+```
+
+Tetrad's saved graph text, which causal-learn's `txt2generalgraph` also reads:
+
+```
+Graph Nodes:
+Maternal_smoking;Birth_weight;SES;Genetic_factors
+
+Graph Edges:
+1. SES --> Maternal_smoking
+2. Maternal_smoking --> Birth_weight
+3. SES --> Birth_weight
+4. Genetic_factors --> Birth_weight
+```
+
+The nodes are in graph order and the edges in graph order, numbered from 1. A graph without edges ends after `Graph Edges:`. Roles, latent included, types and positions are lost. Tetrad's manual also describes a form with latent nodes in parentheses, but tools do not read it, so it is not used (section 7).
+
+#### Mermaid (`mermaid.ts`, phase 36)
+
+```ts
+export function toMermaid(graph: Graph): string
+```
+
+```
+%% Smoking and birth weight
+flowchart TB
+  v1(("Maternal smoking"))
+  v2(("Birth weight"))
+  v3(("SES"))
+  v4(("Genetic factors"))
+  v3 --> v1
+  v1 --> v2
+  v3 --> v2
+  v4 --> v2
+  classDef exposure fill:#e3f1e8,stroke:#4a946a,color:#24563a
+  classDef outcome fill:#e2eaf8,stroke:#5b83cf,color:#23407a
+  classDef latent fill:#f3f4f6,stroke:#80868f,color:#374151
+  classDef other fill:#ffffff,stroke:#7d8a9c,color:#0f172a
+  class v1 exposure
+  class v2 outcome
+  class v4 latent
+  class v3 other
+```
+
+- **Lines in order.**
+  - A comment line with the graph name (only when it has one), then `flowchart TB`.
+  - One circle node per node (`v<i>((" … "))`, in graph order) and one `-->` per edge.
+  - Then, for each role in use in `ROLES` order, a `classDef` line with the role's colours from `EXPORT_PALETTES.light`.
+  - Then, for each role in use in `ROLES` order, one `class <ids> <role>` line, with the ids comma-separated in graph order.
+- **Escaping.** In names, `#` first becomes `#35;`, then `"` becomes `#quot;`, `<` becomes `#lt;` and `>` becomes `#gt;` (Mermaid's entity codes).
+- **What is lost.** Mermaid lays the graph out itself, so positions are not kept. Types, levels and evidence are not written.
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -686,6 +1086,25 @@ FloatingEdgeData.path?: 'causal' | 'biasing'   // only while analysisOn.paths an
 - **Save:** opens the "Save as GraphCreator" dialog below, the same as Save as… → GraphCreator…; its Download button saves `toYaml(graph)` as `<slug>.dag.yaml` (4.1). No server involved. (Until phase 20, Save downloaded the file directly.)
 - **Save as… menu (`CodeDialog`, phase 18):** **GraphCreator…** opens "Save as GraphCreator": a read-only textarea (`aria-label="GraphCreator code"`) with `toYaml(graph)`, the note "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.", Copy and Download (`<slug>.dag.yaml`). **dagitty…** opens "Save as dagitty": textarea `dagitty code` with `toDagitty(graph)`, the note "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.", Copy and Download (`<slug>.dagitty.txt`). Copy toasts `Copied <GraphCreator|dagitty> code to the clipboard.`
 - **Export… (`ExportDialog`, phase 22):** a dialog titled "Export image" with the description "The image shows names, roles (by color) and arrows. Types, levels and evidence are not included." It has a **Format** select (`aria-label="Format"`: SVG, PNG, TikZ; SVG by default; the choice is not remembered between visits). For SVG and PNG it shows a preview: an `<img alt="Preview of the image">` of `toSvg(graph)` on a white, bordered area at most 384 px tall, scaled to fit. PNG adds a **Scale** select (`aria-label="Scale"`: 1×, 2×, 3×; 2× by default) and the line `<width> × <height> pixels`. For TikZ it shows a read-only mono textarea (`aria-label="TikZ code"`) with `toTikz(graph)`, like `CodeDialog`. Buttons: **Copy** for SVG (the SVG text) and TikZ (toasts `Copied SVG code to the clipboard.` / `Copied TikZ code to the clipboard.`; the same error toast as `CodeDialog`), none for PNG; **Download**, which saves `imageFileName(name, format)` (`image/svg+xml`, `image/png`, `text/x-tex`). With no nodes the dialog shows "There is nothing to export yet. Add a node first." in place of the preview and both buttons are disabled. A failed PNG shows the error as a toast. The texts are computed when the dialog opens.
+- **Import and export additions (phases 31 and 39):**
+  - **Open…** reads GML, DOT and networkx JSON as well (4.15 "Detection"). Its description becomes "Paste GraphCreator, dagitty, GML, DOT or networkx JSON code, or open a file. Opening replaces the current graph." Everything else is unchanged: the errors, the confirmation and the warnings toast.
+  - **Save as… menu.** The items are, in order: **GraphCreator…**, **dagitty…**, a separator, **GML…**, **DOT…**, **networkx JSON…**, **bnlearn…**, **Tetrad…** and **Mermaid…**. Each opens `CodeDialog` for its `ExportFormat`. The dialog's title is `Save as <label>` and its read-only textarea is labelled `<label> code` (with `EXPORT_FILES` labels, 4.15). It shows a note, then Copy and Download. Download saves `exportFileName(name, format)` with the format's MIME type. Copy toasts `Copied <label> code to the clipboard.` `CodeDialog` computes the text itself, with `exportText`, from the store's graph when it opens. The notes:
+    - **GraphCreator** and **dagitty:** as above.
+    - **GML:** "The GML file keeps roles, variable types, levels, descriptions, units, evidence and positions. Node labels are names safe for R and Python, such as Maternal_smoking; DoWhy and networkx use them as variable names."
+    - **DOT:** "The DOT file keeps roles, variable types, levels, descriptions, units, evidence and positions as attributes, and the role colors for Graphviz. Node ids are names safe for R and Python, such as Maternal_smoking."
+    - **networkx JSON:** "The networkx JSON keeps everything. Read it in Python with networkx.node_link_graph(data, edges=\"edges\"). Node ids are names safe for R and Python, such as Maternal_smoking."
+    - **bnlearn:** "The bnlearn model string keeps the structure only: no roles, types or positions. Read it in R with bnlearn::model2network()."
+    - **Tetrad:** "The Tetrad text keeps the structure only: roles (latent included), types and positions are not included."
+    - **Mermaid:** "Mermaid code draws the graph with its role colors in Markdown, GitHub and Notion. Mermaid lays the graph out itself, so positions are not kept, and types and evidence are not included."
+  - **dagitty details.** The Save as dagitty dialog gets a checkbox, **Include GraphCreator details**, under the textarea. It is off by default and kept across visits in `uiStore.dagittyDetails` (`graphcreator:dagitty-details`, 4.7 addition below). Switching it recomputes the text (`exportText(graph, 'dagitty', { details })`). While it is on, the note reads "Variable types, levels, descriptions, units and evidence are added as gc.* attributes. dagitty keeps them but does not use them."
+  - **Export….** Format offers SVG, PNG, PDF and TikZ.
+    - A **Theme** select (`aria-label="Theme"`: Light, Dark; Light by default) shows for SVG, PNG and PDF.
+    - A **Legend** checkbox (label "Legend"; off by default) shows for every format.
+    - Both are kept while the page is open, like Format and Scale. The preview, the pixel size and the TikZ text follow them.
+    - **PDF:** shows the SVG preview and the line `<width × 0.75> × <height × 0.75> points` (rounded). It has no Copy button. Download saves `<slug>.pdf` (`application/pdf`) from `toPdf(graph, { theme, legend })`.
+    - The preview area keeps its border. A dark image brings its own dark background.
+    - The description becomes "The image shows names, roles (by color) and arrows, with an optional legend. Types, levels and evidence are not included."
+- **4.7 addition (phase 31):** `uiStore` gains `DAGITTY_DETAILS_KEY = 'graphcreator:dagitty-details'`, `dagittyDetails: boolean` (initial value from `readDagittyDetails(safeLocalStorage())`), `setDagittyDetails(on: boolean)` (which also writes), `readDagittyDetails(storage)` (true only for the stored text `'1'`; null or throwing storage gives false) and `writeDagittyDetails(storage, on)` (writes `'1'` or `'0'`, and ignores null or throwing storage). These follow the pattern of `readAnalysisOn` (4.14).
 - **Share (phase 23):** builds `shareUrl(graph)` and writes it with `navigator.clipboard.writeText`. On success it toasts `Link copied. The graph is stored in the link itself, not on a server.`; when the link is longer than `SHARE_LONG` the toast's description adds `The link is long and may not work in every app. Save as GraphCreator to share a file instead.` When the clipboard fails it shows the error toast `Could not copy the link to the clipboard.` There is no dialog.
 - **Opening a share link (phase 23):** `main.tsx` checks `location.hash` after the autosave restore and before the first render. With `#g=…` it removes the fragment at once with `history.replaceState` (so a reload or the autosaved page never applies the link again), does not open the welcome slides automatically on this load, and passes the decoded result to `offerSharedGraph` (exported by `SharedGraphDialog.tsx`, which `App` mounts inside the `ReactFlowProvider`):
   - **Damaged link:** the error toast `Could not open the shared graph.` with the first error message as its description; the stored graph stays.
@@ -1103,6 +1522,23 @@ Details fixed in phase 29: a count shows `(0)` for an empty list and is left out
 | Instruments with selected nodes (phase 28) | Condition on S, as the rest of the analysis | dagitty-R 0.3.4, which ignores S here | User's choice; consistent with paths and independencies. |
 | Instrument conditioning set (phase 28) | W contains no descendant of a causal-path node and no descendant of the outcome | Descendants of causal-path nodes only (first version); dagitty-R's "mediators or descendants of the outcome" | User's choice. The first version allowed descendants of the outcome when the exposure does not cause it; conditioning on a mediator's descendants can bias an IV estimate, so GraphCreator stays stricter than dagitty-R. |
 | Section 6 heading | Restored as "## 6. Project setup and conventions" | — | It was dropped by accident in 910cfc7; other sections refer to "section 6". |
+| New formats, direction (2026-11-09) | Export GML, DOT, networkx JSON, bnlearn, Tetrad and Mermaid; Open also reads GML, DOT and networkx JSON | Export only; export and open all six | Recommended option. These three come back from DoWhy and Python tools; parsing Mermaid, bnlearn and Tetrad adds little. |
+| New formats in the UI | One Save as… item per format, each opening `CodeDialog` | One "Other formats…" dialog with a Format select (recommended); inside the Export dialog | User's choice. |
+| Node names in exchange formats | Safe ids (`toDagittyIds`) as node names; the full name kept as `name`/`label` where possible | Names as typed | Recommended option. DoWhy, bnlearn and networkx look nodes up by name, and the names must match data columns. In GML the safe id is the `label`, because networkx's `parse_gml` (used by DoWhy) names nodes by `label`. |
+| Metadata in GML, DOT and JSON | Always everything (roles, types, levels, description, unit, positions, evidence, note); round trip like YAML | Structure and roles only | Recommended option. These formats are meant for data, so no checkbox. |
+| DOT and Mermaid look | Role colours from the light palette (DOT `fillcolor`/`color`/`fontcolor`, Mermaid `classDef`) | DOT plain; neither | Recommended option. |
+| bnlearn output | The model string only | A ready-to-run R line | Recommended option. |
+| Tetrad variant | Tetrad's saved-file form (`Graph Nodes:` / `Graph Edges:`), read by causal-learn | The manual's `# Nodes` form with latent nodes in parentheses | Recommended option; tools read the saved-file form. Roles are lost. |
+| networkx edge key | Write `edges`, accept `links` on import | Write `links` | networkx 3.7 defaults to `edges`; `links` was the key before 3.4. |
+| PDF | Own vector PDF writer with Helvetica (`pdfExport.ts`) | jsPDF + svg2pdf.js loaded lazily; a PNG inside a PDF page | Recommended option. No dependency and vector output; the font differs slightly from the canvas. |
+| Legend layout | Box in a corner listing the roles in use (option B) | A row below (A); a column on the right (C); a row below with all six roles (D) | User's choice, picked from four drawn options. |
+| Legend placement | Best free corner (top right, top left, bottom right, bottom left), else beside the graph | Top right, growing when it would overlap (recommended); bottom right | User's choice. |
+| Legend and theme controls | A Legend checkbox (off) and a Theme select (Light) in the Export dialog, kept while the page is open | The theme follows the app | Recommended option. |
+| TikZ options | The legend, but no dark theme | Both; neither | Recommended option. LaTeX documents are printed on white. |
+| dagitty details names | `gc.` prefix (`gc.var_type`, `gc.levels`, …) | The YAML key names without a prefix | Recommended option. It cannot clash with dagitty's own attributes, and dagitty-R keeps such attributes (checked). |
+| dagitty details lists | `;`-separated, with `\;` and `\\` escapes | JSON array text | Recommended option; readable in dagitty.net. |
+| dagitty details checkbox | Off by default, remembered across visits | On by default; remembered only per page | Recommended option. Plain dagitty stays the default. |
+| Exchange-format oracle | A dev-time script (`scripts/check-formats.py` with networkx, pydot and causal-learn, plus bnlearn and dagitty in R) that reads committed sample exports and records what each tool saw | Unit tests only | Recommended option. It proves the files work in the real tools; it does not run in CI. |
 
 ## 8. Implementation phases
 
@@ -1112,7 +1548,7 @@ General rules for every phase:
 
 - Read the whole spec first; sections 3–7 and the decisions table are binding.
 - Only create or change the files the phase owns. All other files are read-only for it. Code against the contracts of earlier phases; don't change them.
-- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`; phase 24 adds `tabs` and `switch`). If another is needed, stop and report it.
+- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`; phase 24 adds `tabs` and `switch`; phase 31 adds `checkbox`). If another is needed, stop and report it.
 - Don't add npm dependencies; everything needed is installed (section 6). The only exception is phase 10, which swaps the font packages (5.7.3).
 - "All checks" means `npm run typecheck`, `npm run lint`, `npm test` and `npm run test:e2e`.
 
@@ -1150,8 +1586,26 @@ General rules for every phase:
 | 28 | Instrumental variables | 24 | 14 | `src/model/analysis/instruments.ts`, `instruments.test.ts` |
 | 29 | Analysis tab | 24 | 14 | `src/components/SidePanel.tsx`, `src/components/AnalysisPanel.tsx` |
 | 30 | Analysis integration and end-to-end tests | 25, 26, 27, 28, 29 | 15 | `e2e/analysis.spec.ts`, fixes in any file of phases 24–29, this spec's Status line and Open issues, `docs/IDEAS.md` |
+| 31 | Export contracts | 30 | 16 | `src/model/exchange.ts` (+ test), `src/model/palette.ts` (+ test), `src/model/fileFormat.ts` (+ test), stubs `src/model/{gml,dot,networkx,bnlearn,tetrad,mermaid}.ts`, `src/model/dagitty.ts` (the `opts` parameter only), `src/lib/imageExport.ts` (+ test; signatures and the palette move only), `src/lib/imageScene.ts` (types, `LEGEND`, stub), `src/lib/pdfExport.ts` (`toPdf` real, `sceneToPdf` stub), `src/store/uiStore.ts` (+ test), `src/components/CodeDialog.tsx` (the `COPY` table only), `src/components/ui/checkbox.tsx` |
+| 32 | dagitty details | 31 | 17 | `src/model/dagitty.ts`, `dagitty.test.ts` |
+| 33 | GML | 31 | 17 | `src/model/gml.ts`, `gml.test.ts` |
+| 34 | DOT | 31 | 17 | `src/model/dot.ts`, `dot.test.ts` |
+| 35 | networkx JSON | 31 | 17 | `src/model/networkx.ts`, `networkx.test.ts` |
+| 36 | bnlearn, Tetrad and Mermaid | 31 | 17 | `src/model/{bnlearn,tetrad,mermaid}.ts` and their tests |
+| 37 | Image scene, legend and theme | 31 | 17 | `src/lib/imageScene.ts`, `imageScene.test.ts`, `src/lib/imageExport.ts`, `imageExport.test.ts` |
+| 38 | PDF writer | 31 | 17 | `src/lib/pdfExport.ts`, `pdfExport.test.ts` |
+| 39 | Export and format dialogs | 31 | 17 | `src/components/TopBar.tsx`, `CodeDialog.tsx`, `ExportDialog.tsx`, `OpenDialog.tsx` |
+| 40 | Format integration, real-tool reference and end-to-end tests | 32, 33, 34, 35, 36, 37, 38, 39 | 18 | `scripts/check-formats.py`, `scripts/check-formats.R`, `src/model/__fixtures__/formats/*`, `src/model/formats.reference.test.ts`, `e2e/formats.spec.ts`, `e2e/export.spec.ts`, `e2e/files.spec.ts`, fixes in any file of phases 31–39, this spec's Status line and Open issues, `docs/IDEAS.md` |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
+
+**Import and export contracts (fixed in phase 31, used by phases 32–40).** Wave 17 builds eight parts in parallel against these:
+- the signatures in 4.11 "PDF, legend and dark theme";
+- 4.15 (`exchange.ts`, `fileFormat.ts` and the writer and parser signatures);
+- the `uiStore` addition in 5.4;
+- the `CodeDialog` `COPY` table.
+
+Phase 31 leaves the app working as before. The stubs for `toGml`, `toDot`, `toNetworkx`, `toBnlearn`, `toTetrad` and `toMermaid` return `''`. `parseGml`, `parseDot` and `parseNetworkx` return the error `<label> files cannot be opened yet.`. `imageScene` and `sceneToPdf` throw `Error('not implemented')`. `toSvg` and `toTikz` accept and ignore the new options. None of these is reachable from the UI until phase 39, and phase 39 lands after the parts it shows. `dagitty.ts`, `imageExport.ts` and `CodeDialog.tsx` are touched by phase 31 and again in wave 17; phase 31 changes only what its row names.
 
 Wave 4 is the wide one: its five phases share no files, and each codes against the contracts fixed in phase 3 (the store API in 4.6, the `yaml.ts`/`dagitty.ts` signatures in 4.1–4.2, the component contracts below). The UI phases 6–8 cannot be seen in the app until phase 9 mounts them, so their behaviour is tested end to end in phase 9.
 
@@ -1659,7 +2113,7 @@ Phases: 25, 26, 27, 28, 29. Parallel: all five (one sub agent each, in its own w
 
 Phases: 30. Parallel: single phase. Check after the wave: all checks; the browser checks in phase 30.
 
-#### Phase 30: Analysis integration and end-to-end tests [x]
+#### Phase 30: Analysis integration and end-to-end tests [x] (dcc2056)
 
 - **Goal:** the analysis works end to end and the spec, IDEAS.md and memory reflect it.
 - **Depends on:** phases 25–29.
@@ -1668,6 +2122,167 @@ Phases: 30. Parallel: single phase. Check after the wave: all checks; the browse
 - **Tests:** `e2e/analysis.spec.ts` (section 9).
 - **Done when:** all checks pass; in the browser (both themes) an M-bias graph shows `(empty set)` as sufficient and adjusting the collider Z makes the path through Z dashed and the report say "not sufficient"; Use this set and undo work.
 - **Out of scope:** an exportable report; analysis in exported images.
+
+### Wave 16: Export contracts [ ]
+
+Phases: 31. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except that the Open dialog now routes `digraph` text to the DOT stub.
+
+#### Phase 31: Export contracts [ ]
+
+- **Goal:** the shared parts and signatures of 4.11 "PDF, legend and dark theme", 4.15 and 5.4 exist, so wave 17 can build the formats, the image changes and the dialogs in parallel.
+- **Depends on:** phase 30.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `Graph`, `Result`, `Issue` (3.2–3.3), `validateGraph` (4.4), `autoLayout` (4.5), `nodeDiameter` (5.7.6), `toDagittyIds`, `fileSlug`, `readAnalysisOn` as the storage pattern (4.14), `safeLocalStorage` (`src/lib/welcome.ts`).
+- **Work:**
+  - **`exchange.ts`:** `ExchangeNode`, `ExchangeEdge`, `buildGraph`, `encodeList`, `decodeList` and `ignoredAttribute`, for real (4.15 "Shared parts").
+  - **`palette.ts`:** `ImageTheme`, `ExportPalette` and `EXPORT_PALETTES` with both themes (4.11).
+  - **`imageExport.ts`:** imports the palette from `palette.ts`, re-exports `EXPORT_PALETTES` and `ImageTheme`, and drops `EXPORT_PALETTE`; its users use `EXPORT_PALETTES.light`. Add `ImageOptions`, `'pdf'` in `ImageFormat` and `.pdf` in `imageFileName`. The new options are accepted and ignored. The palette test moves to `palette.test.ts`.
+  - **`imageScene.ts`:** the types and `LEGEND` of 4.11, with `imageScene` as a stub.
+  - **`pdfExport.ts`:** `toPdf` for real (`sceneToPdf(imageScene(graph, opts))`), with `sceneToPdf` as a stub.
+  - **`fileFormat.ts`:** `GraphFormat`, `ExportFormat`, `EXPORT_FORMATS`, `EXPORT_FILES`, `exportText`, `exportFileName`, the new detection order and dispatch (4.15).
+  - **Format modules:** the six format modules as stubs with their 4.15 signatures.
+  - **`dagitty.ts`:** `toDagitty(graph, opts?)`, with the option ignored for now.
+  - **`uiStore.ts`:** the `dagittyDetails` addition (5.4).
+  - **`CodeDialog.tsx`:** `COPY` becomes `Record<ExportFormat, { title; code; note }>` with all eight entries and their notes (5.4), plus `detailsNote` for dagitty. The MIME type comes from `EXPORT_FILES`. Its `format` prop becomes `ExportFormat`. Nothing else changes.
+  - **`ui/checkbox.tsx`:** `npx shadcn@latest add checkbox`. It uses the installed `radix-ui`, so no new dependency, and is styled with the Calm teal tokens: `--primary` when checked.
+- **Tests:**
+  - `exchange.test.ts`;
+  - `palette.test.ts`;
+  - the `fileFormat.test.ts` additions;
+  - the `uiStore.test.ts` additions;
+  - the existing `imageExport.test.ts`, updated for the palette move (section 9).
+- **Done when:** all checks pass; detection sends the GML, DOT and JSON samples of section 9 to the right parser, and every existing YAML and dagitty fixture still goes where it went.
+- **Out of scope:** the writers, the parsers, the scene and PDF drawing, the dialogs.
+
+### Wave 17: Export parts [ ]
+
+Phases: 32, 33, 34, 35, 36, 37, 38, 39. Parallel: all eight, one sub agent each in its own worktree; their files are disjoint. Land them in the order 32, 33, 34, 35, 36, 37, 38, 39.
+
+Check after the wave: all checks, then in the browser:
+- each Save as… item shows its text and downloads its file;
+- the dagitty checkbox adds the `gc.*` attributes and is still set after a reload;
+- a pasted GML, DOT and JSON export of the smoking graph opens with its types and evidence;
+- Export gives a dark PNG with a legend, and a PDF that opens in the browser's PDF viewer.
+
+Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
+
+#### Phase 32: dagitty details [ ]
+
+- **Goal:** dagitty code can carry the GraphCreator metadata as `gc.*` attributes, and Open always reads them back.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.2, `encodeList` and `decodeList` (4.15).
+- **Work:** `toDagitty` with `details` and `parseDagitty` reading the `gc.*` keys, as in 4.2 "GraphCreator details in dagitty". Edge attribute lists on chains and groups apply to every edge.
+- **Tests:** the `dagitty.test.ts` additions (section 9).
+- **Done when:** all checks pass; the example in 4.2 is reproduced exactly for the 4.1 graph; the round trip with details equals `toYaml(g)`.
+- **Out of scope:** the checkbox (phase 39); the dagitty-R check (phase 40).
+
+#### Phase 33: GML [ ]
+
+- **Goal:** `toGml` and `parseGml` as in 4.15.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.15 (`buildGraph`, `ignoredAttribute`, `toDagittyIds`, the number rules).
+- **Work:** the writer, a GML tokenizer and parser, and the reading rules of 4.15.
+- **Tests:** `gml.test.ts` (section 9).
+- **Done when:** all checks pass; the 4.15 example is reproduced exactly for the 4.1 graph (the parts shown); the round trip holds on every valid fixture.
+- **Out of scope:** yEd's GraphML (XML), and other GML extensions.
+
+#### Phase 34: DOT [ ]
+
+- **Goal:** `toDot` and `parseDot` as in 4.15.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.15, `EXPORT_PALETTES.light`.
+- **Work:** the writer, a tokenizer and recursive-descent parser for the DOT subset in 4.15, and the error messages listed there.
+- **Tests:** `dot.test.ts` (section 9).
+- **Done when:** all checks pass; the 4.15 example is reproduced exactly; the round trip holds on every valid fixture; a typical DoWhy string (`digraph { A -> B; B -> C; A -> C }`) opens with layout.
+- **Out of scope:** undirected graphs, HTML labels, ports, edge splines.
+
+#### Phase 35: networkx JSON [ ]
+
+- **Goal:** `toNetworkx` and `parseNetworkx` as in 4.15.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.15.
+- **Work:** the writer with its one-line short arrays, and the reader with `edges`/`links`.
+- **Tests:** `networkx.test.ts` (section 9).
+- **Done when:** all checks pass; the 4.15 example shape is reproduced for the 4.1 graph; the round trip holds on every valid fixture.
+- **Out of scope:** networkx's adjacency and tree formats; multigraphs.
+
+#### Phase 36: bnlearn, Tetrad and Mermaid [ ]
+
+- **Goal:** `toBnlearn`, `toTetrad` and `toMermaid` as in 4.15.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.15, `EXPORT_PALETTES.light`.
+- **Work:** the three writers.
+- **Tests:** `bnlearn.test.ts`, `tetrad.test.ts` and `mermaid.test.ts` (section 9).
+- **Done when:** all checks pass; the three 4.15 examples are reproduced exactly for the 4.1 graph.
+- **Out of scope:** reading these formats.
+
+#### Phase 37: Image scene, legend and theme [ ]
+
+- **Goal:** `imageScene` computes the picture with the legend and both themes, and SVG and TikZ are drawn from it.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.11 (both parts), `EXPORT_PALETTES`, `ROLE_LABELS`, `nodeDiameter`, `wrapLabel`, `edgeEndpoints`.
+- **Work:** `imageScene` with the legend placement of 4.11; `toSvg` and `svgSize` rewritten on top of the scene; the theme and the legend in SVG; the TikZ legend.
+- **Tests:** `imageScene.test.ts` and the `imageExport.test.ts` additions (section 9).
+- **Done when:** all checks pass; the light SVG without a legend is identical to before this phase for every valid fixture; a dark SVG with a legend looks right in the browser.
+- **Out of scope:** PDF drawing (phase 38); the dialog (phase 39); the analysis marking in images.
+
+#### Phase 38: PDF writer [ ]
+
+- **Goal:** `sceneToPdf` writes a valid vector PDF of a scene.
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** the `Scene` types (4.11).
+- **Work:** the PDF objects, the content stream, the Helvetica width table, and the escaping and WinAnsi mapping of 4.11. It is tested on hand-built scenes, because `imageScene` is a stub in this branch.
+- **Tests:** `pdfExport.test.ts` (section 9).
+- **Done when:** all checks pass; a PDF of a hand-built scene opens in the browser's PDF viewer and in `pdftotext` or `qpdf --check` when available (otherwise say so).
+- **Out of scope:** embedded fonts; compression; several pages.
+
+#### Phase 39: Export and format dialogs [ ]
+
+- **Goal:** the Save as… menu, `CodeDialog`, the Export dialog and the Open dialog work as in 5.4 "Import and export additions".
+- **Depends on:** phase 31.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `EXPORT_FORMATS`, `EXPORT_FILES`, `exportText`, `exportFileName` (4.15), `uiStore.dagittyDetails`, `ImageOptions`, `toPdf`, the `checkbox` component.
+- **Work:**
+  - **`TopBar.tsx`:** the menu items and the separator. `openCode(format)` passes only the format.
+  - **`CodeDialog.tsx`:** computes its text and file name, and adds the details checkbox for dagitty.
+  - **`ExportDialog.tsx`:** PDF, Theme, Legend, and the points line.
+  - **`OpenDialog.tsx`:** the new description.
+
+  This phase is coded against the stubs, so the new formats show empty text until wave 17 lands. The existing e2e tests must still pass.
+- **Tests:** none of its own (components have no unit tests). `e2e` follows in phase 40.
+- **Done when:** all checks pass; in the browser every menu item opens its dialog, the checkbox survives a reload, and Theme and Legend change the preview once phase 37 has landed. When this phase runs before it lands, check that the controls update their state.
+- **Out of scope:** the formats themselves.
+
+### Wave 18: Format integration [ ]
+
+Phases: 40. Parallel: single phase. Check after the wave: all checks; the browser checks in phase 40.
+
+#### Phase 40: Format integration, real-tool reference and end-to-end tests [ ]
+
+- **Goal:** the new formats are checked against the real tools, the whole feature works end to end, and the spec, IDEAS.md and memory reflect it.
+- **Depends on:** phases 32–39.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - **Samples.** `src/model/__fixtures__/formats/` holds the exports of the sample graphs: `smoking.dag.yaml`, `quoted-names.dagitty.txt`, and the analysis gallery's dagitty files, read with their GraphCreator metadata where they have it. For each sample there is one file per writer (`<graph>.gml`, `.dot`, `.json`, `.bnlearn.txt`, `.tetrad.txt`, `.mmd`) and the dagitty file with details (`<graph>.details.dagitty.txt`). `formats.reference.test.ts` checks that the writers still produce these files exactly, and rewrites them when the environment variable `UPDATE_FORMAT_SAMPLES=1` is set.
+  - **Real-tool reference.** `scripts/check-formats.py` and `scripts/check-formats.R` read the sample files and write `src/model/__fixtures__/formats/reference.json`: for each sample and tool, the node names, the edges and the node attributes the tool saw, plus the tool versions. The tools are:
+    - Python: networkx `parse_gml` (with `label="label"`, as DoWhy uses it) and `node_link_graph(edges="edges")`; pydot `graph_from_dot_data`; causal-learn `txt2generalgraph`.
+    - R: bnlearn `model2network`; dagitty, which must parse the details file and give the same `exposures`, `outcomes`, `latents` and edges as the plain export, and keep every `gc.*` attribute when printed.
+  - **Running the reference.** Each script's header says how to install its tools: `python3 -m venv <dir>` then `<dir>/bin/pip install networkx pydot causal-learn`; `install.packages(c("bnlearn", "dagitty"))`. The scripts do not run in CI.
+  - **Tests.** `formats.reference.test.ts` compares `reference.json` with the sample graphs. Then write the e2e tests, fix integration problems, and update the Status line, the Open issues and `docs/IDEAS.md`. Remove the built "Import and export" items there; keep the JSON Schema item.
+- **Tests:** `formats.reference.test.ts`, `e2e/formats.spec.ts` and the `e2e/export.spec.ts` and `e2e/files.spec.ts` additions (section 9).
+- **Done when:** all checks pass; `reference.json` covers every sample and tool; in the browser (both app themes):
+  - the smoking graph's GML, DOT and JSON exports pasted into Open recreate it with types and evidence;
+  - the Mermaid code renders with role colours in a Mermaid viewer;
+  - the PDF with a legend opens in the browser;
+  - a dark PNG with a legend downloads.
+- **Out of scope:** opening bnlearn, Tetrad or Mermaid; the JSON Schema; analysis marking in images.
 
 ## 9. Tests
 
@@ -1730,6 +2345,112 @@ Causal analysis (phases 24–30):
 - `src/model/analysis/instruments.test.ts` (phase 28): the `instrument` gallery file gives Z unconditionally; a conditional instrument case gives the right `given`; the results equal `reference.json`; `'needs-single'` with two exposures.
 - `e2e/analysis.spec.ts` (phase 30): with `smoking.dag.yaml` open, the Analysis tab shows `Total effect of Maternal smoking on Birth weight.`, the set `SES` and "not sufficient"; Use this set marks SES as Adjusted (its circle's `data-role`), the report turns "sufficient", and Ctrl+Z undoes it; switching Paths on gives `data-path="causal"` and `data-path="biasing"` edges, and adjusting SES removes the biasing one; hovering the SES row shows the rim on the SES circle; switching Report off hides its text, and the switch states survive a reload; clicking a node switches to Edit; a pasted dagitty graph with two exposures shows the instruments message; with no exposure the empty-state line shows.
 
+
+Import and export (phases 31–40):
+
+- `src/model/exchange.test.ts` (phase 31): `encodeList`/`decodeList` round-trip items containing `;`, `\` and spaces, and drop empty items. `buildGraph`:
+  - gives the role, type and list errors with their exact messages, all at once;
+  - turns a number into text and a single text into a one-item list;
+  - merges duplicate edges keeping the first's evidence;
+  - gives the missing-node edge error;
+  - converts centres to top-left positions with `nodeDiameter`;
+  - lays out and warns when a centre is missing;
+  - passes cycles, self-edges and `levels` on a continuous node through `validateGraph`;
+  - keeps the parser's warnings first.
+- `src/model/palette.test.ts` (phase 31): both palettes equal the `:root` and `.dark` tokens in `index.css`, and the light background is `#ffffff`.
+- `src/model/fileFormat.test.ts` (phase 31 additions):
+  - the extensions `.gml`, `.dot`, `.gv` and `.json` force their format;
+  - `graph [` after `#` comments is GML;
+  - `digraph`, `strict digraph` and `digraph G {` after comments are DOT;
+  - JSON with a `nodes` array is networkx;
+  - `{a b} -> c` and `{ "x": 1 }` without `nodes` are dagitty;
+  - every phase 18 case is unchanged;
+  - `exportFileName` gives `smoking-and-birth-weight.gml` etc. and `graph.mmd` without a name;
+  - `exportText` dispatches to each writer and passes `details` to dagitty only.
+- `src/store/uiStore.test.ts` (phase 31 addition): `dagittyDetails` is false by default and with null, throwing or unknown storage; `setDagittyDetails` writes `'1'` and `'0'`.
+- `src/model/dagitty.test.ts` (phase 32 additions):
+  - `toDagitty(g, { details: true })` for the 4.1 graph equals the 4.2 example;
+  - without the option the output is unchanged;
+  - items with `;`, `\` and `"` survive a round trip;
+  - an edge chain with `[gc.note="x"]` gives the note to both edges;
+  - an unknown `gc.foo` warns;
+  - a bad `gc.var_type` gives its line-numbered error;
+  - `gc.levels` on a continuous node gives `validateGraph`'s error;
+  - the full round trip with details equals `toYaml(g)`.
+- `src/model/gml.test.ts` (phase 33):
+  - the 4.15 example;
+  - the round trip on every valid YAML and dagitty fixture;
+  - `&#34;`, `&amp;` and non-ASCII names survive;
+  - `label` is the safe id and `name` the full name;
+  - a networkx-written GML without `name` keys opens with the labels as names;
+  - `directed 0`, `multigraph 1`, a missing `graph [`, an unclosed list and an edge to an unknown id give their messages;
+  - yEd's `graphics [ x y w h type ]` keys are silent;
+  - an unknown key warns once.
+- `src/model/dot.test.ts` (phase 34):
+  - the 4.15 example;
+  - the round trip;
+  - `digraph { A -> B; B -> C; A -> C }` opens with three nodes and a layout warning;
+  - `A -> {B C}`, `subgraph cluster_x { … }`, `a -> b -> c`, `"a b" -> c`, `"x" + "y"` concatenation and comments work;
+  - `pos` converts from points with y up;
+  - `graph {`, `--`, `<html>` labels and ports give their messages;
+  - styling keys are silent and `weight` warns;
+  - `label="\N"` means the id.
+- `src/model/networkx.test.ts` (phase 35):
+  - the 4.15 example shape (pretty-printed, short arrays on one line);
+  - the round trip;
+  - `links` instead of `edges` is accepted;
+  - numeric ids become text;
+  - invalid JSON, a missing `nodes`, `"directed": false` and `"multigraph": true` give their messages;
+  - an unknown node key warns once;
+  - `pos` must be two numbers.
+- `src/model/bnlearn.test.ts`, `tetrad.test.ts`, `mermaid.test.ts` (phase 36):
+  - the three 4.15 examples;
+  - an empty graph (`''` for bnlearn; the two headers for Tetrad; only `flowchart TB` for Mermaid);
+  - safe ids in bnlearn and Tetrad;
+  - Mermaid escapes `"`, `<`, `>` and `#`, and has a `classDef` only for the roles in use.
+- `src/lib/imageScene.test.ts` (phase 37):
+  - one circle and one set of text lines per node, one edge per edge;
+  - the size equals `svgSize`;
+  - the legend lists only the roles in use in `ROLES` order;
+  - each corner is chosen when the earlier ones are blocked (four hand-built graphs);
+  - `'beside'` widens the image by 112 px;
+  - the dark theme swaps only colours;
+  - no legend without the option.
+- `src/lib/imageExport.test.ts` (phase 37 additions):
+  - for every valid fixture, the light SVG without a legend equals the output before phase 37 (a stored snapshot made at the start of the phase);
+  - the dark SVG uses the dark background and role colours;
+  - the legend's `<rect>`, swatches and labels appear;
+  - `toTikz` with `legend` adds the box, the swatches, the labels and `gcBorder`/`gcText`, and without it is unchanged.
+- `src/lib/pdfExport.test.ts` (phase 38):
+  - for a hand-built scene, the file starts with `%PDF-1.4` and ends with `%%EOF`;
+  - every `xref` offset points at its `n 0 obj`;
+  - the `/MediaBox` is the scene size × 0.75;
+  - the stream has the flip `cm`, one `B` per circle and one `Tj` per text line;
+  - a centred line starts at the AFM-measured offset;
+  - `(`, `)` and `\` are escaped;
+  - `é` maps to its WinAnsi byte and `β` to `?`;
+  - the `/Title` holds the graph name.
+- `src/model/formats.reference.test.ts` (phase 40):
+  - every sample file equals its writer's current output;
+  - for every sample and tool in `reference.json`, the nodes are the safe ids and the edges are the graph's edges;
+  - networkx sees the same `name`, `role`, `var_type`, `levels`, `description`, `unit` and `evidence`;
+  - pydot sees the `gc_*` attributes;
+  - causal-learn sees the directed edges;
+  - bnlearn sees the arcs;
+  - dagitty-R keeps the `gc.*` attributes.
+- `e2e/formats.spec.ts` (phase 40):
+  - each Save as… item opens its dialog with `exportText`'s text, and Download gives its file name;
+  - the dagitty checkbox adds `gc.var_type` and survives a reload;
+  - pasting the smoking graph's GML, DOT and JSON exports into Open recreates it (4 nodes, 4 edges, SES with type ordinal);
+  - a pasted `digraph { A -> B }` opens;
+  - a `graph [ directed 0 ]` paste shows the error and keeps the graph.
+- `e2e/export.spec.ts` (phase 40 additions):
+  - PDF shows the preview and the points line, and downloads a file starting with `%PDF-`;
+  - Theme Dark changes the preview's background and is hidden for TikZ;
+  - Legend adds the legend to the downloaded SVG and the TikZ text;
+  - Theme and Legend keep their values when the dialog is reopened.
+- `e2e/files.spec.ts` (phase 40 update): the Open dialog's new description.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the host (GitHub Pages, Cloudflare or an EU host) is not chosen. When it is, add a deploy job that runs after CI passes on `develop` and publishes to `production`, and decide on a custom domain.
@@ -1742,4 +2463,7 @@ Causal analysis (phases 24–30):
 - **Share links and hosting:** a link names the address it was made on, so links made on a local or preview build only open there. Once a host and domain are chosen, links should be made on that domain.
 - **Analysis reference:** `reference.json` was made with one dagitty-R version (recorded in the file). If a later dagitty-R gives different answers, decide case by case which is right before regenerating it.
 - **Analysis on large graphs:** the analysis runs on every change in the main thread. If large graphs feel slow, compute it lazily per switched-on section or in a Web Worker.
+- **PDF text:** the PDF uses the standard Helvetica font without embedding it, so characters outside WinAnsi (Greek letters, for example) appear as `?`, and the text looks slightly different from the canvas's IBM Plex Sans. Embedding a TrueType subset of IBM Plex Sans would fix both, at the cost of a font file in the bundle.
+- **Formats without positions or roles:** Mermaid lays the graph out itself, and bnlearn and Tetrad keep only the structure, Tetrad dropping the latent role as well. The dialog notes say so.
+- **Real-tool reference:** `src/model/__fixtures__/formats/reference.json` was made with the tool versions recorded in it. If a later networkx, pydot, causal-learn, bnlearn or dagitty reads the samples differently, decide case by case before regenerating.
 - Everything in [IDEAS.md](IDEAS.md).
