@@ -28,9 +28,10 @@ const autosaveWrites = (page: Page) =>
     () => (globalThis as unknown as { __writes: string[] }).__writes,
   )
 
-/** Opens the welcome slides with Help and takes the tour. */
+/** Opens the welcome slides with Help → Welcome and takes the tour. */
 async function startTour(page: Page) {
   await topBar(page).getByRole('button', { name: 'Help' }).click()
+  await page.getByRole('menuitem', { name: 'Welcome' }).click()
   const slides = page.getByRole('dialog')
   for (let i = 0; i < 3; i++) {
     await slides.getByRole('button', { name: 'Next' }).click()

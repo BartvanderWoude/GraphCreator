@@ -1,5 +1,6 @@
 import { Fragment, useMemo, useRef, useState, type ReactElement } from 'react'
 import {
+  BookOpen,
   ChevronDown,
   CircleHelp,
   Download,
@@ -8,6 +9,7 @@ import {
   ImageDown,
   Link,
   Moon,
+  Sparkles,
   Sun,
   TriangleAlert,
 } from 'lucide-react'
@@ -34,7 +36,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { copyShareLink } from '@/lib/shareLink'
+import {
+  SHARE_COPIED_MESSAGE,
+  SHARE_COPY_FAILED_MESSAGE,
+  SHARE_LONG,
+  SHARE_LONG_MESSAGE,
+  shareUrl,
+} from '@/lib/shareLink'
 import {
   Tooltip,
   TooltipContent,
@@ -50,6 +58,7 @@ import { emptyGraph, type Graph } from '@/model/graph'
 import type { Issue } from '@/model/result'
 import { validateGraph } from '@/model/validate'
 import { useGraphStore } from '@/store/graphStore'
+import { lessonEvent } from '@/store/lessonEvents'
 import { useLessonStore } from '@/store/lessonStore'
 import { useThemeStore } from '@/store/themeStore'
 import { useUiStore } from '@/store/uiStore'
@@ -124,6 +133,58 @@ function LessonLock({
 }
 
 /**
+ * The Share action (spec 5.4), as `copyShareLink` in `shareLink.ts`, plus the `link-copied` lesson
+ * event after the clipboard write succeeded (spec 4.8). `copyShareLink` does not say whether it
+ * succeeded, so its steps are repeated here.
+ */
+async function share(graph: Graph): Promise<void> {
+  let url: string
+  try {
+    url = await shareUrl(graph)
+    await navigator.clipboard.writeText(url)
+  } catch {
+    toast.error(SHARE_COPY_FAILED_MESSAGE)
+    return
+  }
+  toast(SHARE_COPIED_MESSAGE, {
+    description: url.length > SHARE_LONG ? SHARE_LONG_MESSAGE : undefined,
+  })
+  lessonEvent({ kind: 'link-copied' })
+}
+
+/**
+ * The Help menu (spec 5.7.11): Welcome reopens the welcome slides at slide 1, Lessons… opens the
+ * Lessons dialog.
+ */
+function HelpMenu() {
+  const openWelcome = useUiStore((s) => s.openWelcome)
+  const openLessons = useUiStore((s) => s.openLessons)
+  return (
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="rounded-md bg-accent text-accent-foreground hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)] hover:text-accent-foreground aria-expanded:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)] aria-expanded:text-accent-foreground dark:hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_10%)] dark:aria-expanded:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_10%)]"
+        >
+          <CircleHelp {...ICON} />
+          Help
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-auto">
+        <DropdownMenuItem onSelect={openWelcome}>
+          <Sparkles {...ICON} />
+          Welcome
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={openLessons}>
+          <BookOpen {...ICON} />
+          Lessons…
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/**
  * Switches between the light and dark theme (spec 5.1, 5.7.2). Light is the default; the theme
  * store keeps the choice in localStorage. The name stays "Dark mode" and `aria-pressed` gives the state.
  */
@@ -153,15 +214,14 @@ function ThemeToggle() {
 
 /**
  * The top bar (spec 5.1, 5.4): logo, graph name, New, Open…, Save with its "Save as…" menu,
- * the warnings badge, Help and the Dark mode toggle, plus their dialogs and toasts. New and
- * Open… are disabled during a lesson. Must be rendered inside App's `<ReactFlowProvider>`.
+ * Export…, Share, the warnings badge, the Help menu and the Dark mode toggle, plus their dialogs
+ * and toasts. New and Open… are disabled during a lesson. Must be rendered inside App's `<ReactFlowProvider>`.
  */
 export function TopBar() {
   const graph = useGraphStore((s) => s.graph)
   const replaceGraph = useGraphStore((s) => s.replaceGraph)
   const setGraphName = useGraphStore((s) => s.setGraphName)
   const inLesson = useLessonStore((s) => s.active !== null)
-  const openWelcome = useUiStore((s) => s.openWelcome)
   const view = useCanvasActions()
 
   const warnings = useMemo(() => validateGraph(graph).warnings, [graph])
@@ -328,7 +388,7 @@ export function TopBar() {
         <Button
           variant="ghost"
           className="rounded-md"
-          onClick={() => void copyShareLink(useGraphStore.getState().graph)}
+          onClick={() => void share(useGraphStore.getState().graph)}
         >
           <Link {...ICON} />
           Share
@@ -345,14 +405,7 @@ export function TopBar() {
               {plural(warnings.length, 'warning')}
             </button>
           )}
-          <Button
-            variant="ghost"
-            className="rounded-md bg-accent text-accent-foreground hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_6%)] hover:text-accent-foreground dark:hover:bg-[color-mix(in_oklch,var(--accent),var(--foreground)_10%)]"
-            onClick={openWelcome}
-          >
-            <CircleHelp {...ICON} />
-            Help
-          </Button>
+          <HelpMenu />
           <ThemeToggle />
         </div>
 

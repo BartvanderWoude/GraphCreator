@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -21,6 +21,7 @@ import {
 } from '@/model/fileFormat'
 import type { Graph } from '@/model/graph'
 import { useGraphStore } from '@/store/graphStore'
+import { lessonEvent } from '@/store/lessonEvents'
 import { useUiStore } from '@/store/uiStore'
 
 /** Each format's dialog texts (spec 5.4); file names and MIME types are in `EXPORT_FILES`. */
@@ -76,7 +77,8 @@ const COPY: Record<
  * Shows the graph as text in one of the `ExportFormat`s, with Copy and Download buttons (spec
  * 5.4, Save and its "Save as…" menu). The text and file name are computed from the store's graph
  * when the dialog opens. Save as dagitty adds the "Include GraphCreator details" checkbox, whose
- * choice is kept in `uiStore.dagittyDetails`.
+ * choice is kept in `uiStore.dagittyDetails`. While a lesson runs it records `code-opened`,
+ * `code-copied` and `code-downloaded` with its format (spec 4.8).
  */
 export function CodeDialog({
   open,
@@ -97,6 +99,11 @@ export function CodeDialog({
     setWasOpen(open)
     if (open) setGraph(useGraphStore.getState().graph)
   }
+
+  // Recorded once per opening: TopBar sets the format together with `open`, never while open.
+  useEffect(() => {
+    if (open) lessonEvent({ kind: 'code-opened', format })
+  }, [open, format])
 
   const copy = COPY[format]
   const label = EXPORT_FILES[format].label
@@ -119,6 +126,7 @@ export function CodeDialog({
     try {
       await navigator.clipboard.writeText(output.text)
       toast(`Copied ${label} code to the clipboard.`)
+      lessonEvent({ kind: 'code-copied', format })
     } catch {
       toast.error(
         'Could not copy to the clipboard. Select the text and copy it instead.',
@@ -129,6 +137,7 @@ export function CodeDialog({
   function download() {
     try {
       downloadText(output.filename, output.text, EXPORT_FILES[format].mime)
+      lessonEvent({ kind: 'code-downloaded', format })
     } catch (e) {
       toast.error(`Could not download the file: ${errorMessage(e)}`)
     }

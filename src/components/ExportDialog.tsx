@@ -34,6 +34,7 @@ import {
 import { toPdf } from '@/lib/pdfExport'
 import type { Graph } from '@/model/graph'
 import { useGraphStore } from '@/store/graphStore'
+import { lessonEvent } from '@/store/lessonEvents'
 
 const FORMATS: { value: ImageFormat; label: string }[] = [
   { value: 'svg', label: 'SVG' },
@@ -79,7 +80,8 @@ function errorMessage(e: unknown): string {
  * Exports the graph as an SVG, PNG, PDF or TikZ image (spec 4.11, 5.4 "Export…"). The picture is
  * drawn from the graph data in the chosen theme (TikZ is always light), optionally with a legend
  * of the roles in use, and with the IBM Plex Sans font embedded in SVG and PNG. Format, Theme,
- * Scale and Legend keep their choice while the page is open.
+ * Scale and Legend keep their choice while the page is open. While a lesson runs, a successful
+ * Copy or Download records `export-copied` or `export-downloaded` with the format (spec 4.8).
  */
 export function ExportDialog({
   open,
@@ -115,6 +117,7 @@ export function ExportDialog({
     try {
       await navigator.clipboard.writeText(text)
       toast(`Copied ${what} code to the clipboard.`)
+      lessonEvent({ kind: 'export-copied', format })
     } catch {
       toast.error(
         'Could not copy to the clipboard. Select the text and copy it instead.',
@@ -140,6 +143,7 @@ export function ExportDialog({
           ),
         )
       else downloadBlob(filename, await svgToPng(data.svg, scale))
+      lessonEvent({ kind: 'export-downloaded', format })
     } catch (e) {
       toast.error(
         format === 'png'

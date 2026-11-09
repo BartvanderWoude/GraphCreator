@@ -2532,7 +2532,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - "Key idea" is written in sentence case and shown uppercase by CSS. Ctrl→⌘ applies to body and task only.
   - A wrong click after the step is done is not recorded (phase 41), so the panel then shows "Try it" with no feedback.
 
-#### Phase 43: Canvas pointer [x]
+#### Phase 43: Canvas pointer [x] (17ea1b0)
 
 - **Goal:** the pulsing labels of 5.7.12, and the `edge-refused` event.
 - **Depends on:** phase 41.
@@ -2548,7 +2548,7 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
   - Two pointer entries for one node: the first wins. Outside a lesson the `pointer` key is left out of node data.
   - `Canvas` shows refusals through one helper that toasts and records `edge-refused`, used by connect mode, `onConnect` and `onConnectEnd`.
 
-#### Phase 44: Help menu, Lessons dialog and events [ ]
+#### Phase 44: Help menu, Lessons dialog and events [x]
 
 - **Goal:** the Help menu and the Lessons dialog of 5.7.11, and the app events of 4.8.
 - **Depends on:** phase 41.
@@ -2558,6 +2558,11 @@ Phases: 42–47. Parallel: yes. Check after the wave: all checks.
 - **Tests:** the updated e2e tests; the dialog itself is tested end to end in phase 48.
 - **Done when:** all checks pass.
 - **Out of scope:** the lesson texts; any change to the welcome slides.
+- **Details fixed in phase 44:**
+  - The Help menu uses `modal={false}` and `align="end"`; its items are menu items "Welcome" and "Lessons…" in a portal. `e2e/smoke.spec.ts` needed no change.
+  - Lessons dialog: group headings are `<h3>`; rows have dividers; the finished count sits below the scrolling list and counts only ids in `LESSONS`; the Finished icon has `role="img"`. Focus starts on the first Start button.
+  - `code-opened` is recorded once per opening (an effect on open and format), even when the writer throws. Copy and download events are recorded only after success (PNG after the conversion resolves).
+  - `copyShareLink` returns nothing and swallows errors, so `TopBar` repeats its steps with `shareUrl` and records `link-copied` after a successful write; `copyShareLink` is unused until phase 48 makes it report success.
 
 #### Phase 45: App-track lessons [ ]
 

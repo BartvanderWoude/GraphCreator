@@ -224,6 +224,7 @@ test('a damaged link shows the error toast and keeps the stored graph', async ({
 
 test('Share works on the practice graph during a lesson', async ({ page }) => {
   await topBar(page).getByRole('button', { name: 'Help' }).click()
+  await page.getByRole('menuitem', { name: 'Welcome' }).click()
   const slides = page.getByRole('dialog')
   for (let i = 0; i < 3; i++) {
     await slides.getByRole('button', { name: 'Next' }).click()
