@@ -196,6 +196,25 @@
   fill: var(--edge-hover);
 }
 
+/* On an open path (Analysis tab, Paths switched on): line style only, in --edge-hover, so the
+   marking is not colour-only. Causal: 3 px solid; biasing: 2 px dashed. */
+.react-flow
+  .react-flow__edge-floating
+  .react-flow__edge-path.gc-edge-path[data-path='causal'] {
+  stroke: var(--edge-hover);
+  stroke-width: 3;
+}
+.react-flow
+  .react-flow__edge-floating
+  .react-flow__edge-path.gc-edge-path[data-path='biasing'] {
+  stroke: var(--edge-hover);
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+}
+.react-flow .react-flow__edge-floating .gc-edge-arrow[data-path] {
+  fill: var(--edge-hover);
+}
+
 /* Selected (and keyboard focus, which React Flow also shows in the selection colour). */
 .react-flow
   .react-flow__edge-floating.selected
@@ -209,6 +228,24 @@
 .react-flow .react-flow__edge-floating.selected .gc-edge-arrow,
 .react-flow .react-flow__edge-floating:focus-visible .gc-edge-arrow {
   fill: var(--primary);
+}
+
+/* Selected and on a path: the selected colour with the path's width (the dash stays). */
+.react-flow
+  .react-flow__edge-floating.selected
+  .react-flow__edge-path.gc-edge-path[data-path='causal'],
+.react-flow
+  .react-flow__edge-floating:focus-visible
+  .react-flow__edge-path.gc-edge-path[data-path='causal'] {
+  stroke-width: 3;
+}
+.react-flow
+  .react-flow__edge-floating.selected
+  .react-flow__edge-path.gc-edge-path[data-path='biasing'],
+.react-flow
+  .react-flow__edge-floating:focus-visible
+  .react-flow__edge-path.gc-edge-path[data-path='biasing'] {
+  stroke-width: 2;
 }
 
 /* ---- Connection line --------------------------------------------------------------------- */

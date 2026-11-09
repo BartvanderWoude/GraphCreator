@@ -38,7 +38,10 @@ export function CircleNode({
       className={cn(
         'gc-node',
         connecting && 'gc-connecting',
-        (data.connectSource || connecting === 'from') && 'gc-rim-on',
+        // The hover rim: connect-mode source, connection being dragged from it, or an Analysis
+        // item pointing at it (5.7.7).
+        (data.connectSource || data.highlighted || connecting === 'from') &&
+          'gc-rim-on',
         selected && 'gc-selected',
       )}
       style={{ width: d, height: d }}

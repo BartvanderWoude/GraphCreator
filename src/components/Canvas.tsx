@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent } from 'react'
 import {
   ReactFlow,
@@ -25,6 +25,7 @@ import {
   type CircleFlowNode,
   type FloatingFlowEdge,
 } from '@/components/canvas/types'
+import { useAnalysis } from '@/components/useAnalysis'
 import { cn } from '@/lib/utils'
 import { canAddEdge, defaultNodeName, type Graph } from '@/model/graph'
 import { nodeDiameter } from '@/model/nodeSize'
@@ -34,10 +35,25 @@ import { useUiStore } from '@/store/uiStore'
 
 type Selection = GraphState['selection']
 
+/** Edge id → the kind of open path it lies on (spec 4.14 `FloatingEdgeData.path`). */
+type PathMarks = ReadonlyMap<string, 'causal' | 'biasing'>
+
+const NO_MARKS: PathMarks = new Map()
+
+/** What the flow is derived from besides the graph and the selection. */
+interface Overlay {
+  connectFrom: string | null
+  /** Edges to mark; empty while the Paths switch is off or the paths are truncated. */
+  pathMarks: PathMarks
+  /** Circles an Analysis item points at (`uiStore.hoverNodeIds`). */
+  hoverNodeIds: string[]
+}
+
 /**
  * React Flow's view of the graph. It is rebuilt from the store's `graph` and `selection` (and the
- * connect-mode source), but kept in local state so React Flow can apply its own transient changes
- * (in-drag positions, measured sizes, multi-selection flags) between store commits.
+ * overlay: connect-mode source, path marking, highlighted circles), but kept in local state so
+ * React Flow can apply its own transient changes (in-drag positions, measured sizes,
+ * multi-selection flags) between store commits.
  */
 interface Flow {
   nodes: CircleFlowNode[]
@@ -45,7 +61,7 @@ interface Flow {
   /** The store values this flow was last synced from. */
   graph: Graph | null
   selection: Selection
-  connectFrom: string | null
+  overlay: Overlay
 }
 
 function sameSelection(a: Selection, b: Selection): boolean {
@@ -72,8 +88,10 @@ function syncFlow(
   prev: Flow,
   graph: Graph,
   selection: Selection,
-  connectFrom: string | null,
+  overlay: Overlay,
 ): Flow {
+  const { connectFrom, pathMarks } = overlay
+  const hovered = new Set(overlay.hoverNodeIds)
   const oldNodes = new Map(prev.nodes.map((n) => [n.id, n]))
   const oldEdges = new Map(prev.edges.map((e) => [e.id, e]))
 
@@ -82,6 +100,7 @@ function syncFlow(
     const position = old?.dragging ? old.position : g.pos
     const untyped = g.varType === undefined
     const connectSource = connectFrom === g.id
+    const highlighted = hovered.has(g.id)
     if (
       old &&
       old.position.x === position.x &&
@@ -89,7 +108,8 @@ function syncFlow(
       old.data.name === g.name &&
       old.data.role === g.role &&
       old.data.untyped === untyped &&
-      old.data.connectSource === connectSource
+      old.data.connectSource === connectSource &&
+      !!old.data.highlighted === highlighted
     ) {
       return old
     }
@@ -100,7 +120,7 @@ function syncFlow(
       position,
       width: d,
       height: d,
-      data: { name: g.name, role: g.role, untyped, connectSource },
+      data: { name: g.name, role: g.role, untyped, connectSource, highlighted },
       // A renamed circle changes size; React Flow measures it again.
       measured: old && old.width === d ? old.measured : undefined,
       dragging: old?.dragging,
@@ -110,11 +130,13 @@ function syncFlow(
   let edges: FloatingFlowEdge[] = graph.edges.map((g) => {
     const old = oldEdges.get(g.id)
     const evidenceCount = g.evidence.length
+    const path = pathMarks.get(g.id)
     if (
       old &&
       old.source === g.source &&
       old.target === g.target &&
-      old.data?.evidenceCount === evidenceCount
+      old.data?.evidenceCount === evidenceCount &&
+      old.data?.path === path
     ) {
       return old
     }
@@ -123,7 +145,7 @@ function syncFlow(
       type: 'floating',
       source: g.source,
       target: g.target,
-      data: { evidenceCount },
+      data: path ? { evidenceCount, path } : { evidenceCount },
       selected: old?.selected ?? false,
     }
   })
@@ -143,7 +165,7 @@ function syncFlow(
         : { ...e, selected: isSel('edge', e.id) },
     )
   }
-  return { nodes, edges, graph, selection, connectFrom }
+  return { nodes, edges, graph, selection, overlay }
 }
 
 function hasNodes(graph: Graph, ...ids: string[]): boolean {
@@ -162,6 +184,21 @@ export function Canvas() {
   const selection = useGraphStore((s) => s.selection)
   const tool = useUiStore((s) => s.tool)
   const connectFrom = useUiStore((s) => s.connectFrom)
+  const pathsOn = useUiStore((s) => s.analysisOn.paths)
+  const hoverNodeIds = useUiStore((s) => s.hoverNodeIds)
+  const paths = useAnalysis().paths
+  // Open paths are marked only while the Paths switch is on and they are not truncated (4.14).
+  const pathMarks = useMemo<PathMarks>(() => {
+    if (!pathsOn || !paths || paths.truncated) return NO_MARKS
+    const marks = new Map<string, 'causal' | 'biasing'>()
+    for (const id of paths.causalEdges) marks.set(id, 'causal')
+    for (const id of paths.biasingEdges) marks.set(id, 'biasing')
+    return marks
+  }, [pathsOn, paths])
+  const overlay = useMemo<Overlay>(
+    () => ({ connectFrom, pathMarks, hoverNodeIds }),
+    [connectFrom, pathMarks, hoverNodeIds],
+  )
   // React Flow's colour mode follows the theme (spec 7, "Dark theme mechanism").
   const colorMode: ColorMode = useThemeStore((s) => s.theme)
   const { screenToFlowPosition } = useReactFlow()
@@ -172,20 +209,20 @@ export function Canvas() {
         edges: [],
         graph: null,
         selection: null,
-        connectFrom: null,
+        overlay,
       },
       graph,
       selection,
-      connectFrom,
+      overlay,
     ),
   )
   // Re-derive during render when a store changed (React's "adjust state on prop change" pattern).
   if (
     flow.graph !== graph ||
     flow.selection !== selection ||
-    flow.connectFrom !== connectFrom
+    flow.overlay !== overlay
   ) {
-    setFlow(syncFlow(flow, graph, selection, connectFrom))
+    setFlow(syncFlow(flow, graph, selection, overlay))
   }
 
   const onNodesChange = useCallback((changes: NodeChange<CircleFlowNode>[]) => {

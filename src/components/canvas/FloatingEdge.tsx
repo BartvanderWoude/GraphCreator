@@ -36,6 +36,8 @@ function circleOf(node: InternalNode | undefined): Circle | null {
  * A straight edge from rim to rim (spec 5.2 "Edges", 5.7.7). It starts where the line between
  * the centres leaves the source circle; the arrowhead's tip ends 2 px before the target's rim.
  * Moving a circle re-aims the edge because it reads both nodes from React Flow's store.
+ * An edge on an open causal or biasing path carries `data-path` on its line and arrowhead, and
+ * canvas.css draws the path look from it.
  */
 export function FloatingEdge({
   id,
@@ -59,6 +61,7 @@ export function FloatingEdge({
 
   const markerId = `gc-arrow-${id}`
   const evidenceCount = data?.evidenceCount ?? 0
+  const pathKind = data?.path
 
   return (
     <>
@@ -77,6 +80,7 @@ export function FloatingEdge({
         >
           <path
             className="gc-edge-arrow"
+            data-path={pathKind}
             d={`M 0,0 L ${ARROW_LENGTH},${ARROW_WIDTH / 2} L 0,${ARROW_WIDTH} Z`}
           />
         </marker>
@@ -85,6 +89,7 @@ export function FloatingEdge({
         id={id}
         path={path}
         className="gc-edge-path"
+        data-path={pathKind}
         markerEnd={`url(#${markerId})`}
         interactionWidth={INTERACTION_WIDTH}
       />
