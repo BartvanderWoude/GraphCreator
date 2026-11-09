@@ -1067,6 +1067,11 @@ flowchart TB
 - **Escaping.** In names, `#` first becomes `#35;`, then `"` becomes `#quot;`, `<` becomes `#lt;` and `>` becomes `#gt;` (Mermaid's entity codes).
 - **What is lost.** Mermaid lays the graph out itself, so positions are not kept. Types, levels and evidence are not written.
 
+Details fixed in phase 36:
+- Empty graph: bnlearn gives `''` (the one writer without a final newline), Tetrad `Graph Nodes:\n\n\nGraph Edges:\n` (an empty node line, as Tetrad writes it), Mermaid `flowchart TB\n`.
+- Tetrad numbers only the edges it writes, so skipped edges leave no gaps. bnlearn lists each parent once.
+- Line breaks in the graph name become one space in Mermaid's `%%` comment. `class` lines join ids with `,` and no spaces (`class v1,v4 selected`).
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -2234,7 +2239,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example is reproduced exactly; the round trip holds on every valid fixture; a typical DoWhy string (`digraph { A -> B; B -> C; A -> C }`) opens with layout.
 - **Out of scope:** undirected graphs, HTML labels, ports, edge splines.
 
-#### Phase 35: networkx JSON [x]
+#### Phase 35: networkx JSON [x] (b722c17)
 
 - **Goal:** `toNetworkx` and `parseNetworkx` as in 4.15.
 - **Depends on:** phase 31.
@@ -2245,7 +2250,7 @@ Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared
 - **Done when:** all checks pass; the 4.15 example shape is reproduced for the 4.1 graph; the round trip holds on every valid fixture.
 - **Out of scope:** networkx's adjacency and tree formats; multigraphs.
 
-#### Phase 36: bnlearn, Tetrad and Mermaid [ ]
+#### Phase 36: bnlearn, Tetrad and Mermaid [x]
 
 - **Goal:** `toBnlearn`, `toTetrad` and `toMermaid` as in 4.15.
 - **Depends on:** phase 31.
