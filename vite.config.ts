@@ -5,6 +5,9 @@ import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // GitHub Pages serves the app under /GraphCreator/; the deploy job sets
+  // BASE_PATH. Local dev, preview and the e2e tests use the root.
+  base: process.env.BASE_PATH ?? '/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

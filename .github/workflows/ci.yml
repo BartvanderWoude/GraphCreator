@@ -2,8 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [develop]
+    branches: [develop, production]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   check:
@@ -20,3 +23,75 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
+
+  # Production is updated by merging a pull request from develop. After the
+  # checks pass on production, build it and publish it to GitHub Pages.
+  deploy:
+    needs: check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Releases are squash-merged from develop into production, so develop never
+  # gets the squash commit and the next pull request would show old work
+  # again. Record the release on develop with an "ours" merge: develop's files
+  # stay as they are, and git now knows production's content is included.
+  # This is only safe when production holds nothing develop lacks, so it
+  # first checks that production's files match a commit on develop.
+  sync-develop:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+      - name: Record the release on develop
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3; do
+            git fetch origin develop production
+            git checkout -B develop origin/develop
+            if git merge-base --is-ancestor origin/production HEAD; then
+              echo 'develop already includes production.'
+              exit 0
+            fi
+            base=$(git merge-base HEAD origin/production)
+            tree=$(git rev-parse 'origin/production^{tree}')
+            if ! git log --format=%T "$base..HEAD" | grep -qx "$tree"; then
+              echo '::error::production has changes that are not on develop. Merge production into develop by hand.'
+              exit 1
+            fi
+            git merge -s ours --no-edit -m 'Record production release on develop' origin/production
+            git push origin HEAD:refs/heads/develop && exit 0
+            sleep 5
+          done
+          exit 1

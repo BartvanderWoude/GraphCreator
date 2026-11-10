@@ -29,5 +29,5 @@
 - **Always ask the user before committing to `develop`**, every time, and wait for a clear yes. This includes commits made while landing a wave (squashed phase commits) or by sub agents' work being landed.
 - **Always commit with the `/anthropic-skills:commit` skill**, on branch `develop`. Do not commit by hand.
 - `develop` is the integration branch. All work lands here.
-- `production` is the branch for the live production website. Do not commit or push to it directly. `develop` is deployed into `production` by GitHub Actions (CI/CD).
+- `production` is the branch for the live production website (GitHub Pages). Do not commit or push to it directly. The user releases by squash-merging a pull request from `develop` into `production`; GitHub Actions then deploys `production` and adds a "Record production release on develop" merge commit to `develop` (pull before committing). Don't open or merge that pull request unless asked.
 - `main` is not used. Do not commit to it, branch from it, or open PRs against it.
