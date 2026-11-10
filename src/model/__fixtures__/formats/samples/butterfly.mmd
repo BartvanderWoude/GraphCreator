@@ -1,0 +1,19 @@
+flowchart TB
+  v1(("A"))
+  v2(("B"))
+  v3(("M"))
+  v4(("E"))
+  v5(("D"))
+  v1 --> v3
+  v2 --> v3
+  v1 --> v4
+  v2 --> v5
+  v3 --> v4
+  v3 --> v5
+  v4 --> v5
+  classDef exposure fill:#e3f1e8,stroke:#4a946a,color:#24563a
+  classDef outcome fill:#e2eaf8,stroke:#5b83cf,color:#23407a
+  classDef other fill:#ffffff,stroke:#7d8a9c,color:#0f172a
+  class v4 exposure
+  class v5 outcome
+  class v1,v2,v3 other

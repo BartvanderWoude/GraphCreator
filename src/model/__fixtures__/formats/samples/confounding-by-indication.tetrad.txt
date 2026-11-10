@@ -1,0 +1,8 @@
+Graph Nodes:
+Severity;Indication;Drug;Recovery
+
+Graph Edges:
+1. Severity --> Indication
+2. Indication --> Drug
+3. Severity --> Recovery
+4. Drug --> Recovery

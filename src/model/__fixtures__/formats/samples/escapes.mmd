@@ -1,0 +1,18 @@
+%% Größe & "quotes"
+flowchart TB
+  v1(("Größe β"))
+  v2(("1st visit"))
+  v3(("node"))
+  v4(("a.b"))
+  v1 --> v2
+  v3 --> v1
+  v3 --> v2
+  v2 --> v4
+  classDef exposure fill:#e3f1e8,stroke:#4a946a,color:#24563a
+  classDef outcome fill:#e2eaf8,stroke:#5b83cf,color:#23407a
+  classDef adjusted fill:#f8eedd,stroke:#ad7a2c,color:#6b4510
+  classDef selected fill:#efe7f7,stroke:#9375c4,color:#4c2f75
+  class v1 exposure
+  class v2 outcome
+  class v3 adjusted
+  class v4 selected

@@ -1,0 +1,10 @@
+dag "Smoking and birth weight" {
+"Maternal smoking" [exposure,pos="0.000,0.000"]
+"Birth weight" [outcome,pos="3.000,0.000"]
+SES [label="Socio-economic status",pos="1.500,-1.200"]
+"say \"hi\"" [latent,pos="1.500,1.200"]
+"Maternal smoking" -> "Birth weight"
+SES -> "Maternal smoking"
+SES -> "Birth weight"
+"say \"hi\"" -> "Birth weight"
+}

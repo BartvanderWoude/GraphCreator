@@ -1,0 +1,19 @@
+schema: graphcreator/0.1
+name: Cycle
+nodes:
+  - name: A
+    var_type: continuous
+    pos: [0, 0]
+  - name: B
+    var_type: continuous
+    pos: [200, 0]
+  - name: C
+    var_type: continuous
+    pos: [400, 0]
+edges:
+  - from: A
+    to: B
+  - from: B
+    to: C
+  - from: C
+    to: A

@@ -1,0 +1,8 @@
+Graph Nodes:
+Maternal_smoking;Birth_weight;SES;Genetic_factors
+
+Graph Edges:
+1. SES --> Maternal_smoking
+2. Maternal_smoking --> Birth_weight
+3. SES --> Birth_weight
+4. Genetic_factors --> Birth_weight

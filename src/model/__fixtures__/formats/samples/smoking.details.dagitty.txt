@@ -1,0 +1,10 @@
+dag {
+Maternal_smoking [exposure,label="Maternal smoking",pos="0.000,0.000",gc.var_type="categorical",gc.levels="never;former;current",gc.description="Self-reported during pregnancy"]
+Birth_weight [outcome,label="Birth weight",pos="3.000,0.000",gc.var_type="continuous",gc.unit="g"]
+SES [pos="1.500,-1.200",gc.var_type="ordinal",gc.levels="low;mid;high"]
+Genetic_factors [latent,label="Genetic factors",pos="1.500,1.200"]
+SES -> Maternal_smoking [gc.evidence="PMID:123;doi:10.1000/xyz",gc.note="Well established"]
+Maternal_smoking -> Birth_weight
+SES -> Birth_weight
+Genetic_factors -> Birth_weight
+}

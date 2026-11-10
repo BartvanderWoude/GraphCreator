@@ -1,0 +1,1678 @@
+{
+  "dagitty": "0.3.4",
+  "graphs": {
+    "butterfly.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [],
+      "adjustmentSets": [
+        [
+          "B",
+          "M"
+        ],
+        [
+          "A",
+          "M"
+        ]
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "A",
+          "b": "B",
+          "given": []
+        },
+        {
+          "a": "A",
+          "b": "D",
+          "given": [
+            "B",
+            "E",
+            "M"
+          ]
+        },
+        {
+          "a": "B",
+          "b": "E",
+          "given": [
+            "A",
+            "M"
+          ]
+        }
+      ],
+      "instruments": [
+        {
+          "instrument": "A",
+          "given": [
+            "B",
+            "M"
+          ]
+        }
+      ],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- A -> M -> D",
+          "nodes": [
+            "E",
+            "A",
+            "M",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- A -> M <- B -> D",
+          "nodes": [
+            "E",
+            "A",
+            "M",
+            "B",
+            "D"
+          ],
+          "open": false
+        },
+        {
+          "path": "E <- M -> D",
+          "nodes": [
+            "E",
+            "M",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- M <- B -> D",
+          "nodes": [
+            "E",
+            "M",
+            "B",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "collider.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [
+        "C"
+      ],
+      "latent": [],
+      "selected": [],
+      "adjustmentSets": [
+        []
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> C <- D",
+          "nodes": [
+            "E",
+            "C",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "confounding-by-indication.dagitty.txt": {
+      "exposures": [
+        "Drug"
+      ],
+      "outcomes": [
+        "Recovery"
+      ],
+      "adjusted": [],
+      "latent": [
+        "Severity"
+      ],
+      "selected": [],
+      "adjustmentSets": [
+        [
+          "Indication"
+        ]
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "Drug -> Recovery",
+          "nodes": [
+            "Drug",
+            "Recovery"
+          ],
+          "open": true
+        },
+        {
+          "path": "Drug <- Indication <- Severity -> Recovery",
+          "nodes": [
+            "Drug",
+            "Indication",
+            "Severity",
+            "Recovery"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "confounding.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [],
+      "adjustmentSets": [
+        [
+          "B",
+          "Z"
+        ],
+        [
+          "A",
+          "Z"
+        ]
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "A",
+          "b": "B",
+          "given": []
+        },
+        {
+          "a": "A",
+          "b": "D",
+          "given": [
+            "B",
+            "E",
+            "Z"
+          ]
+        },
+        {
+          "a": "B",
+          "b": "E",
+          "given": [
+            "A",
+            "Z"
+          ]
+        }
+      ],
+      "instruments": [
+        {
+          "instrument": "A",
+          "given": [
+            "B",
+            "Z"
+          ]
+        }
+      ],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- A -> Z -> D",
+          "nodes": [
+            "E",
+            "A",
+            "Z",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- A -> Z <- B -> D",
+          "nodes": [
+            "E",
+            "A",
+            "Z",
+            "B",
+            "D"
+          ],
+          "open": false
+        },
+        {
+          "path": "E <- Z -> D",
+          "nodes": [
+            "E",
+            "Z",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- Z <- B -> D",
+          "nodes": [
+            "E",
+            "Z",
+            "B",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "instrument.dagitty.txt": {
+      "exposures": [
+        "X"
+      ],
+      "outcomes": [
+        "Y"
+      ],
+      "adjusted": [],
+      "latent": [
+        "U"
+      ],
+      "selected": [],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [],
+      "instruments": [
+        {
+          "instrument": "Z",
+          "given": []
+        }
+      ],
+      "paths": [
+        {
+          "path": "X -> Y",
+          "nodes": [
+            "X",
+            "Y"
+          ],
+          "open": true
+        },
+        {
+          "path": "X <- U -> Y",
+          "nodes": [
+            "X",
+            "U",
+            "Y"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "latent-confounder.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [
+        "L"
+      ],
+      "latent": [
+        "U"
+      ],
+      "selected": [],
+      "adjustmentSets": [
+        [
+          "L"
+        ]
+      ],
+      "isAdjustmentSet": true,
+      "independencies": [],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- L <- U -> D",
+          "nodes": [
+            "E",
+            "L",
+            "U",
+            "D"
+          ],
+          "open": false
+        }
+      ]
+    },
+    "m-bias.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [
+        "U1",
+        "U2"
+      ],
+      "selected": [],
+      "adjustmentSets": [
+        []
+      ],
+      "isAdjustmentSet": true,
+      "independencies": [],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- U1 -> Z <- U2 -> D",
+          "nodes": [
+            "E",
+            "U1",
+            "Z",
+            "U2",
+            "D"
+          ],
+          "open": false
+        }
+      ]
+    },
+    "mediation.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [
+        "M"
+      ],
+      "latent": [],
+      "selected": [],
+      "adjustmentSets": [
+        []
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "C",
+          "b": "E",
+          "given": []
+        }
+      ],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E -> M -> D",
+          "nodes": [
+            "E",
+            "M",
+            "D"
+          ],
+          "open": false
+        },
+        {
+          "path": "E -> M <- C -> D",
+          "nodes": [
+            "E",
+            "M",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "no-adjustment-possible.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [
+        "U"
+      ],
+      "selected": [],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- U -> D",
+          "nodes": [
+            "E",
+            "U",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "selection-bias.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [
+        "S"
+      ],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "C",
+            "E"
+          ]
+        }
+      ],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E -> S <- C -> D",
+          "nodes": [
+            "E",
+            "S",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "selection-confounder.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [
+        "S"
+      ],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "A",
+          "b": "D",
+          "given": [
+            "C",
+            "E"
+          ]
+        },
+        {
+          "a": "C",
+          "b": "E",
+          "given": [
+            "A"
+          ]
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "A",
+            "C"
+          ]
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "C",
+            "E"
+          ]
+        },
+        {
+          "a": "E",
+          "b": "S",
+          "given": [
+            "A"
+          ]
+        }
+      ],
+      "instruments": [
+        {
+          "instrument": "A",
+          "given": []
+        }
+      ],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- A -> S <- C -> D",
+          "nodes": [
+            "E",
+            "A",
+            "S",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "selection-on-exposure.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [
+        "S"
+      ],
+      "adjustmentSets": [],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "C",
+          "b": "S",
+          "given": [
+            "E"
+          ]
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "E"
+          ]
+        }
+      ],
+      "instruments": [],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- C -> D",
+          "nodes": [
+            "E",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "selection-recoverable.dagitty.txt": {
+      "exposures": [
+        "E"
+      ],
+      "outcomes": [
+        "D"
+      ],
+      "adjusted": [],
+      "latent": [],
+      "selected": [
+        "S"
+      ],
+      "adjustmentSets": [
+        [
+          "C"
+        ]
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "A",
+          "b": "C",
+          "given": []
+        },
+        {
+          "a": "A",
+          "b": "D",
+          "given": [
+            "C",
+            "E"
+          ]
+        },
+        {
+          "a": "C",
+          "b": "S",
+          "given": []
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "A"
+          ]
+        },
+        {
+          "a": "D",
+          "b": "S",
+          "given": [
+            "C",
+            "E"
+          ]
+        },
+        {
+          "a": "E",
+          "b": "S",
+          "given": [
+            "A"
+          ]
+        }
+      ],
+      "instruments": [
+        {
+          "instrument": "A",
+          "given": []
+        }
+      ],
+      "paths": [
+        {
+          "path": "E -> D",
+          "nodes": [
+            "E",
+            "D"
+          ],
+          "open": true
+        },
+        {
+          "path": "E <- C -> D",
+          "nodes": [
+            "E",
+            "C",
+            "D"
+          ],
+          "open": true
+        }
+      ]
+    },
+    "two-exposures-two-outcomes.dagitty.txt": {
+      "exposures": [
+        "E1",
+        "E2"
+      ],
+      "outcomes": [
+        "D1",
+        "D2"
+      ],
+      "adjusted": [
+        "B"
+      ],
+      "latent": [],
+      "selected": [],
+      "adjustmentSets": [
+        [
+          "B",
+          "C"
+        ]
+      ],
+      "isAdjustmentSet": false,
+      "independencies": [
+        {
+          "a": "B",
+          "b": "C",
+          "given": []
+        },
+        {
+          "a": "B",
+          "b": "D1",
+          "given": []
+        },
+        {
+          "a": "B",
+          "b": "E1",
+          "given": []
+        },
+        {
+          "a": "C",
+          "b": "D2",
+          "given": [
+            "B",
+            "E2"
+          ]
+        },
+        {
+          "a": "C",
+          "b": "D2",
+          "given": [
+            "E1"
+          ]
+        },
+        {
+          "a": "C",
+          "b": "E2",
+          "given": [
+            "E1"
+          ]
+        },
+        {
+          "a": "D1",
+          "b": "D2",
+          "given": [
+            "B",
+            "E2"
+          ]
+        },
+        {
+          "a": "D1",
+          "b": "D2",
+          "given": [
+            "E1"
+          ]
+        },
+        {
+          "a": "D1",
+          "b": "E2",
+          "given": [
+            "E1"
+          ]
+        },
+        {
+          "a": "D2",
+          "b": "E1",
+          "given": [
+            "B",
+            "E2"
+          ]
+        }
+      ],
+      "instruments": null,
+      "paths": [
+        {
+          "path": "E1 -> D1",
+          "nodes": [
+            "E1",
+            "D1"
+          ],
+          "open": true
+        },
+        {
+          "path": "E1 <- C -> D1",
+          "nodes": [
+            "E1",
+            "C",
+            "D1"
+          ],
+          "open": true
+        },
+        {
+          "path": "E2 -> D2",
+          "nodes": [
+            "E2",
+            "D2"
+          ],
+          "open": true
+        },
+        {
+          "path": "E2 <- B -> D2",
+          "nodes": [
+            "E2",
+            "B",
+            "D2"
+          ],
+          "open": false
+        }
+      ]
+    }
+  },
+  "random": [
+    {
+      "dagitty": "dag {\nA [exposure]\nB [selected]\nC\nD\nE\nF [outcome]\nA -> D\nA -> B\nA -> E\nF -> D\nF -> C\nF -> E\nB -> C\n}",
+      "exposure": "A",
+      "outcome": "F",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD\nE\nF [selected]\nG\nH [exposure]\nG -> D\nG -> H\nG -> E\nD -> H\nA -> B\nA -> C\nF -> H\nF -> C\nH -> B\nB -> E\n}",
+      "exposure": "H",
+      "outcome": "B",
+      "selected": "F",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC\nD [selected]\nE\nF\nG [outcome]\nH\nB -> C\nB -> F\nD -> A\nD -> G\nA -> E\nA -> F\nH -> G\nH -> E\nG -> C\nC -> F\n}",
+      "exposure": "B",
+      "outcome": "G",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [exposure]\nC [selected]\nD\nE\nD -> B\nB -> A\nB -> E\nC -> A\nC -> E\n}",
+      "exposure": "B",
+      "outcome": "A",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [exposure]\nD\nE\nF [selected]\nC -> A\nA -> B\n}",
+      "exposure": "C",
+      "outcome": "B",
+      "selected": "F",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD\nE\nF [exposure]\nG [selected]\nH\nD -> C\nD -> F\nD -> A\nC -> A\nC -> B\nF -> G\nA -> B\nA -> E\nA -> H\nB -> G\nE -> G\n}",
+      "exposure": "F",
+      "outcome": "B",
+      "selected": "G",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC\nD [selected]\nE\nF\nG [outcome]\nE -> F\nE -> G\nE -> D\nF -> A\nB -> C\nG -> C\nG -> D\n}",
+      "exposure": "B",
+      "outcome": "G",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD [exposure]\nE\nF [selected]\nG\nF -> D\nF -> C\nF -> E\nD -> B\nE -> B\nE -> G\nB -> G\n}",
+      "exposure": "D",
+      "outcome": "B",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC [selected]\nD\nE\nF\nG\nH [exposure]\nG -> H\nF -> B\nF -> C\nB -> D\nB -> E\nD -> C\nD -> H\nD -> A\nC -> A\nH -> E\n}",
+      "exposure": "H",
+      "outcome": "A",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD\nE\nF [selected]\nG\nH [outcome]\nE -> F\nE -> G\nE -> C\nE -> B\nE -> D\nA -> H\nA -> C\nA -> D\nF -> H\nF -> G\nF -> C\nF -> B\nH -> G\nH -> C\nH -> D\nG -> D\nB -> D\n}",
+      "exposure": "A",
+      "outcome": "H",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [outcome]\nE [selected]\nF [exposure]\nG\nG -> F\nG -> C\nG -> D\nB -> F\nB -> C\n}",
+      "exposure": "F",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": [
+        [
+          "G"
+        ]
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD [outcome]\nE [selected]\nF\nA -> D\nA -> E\nA -> B\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD [selected]\nE [exposure]\nF\nE -> A\nA -> B\nA -> D\n}",
+      "exposure": "E",
+      "outcome": "B",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC\nD [selected]\nE\nF\nG [exposure]\nH\nG -> B\nG -> H\nG -> C\nD -> E\nD -> A\nD -> B\nD -> F\nD -> H\nE -> C\nA -> B\nA -> F\nA -> H\nA -> C\nB -> F\nB -> H\n}",
+      "exposure": "G",
+      "outcome": "A",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [selected]\nE\nF\nG [exposure]\nH [outcome]\nC -> E\nC -> G\nD -> E\nD -> G\nD -> F\nD -> B\nE -> F\nE -> B\nG -> B\nF -> H\nF -> B\nH -> A\nA -> B\n}",
+      "exposure": "G",
+      "outcome": "H",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC [selected]\nD [exposure]\nE\nF\nG\nH\nF -> B\nF -> D\nF -> C\nF -> A\nE -> H\nE -> B\nE -> D\nE -> A\nG -> H\nG -> B\nG -> D\nH -> B\nH -> D\nH -> A\nB -> D\nB -> A\nD -> C\nC -> A\n}",
+      "exposure": "D",
+      "outcome": "A",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [exposure]\nD [selected]\nE\nF\nC -> E\nE -> D\nE -> A\nF -> D\nF -> B\nF -> A\nD -> A\n}",
+      "exposure": "C",
+      "outcome": "B",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC\nD [exposure]\nE [outcome]\nD -> B\nD -> E\nD -> A\nB -> E\nE -> A\nE -> C\n}",
+      "exposure": "D",
+      "outcome": "E",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD\nE [outcome]\nF\nB -> A\nD -> C\nA -> E\nF -> E\n}",
+      "exposure": "B",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC [exposure]\nD\nE [outcome]\nD -> E\nA -> E\n}",
+      "exposure": "C",
+      "outcome": "E",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD\nE\nF [selected]\nG [outcome]\nA -> G\nA -> E\nA -> C\nG -> D\nG -> C\nF -> D\nF -> C\n}",
+      "exposure": "A",
+      "outcome": "G",
+      "selected": "F",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [selected]\nC\nD [exposure]\nE\nD -> B\nD -> E\nB -> A\nB -> C\nE -> A\nE -> C\n}",
+      "exposure": "D",
+      "outcome": "A",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD\nE [selected]\nF [exposure]\nG [outcome]\nE -> F\nE -> G\nE -> D\nE -> A\nB -> G\nB -> D\nF -> C\nF -> D\nC -> A\nG -> D\nG -> A\n}",
+      "exposure": "F",
+      "outcome": "G",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC\nD\nE [selected]\nF [outcome]\nG\nA -> D\nE -> C\nE -> F\nB -> F\nF -> G\nF -> D\n}",
+      "exposure": "B",
+      "outcome": "F",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC [outcome]\nD\nE\nF\nE -> A\nE -> D\nB -> D\n}",
+      "exposure": "B",
+      "outcome": "C",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD [outcome]\nE\nA -> B\nA -> C\nB -> E\nB -> C\nE -> C\n}",
+      "exposure": "B",
+      "outcome": "D",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD [outcome]\nE [selected]\nA -> B\nA -> C\nC -> D\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [selected]\nD\nE\nF\nG\nH [exposure]\nH -> B\nH -> G\nB -> D\nB -> G\nB -> E\nA -> G\nF -> E\nF -> C\nD -> C\nG -> C\nE -> C\n}",
+      "exposure": "H",
+      "outcome": "B",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC\nD [exposure]\nE [outcome]\nF\nG\nH\nA -> B\nD -> B\nD -> F\nE -> C\nE -> B\nE -> H\nB -> H\nG -> H\n}",
+      "exposure": "D",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC [exposure]\nD\nE [selected]\nD -> E\nD -> C\n}",
+      "exposure": "C",
+      "outcome": "A",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [exposure]\nE\nF [outcome]\nG [selected]\nA -> D\nA -> C\nD -> F\nG -> E\nG -> F\nB -> C\nB -> E\nC -> E\n}",
+      "exposure": "D",
+      "outcome": "F",
+      "selected": "G",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [outcome]\nD [selected]\nE [exposure]\nF\nD -> F\nD -> C\nD -> B\nA -> E\nA -> F\nC -> B\n}",
+      "exposure": "E",
+      "outcome": "C",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC\nD [exposure]\nE [outcome]\nD -> B\nD -> C\nB -> E\nA -> C\nC -> E\n}",
+      "exposure": "D",
+      "outcome": "E",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC [outcome]\nD\nE [exposure]\nD -> B\nD -> E\nD -> A\nD -> C\nB -> A\nB -> C\nA -> C\n}",
+      "exposure": "E",
+      "outcome": "C",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC\nD [outcome]\nE\nF\nG\nH [exposure]\nH -> C\nH -> D\nH -> F\nH -> G\nB -> G\nB -> A\nC -> E\nC -> G\nE -> A\nD -> G\n}",
+      "exposure": "H",
+      "outcome": "D",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [selected]\nE [exposure]\nF [outcome]\nE -> D\nE -> C\nE -> F\nE -> A\nE -> B\nD -> F\nC -> A\nC -> B\nF -> B\n}",
+      "exposure": "E",
+      "outcome": "F",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD\nE [outcome]\nF [selected]\nG [exposure]\nG -> E\nA -> E\nA -> D\nA -> C\nE -> B\nE -> D\nE -> C\nB -> F\nD -> C\n}",
+      "exposure": "G",
+      "outcome": "E",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [exposure]\nC\nD [selected]\nE\nD -> C\nE -> A\nB -> C\nC -> A\n}",
+      "exposure": "B",
+      "outcome": "A",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD\nE [exposure]\nF\nG [selected]\nH\nH -> D\nH -> A\nE -> D\nF -> B\nF -> D\nF -> C\nF -> A\nF -> G\nB -> D\nD -> G\nA -> G\n}",
+      "exposure": "E",
+      "outcome": "B",
+      "selected": "G",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB [selected]\nC\nD [outcome]\nE\nF\nA -> C\nA -> B\nF -> C\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [outcome]\nC\nD [exposure]\nE\nF\nF -> D\nF -> B\nE -> D\n}",
+      "exposure": "D",
+      "outcome": "B",
+      "selected": "A",
+      "adjustmentSets": [
+        [
+          "F"
+        ]
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD\nE\nF\nG [selected]\nH [exposure]\nE -> F\nE -> D\nG -> H\nG -> A\nH -> F\nF -> D\n}",
+      "exposure": "H",
+      "outcome": "B",
+      "selected": "G",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC [outcome]\nD [exposure]\nE\nF\nE -> A\nE -> B\nA -> B\nA -> F\nB -> C\nF -> C\n}",
+      "exposure": "D",
+      "outcome": "C",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD [selected]\nE\nF [outcome]\nC -> B\nD -> F\nF -> B\nF -> E\n}",
+      "exposure": "A",
+      "outcome": "F",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC\nD\nE [outcome]\nF [selected]\nF -> E\nA -> D\nA -> B\nA -> E\nC -> D\nC -> B\nC -> E\nD -> B\nD -> E\n}",
+      "exposure": "B",
+      "outcome": "E",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC [outcome]\nD [exposure]\nE\nF\nF -> B\nE -> C\n}",
+      "exposure": "D",
+      "outcome": "C",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [exposure]\nC [selected]\nD\nE\nC -> B\nE -> D\nB -> A\nB -> D\n}",
+      "exposure": "B",
+      "outcome": "A",
+      "selected": "C",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [outcome]\nD\nE\nF [exposure]\nG [selected]\nA -> F\nA -> D\nA -> G\nA -> E\nF -> E\nD -> C\n}",
+      "exposure": "F",
+      "outcome": "C",
+      "selected": "G",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC [selected]\nD\nE\nF [exposure]\nG\nE -> D\nE -> B\nE -> G\nF -> A\nB -> G\n}",
+      "exposure": "F",
+      "outcome": "A",
+      "selected": "C",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC\nD [selected]\nE [exposure]\nE -> D\nE -> A\nD -> A\nC -> B\nB -> A\n}",
+      "exposure": "E",
+      "outcome": "A",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [exposure]\nD\nE\nF\nG [selected]\nG -> B\nG -> A\nC -> F\nF -> A\nE -> A\nE -> D\n}",
+      "exposure": "C",
+      "outcome": "B",
+      "selected": "G",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC\nD [exposure]\nE [selected]\nF\nG\nB -> C\nB -> A\nF -> C\nF -> G\nF -> D\nC -> D\nC -> A\nE -> A\n}",
+      "exposure": "D",
+      "outcome": "A",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC\nD\nE [selected]\nF [exposure]\nG\nH\nE -> G\nE -> C\nE -> H\nE -> A\nF -> H\nF -> D\nG -> C\nG -> H\nG -> D\nG -> A\nB -> C\nB -> H\nB -> D\nD -> A\n}",
+      "exposure": "F",
+      "outcome": "A",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [exposure]\nD [outcome]\nE [selected]\nF\nA -> C\nA -> B\nF -> D\nF -> E\nD -> B\n}",
+      "exposure": "C",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC [exposure]\nD [outcome]\nE\nF\nG\nF -> B\nF -> E\nB -> C\nB -> A\nB -> E\nB -> G\nC -> A\nC -> E\n}",
+      "exposure": "C",
+      "outcome": "D",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [selected]\nD\nE\nF [exposure]\nG\nH\nF -> A\nF -> B\nD -> C\nC -> G\nC -> A\nG -> H\nG -> A\nG -> B\nH -> A\nE -> A\n}",
+      "exposure": "F",
+      "outcome": "B",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB\nC\nD [selected]\nE\nF [exposure]\nG\nE -> C\nE -> G\nF -> C\nF -> A\nC -> D\nC -> G\nB -> D\nD -> A\n}",
+      "exposure": "F",
+      "outcome": "A",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD\nE [outcome]\nF\nG\nB -> E\nB -> C\nG -> D\nD -> A\n}",
+      "exposure": "B",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD\nE [outcome]\nF\nG\nH\nB -> E\nB -> H\nB -> G\nE -> H\nE -> F\nE -> D\nH -> D\nH -> C\nG -> F\nA -> D\nA -> C\nF -> D\nF -> C\n}",
+      "exposure": "B",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC [outcome]\nD\nE\nF [selected]\nB -> E\nB -> D\nB -> C\nB -> F\nB -> A\nE -> D\nD -> A\nC -> F\n}",
+      "exposure": "B",
+      "outcome": "C",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [outcome]\nD [exposure]\nE\nF [selected]\nG\nD -> C\nD -> E\nD -> F\nC -> A\nC -> G\nC -> B\nE -> A\nE -> F\nA -> B\nB -> F\n}",
+      "exposure": "D",
+      "outcome": "C",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC [selected]\nD [outcome]\nE\nF\nE -> A\nE -> B\nA -> B\nA -> C\nA -> F\nA -> D\nB -> D\nC -> D\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [selected]\nD\nE\nF [exposure]\nG\nH\nA -> C\nA -> D\nF -> C\nF -> D\nF -> H\nF -> B\nE -> D\nE -> B\nG -> H\nC -> D\n}",
+      "exposure": "F",
+      "outcome": "B",
+      "selected": "C",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD\nE [selected]\nF\nG [outcome]\nA -> B\nA -> F\nA -> E\nA -> D\nC -> G\nB -> F\nF -> E\nE -> G\n}",
+      "exposure": "A",
+      "outcome": "G",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [selected]\nD\nE [exposure]\nF\nG\nH [outcome]\nF -> A\nF -> H\nC -> E\nC -> A\nC -> B\nE -> B\nG -> B\nA -> D\nA -> B\nD -> B\nD -> H\n}",
+      "exposure": "E",
+      "outcome": "H",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC [outcome]\nD [exposure]\nE\nF\nG\nD -> F\nD -> E\nG -> C\nG -> E\nG -> B\nC -> F\nC -> E\nF -> E\nF -> B\n}",
+      "exposure": "D",
+      "outcome": "C",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC [selected]\nD\nE\nF\nG\nH [outcome]\nB -> D\nB -> G\nB -> C\nB -> E\nB -> H\nD -> G\nG -> F\nG -> H\nA -> C\nA -> E\nE -> F\nE -> H\nF -> H\n}",
+      "exposure": "B",
+      "outcome": "H",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [selected]\nC\nD\nE [exposure]\nF\nE -> F\nE -> B\nE -> C\nF -> D\nD -> A\nA -> C\n}",
+      "exposure": "E",
+      "outcome": "A",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [outcome]\nE\nF\nG [exposure]\nH [selected]\nC -> A\nB -> E\nB -> G\nB -> D\nE -> D\nH -> D\nH -> F\n}",
+      "exposure": "G",
+      "outcome": "D",
+      "selected": "H",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [exposure]\nD [outcome]\nE [selected]\nF\nG\nG -> B\nF -> A\nE -> D\n}",
+      "exposure": "C",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [selected]\nD\nE [exposure]\nF [outcome]\nG\nA -> E\nA -> D\nA -> B\nD -> B\nB -> G\nF -> G\n}",
+      "exposure": "E",
+      "outcome": "F",
+      "selected": "C",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC [selected]\nD [outcome]\nE\nC -> E\nC -> A\nE -> D\nA -> D\nB -> D\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC [exposure]\nD\nE [selected]\nA -> E\nD -> E\nD -> B\nC -> E\nC -> B\n}",
+      "exposure": "C",
+      "outcome": "B",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB [outcome]\nC\nD\nE [selected]\nC -> E\nC -> A\nC -> D\nE -> B\nE -> D\nA -> B\nA -> D\nB -> D\n}",
+      "exposure": "A",
+      "outcome": "B",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [outcome]\nC\nD [exposure]\nE\nF\nG\nH [selected]\nD -> F\nD -> B\nA -> F\nA -> B\nA -> G\nA -> H\nE -> F\nE -> G\nF -> C\nF -> B\nF -> H\nC -> B\nC -> G\nC -> H\nB -> G\n}",
+      "exposure": "D",
+      "outcome": "B",
+      "selected": "H",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB [outcome]\nC [selected]\nD\nE\nF\nD -> F\nE -> F\nA -> F\nF -> B\n}",
+      "exposure": "A",
+      "outcome": "B",
+      "selected": "C",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [exposure]\nD\nE\nF [selected]\nG\nH [outcome]\nC -> B\nC -> D\nC -> A\nB -> D\nB -> H\nB -> F\nB -> E\nD -> G\nD -> F\nG -> A\nG -> F\nA -> E\nH -> E\nF -> E\n}",
+      "exposure": "C",
+      "outcome": "H",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC [outcome]\nD\nE [selected]\nF\nA -> F\nA -> B\nA -> E\nD -> C\nD -> E\nF -> C\nB -> E\n}",
+      "exposure": "A",
+      "outcome": "C",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [selected]\nD\nE [exposure]\nF [outcome]\nA -> F\nB -> C\nB -> F\nE -> C\nE -> F\nC -> F\nF -> D\n}",
+      "exposure": "E",
+      "outcome": "F",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [outcome]\nD [selected]\nE\nF\nG\nH [exposure]\nH -> G\nH -> F\nD -> C\nD -> B\nD -> E\nC -> B\nC -> E\nG -> A\nB -> E\nB -> A\n}",
+      "exposure": "H",
+      "outcome": "C",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [exposure]\nE [selected]\nF [outcome]\nD -> E\nD -> A\nC -> F\nC -> B\nC -> A\nF -> A\nB -> A\n}",
+      "exposure": "D",
+      "outcome": "F",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB [selected]\nC\nD\nE\nF\nG [outcome]\nH\nB -> H\nB -> E\nC -> H\nC -> E\nC -> F\nD -> H\nD -> F\nH -> E\nH -> F\nG -> F\n}",
+      "exposure": "A",
+      "outcome": "G",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC [selected]\nD\nE\nF [outcome]\nB -> D\nB -> A\nB -> E\nA -> F\nA -> C\nE -> C\n}",
+      "exposure": "B",
+      "outcome": "F",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [outcome]\nE [selected]\nF\nG\nH [exposure]\nH -> B\nH -> E\nH -> G\nD -> G\nD -> C\nD -> A\nF -> G\nB -> A\nE -> A\nG -> A\n}",
+      "exposure": "H",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC [outcome]\nD [selected]\nE\nF\nG\nH\nB -> F\nB -> E\nB -> A\nB -> C\nF -> E\nF -> H\nF -> D\nF -> C\nE -> H\nE -> A\nG -> H\nG -> D\nG -> A\nG -> C\nH -> A\nH -> C\nD -> A\nD -> C\n}",
+      "exposure": "B",
+      "outcome": "C",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [outcome]\nB [selected]\nC [exposure]\nD\nE\nE -> A\nE -> B\nC -> B\nA -> B\n}",
+      "exposure": "C",
+      "outcome": "A",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC [outcome]\nD\nE [selected]\nA -> E\nC -> D\nB -> E\n}",
+      "exposure": "A",
+      "outcome": "C",
+      "selected": "E",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD\nE [outcome]\nB -> C\nB -> E\nD -> C\nC -> A\nC -> E\n}",
+      "exposure": "B",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [outcome]\nD [selected]\nE\nF [exposure]\nA -> E\nF -> E\nE -> C\nC -> D\n}",
+      "exposure": "F",
+      "outcome": "C",
+      "selected": "D",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD\nE [outcome]\nF [selected]\nG\nC -> F\nC -> E\nC -> D\nF -> A\nF -> E\nF -> D\nA -> B\nA -> D\nB -> E\nE -> D\n}",
+      "exposure": "A",
+      "outcome": "E",
+      "selected": "F",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC [selected]\nD [exposure]\nE [outcome]\nD -> A\nD -> C\nA -> C\nA -> E\nC -> B\nC -> E\nB -> E\n}",
+      "exposure": "D",
+      "outcome": "E",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC [exposure]\nD\nE [outcome]\nF\nD -> B\nB -> A\nB -> F\nC -> E\nC -> F\nA -> E\nE -> F\n}",
+      "exposure": "C",
+      "outcome": "E",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB\nC\nD [exposure]\nE [selected]\nF\nG [outcome]\nA -> D\nA -> E\nC -> B\nF -> D\nF -> G\nD -> G\nD -> E\nB -> G\nG -> E\n}",
+      "exposure": "D",
+      "outcome": "G",
+      "selected": "E",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC\nD [outcome]\nE [selected]\nF\nG\nH\nB -> A\nB -> D\nE -> A\nE -> C\nA -> C\nC -> G\nC -> H\n}",
+      "exposure": "A",
+      "outcome": "D",
+      "selected": "E",
+      "adjustmentSets": [
+        [
+          "B"
+        ]
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC\nD [outcome]\nE\nF [exposure]\nC -> B\nF -> B\nF -> D\nF -> E\nB -> E\n}",
+      "exposure": "F",
+      "outcome": "D",
+      "selected": "B",
+      "adjustmentSets": [
+        []
+      ]
+    },
+    {
+      "dagitty": "dag {\nA\nB [exposure]\nC [selected]\nD [outcome]\nE\nF\nC -> B\nC -> D\nB -> D\nB -> F\nB -> E\nF -> E\n}",
+      "exposure": "B",
+      "outcome": "D",
+      "selected": "C",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB\nC [outcome]\nD\nE [exposure]\nA -> B\nA -> E\nA -> C\nA -> D\nB -> E\nB -> D\nC -> D\n}",
+      "exposure": "E",
+      "outcome": "C",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA\nB [selected]\nC [exposure]\nD\nE [outcome]\nF\nG\nH\nD -> C\nD -> E\nD -> H\nB -> F\nF -> G\nF -> E\nC -> G\nC -> E\nG -> H\nE -> H\n}",
+      "exposure": "C",
+      "outcome": "E",
+      "selected": "B",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [selected]\nB [exposure]\nC\nD\nE\nF [outcome]\nG\nH\nG -> E\nG -> A\nG -> H\nB -> C\nB -> F\nB -> H\nC -> A\nC -> D\nE -> F\nE -> D\nA -> H\nF -> D\nD -> H\n}",
+      "exposure": "B",
+      "outcome": "F",
+      "selected": "A",
+      "adjustmentSets": []
+    },
+    {
+      "dagitty": "dag {\nA [exposure]\nB\nC [selected]\nD\nE\nF [outcome]\nD -> A\nD -> F\nA -> F\nB -> E\nB -> F\n}",
+      "exposure": "A",
+      "outcome": "F",
+      "selected": "C",
+      "adjustmentSets": [
+        [
+          "D"
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+schema: graphcreator/9.9
+name: From the future
+nodes:
+  - name: A

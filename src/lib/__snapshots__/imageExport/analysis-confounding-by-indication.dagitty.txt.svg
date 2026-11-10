@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="428" height="348" viewBox="0 0 428 348">
+<title>Graph</title>
+<rect width="428" height="348" fill="#ffffff"/>
+<line x1="179.83" y1="84.79" x2="119.7" y2="121.37" stroke="#64748b" stroke-width="1.5"/>
+<path d="M112.86,125.53 L118.21,117.01 L122.89,124.7 Z" fill="#64748b"/>
+<line x1="65.4" y1="197.67" x2="61" y2="234.3" stroke="#64748b" stroke-width="1.5"/>
+<path d="M60.05,242.24 L56.66,232.77 L65.59,233.84 Z" fill="#64748b"/>
+<line x1="236.53" y1="97.05" x2="335.83" y2="242.69" stroke="#64748b" stroke-width="1.5"/>
+<path d="M340.34,249.3 L331.55,244.4 L338.99,239.33 Z" fill="#64748b"/>
+<line x1="87.99" y1="276.83" x2="314.02" y2="282.7" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322.01,282.91 L312.9,287.17 L313.13,278.18 Z" fill="#64748b"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
+<circle cx="214" cy="64" r="39" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
+<text x="214" y="68.88" fill="#374151">Severity</text>
+<circle cx="71" cy="151" r="46" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="71" y="155.88" fill="#0f172a">Indication</text>
+<circle cx="56" cy="276" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="56" y="280.88" fill="#24563a">Drug</text>
+<circle cx="364" cy="284" r="39" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="364" y="288.88" fill="#23407a">Recovery</text>
+</g>
+</svg>

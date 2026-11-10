@@ -1,0 +1,1 @@
+[Severity][Indication|Severity][Drug|Indication][Recovery|Severity:Drug]

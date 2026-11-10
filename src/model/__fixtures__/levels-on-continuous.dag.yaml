@@ -1,0 +1,12 @@
+schema: graphcreator/0.1
+nodes:
+  - name: Birth weight
+    var_type: continuous
+    levels: [low, high]
+    unit: g
+  - name: SES
+    var_type: ordinal
+    levels: [low, mid, high]
+    unit: EUR
+  - name: Genetic factors
+    levels: [a, b]

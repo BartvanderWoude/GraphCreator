@@ -1,0 +1,8 @@
+dag {
+X [exposure]
+Y [outcome]
+Z
+Z -> X
+Z -> Y
+X -> Y
+}

@@ -1,3 +1,5 @@
+> **Background research only.** The source of truth for GraphCreator is [SPEC.md](SPEC.md); deferred features are in [IDEAS.md](IDEAS.md).
+
 # Typed DAGs fill epidemiology's tooling gap
 
 ## NOTICE

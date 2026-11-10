@@ -1,0 +1,48 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "C",
+      "name": "C",
+      "pos": [182, -68]
+    },
+    {
+      "id": "E",
+      "name": "E",
+      "role": "exposure",
+      "pos": [32, 82]
+    },
+    {
+      "id": "D",
+      "name": "D",
+      "role": "outcome",
+      "pos": [332, 82]
+    },
+    {
+      "id": "S",
+      "name": "S",
+      "role": "selected",
+      "pos": [32, 232]
+    }
+  ],
+  "edges": [
+    {
+      "source": "E",
+      "target": "D"
+    },
+    {
+      "source": "E",
+      "target": "S"
+    },
+    {
+      "source": "C",
+      "target": "E"
+    },
+    {
+      "source": "C",
+      "target": "D"
+    }
+  ]
+}

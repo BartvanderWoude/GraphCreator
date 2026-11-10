@@ -1,0 +1,31 @@
+schema: graphcreator/0.1
+name: Größe & "quotes"
+nodes:
+  - name: Größe β
+    role: exposure
+    var_type: ordinal
+    levels: ["a;b", 'back\slash', c]
+    description: Says "hi" & <bye>
+    pos: [0, 0]
+  - name: 1st visit
+    role: outcome
+    var_type: continuous
+    unit: kg/m²
+    pos: [200, 0]
+  - name: node
+    role: adjusted
+    pos: [100, 150]
+  - name: a.b
+    role: selected
+    pos: [300, 150]
+edges:
+  - from: Größe β
+    to: 1st visit
+    evidence: ["PMID:1;2", "doi:10.1/x"]
+    note: It's "known"
+  - from: node
+    to: Größe β
+  - from: node
+    to: 1st visit
+  - from: 1st visit
+    to: a.b

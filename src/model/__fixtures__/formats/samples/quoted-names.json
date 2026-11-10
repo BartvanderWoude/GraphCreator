@@ -1,0 +1,48 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "Maternal_smoking",
+      "name": "Maternal smoking",
+      "role": "exposure",
+      "pos": [42, 42]
+    },
+    {
+      "id": "Birth_weight",
+      "name": "Birth weight",
+      "role": "outcome",
+      "pos": [336, 36]
+    },
+    {
+      "id": "Socio_economic_status",
+      "name": "Socio-economic status",
+      "pos": [213, -57]
+    },
+    {
+      "id": "say__hi_",
+      "name": "say \"hi\"",
+      "role": "latent",
+      "pos": [182, 152]
+    }
+  ],
+  "edges": [
+    {
+      "source": "Maternal_smoking",
+      "target": "Birth_weight"
+    },
+    {
+      "source": "Socio_economic_status",
+      "target": "Maternal_smoking"
+    },
+    {
+      "source": "Socio_economic_status",
+      "target": "Birth_weight"
+    },
+    {
+      "source": "say__hi_",
+      "target": "Birth_weight"
+    }
+  ]
+}

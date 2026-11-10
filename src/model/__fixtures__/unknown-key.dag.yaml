@@ -1,0 +1,12 @@
+schema: graphcreator/0.1
+nodse:
+  - name: A
+nodes:
+  - name: SES
+    var_type: ordinall
+    colour: red
+  - role: exposure
+edges:
+  - from: SES
+    to: A
+    weight: 2

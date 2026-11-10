@@ -1,0 +1,32 @@
+schema: graphcreator/0.1
+name: Smoking and birth weight
+nodes:
+  - name: Maternal smoking
+    role: exposure
+    var_type: categorical
+    levels: [never, former, current]
+    description: Self-reported during pregnancy
+    pos: [0, 0]
+  - name: Birth weight
+    role: outcome
+    var_type: continuous
+    unit: g
+    pos: [300, 0]
+  - name: SES
+    var_type: ordinal
+    levels: [low, mid, high]
+    pos: [150, -120]
+  - name: Genetic factors
+    role: latent
+    pos: [150, 120]
+edges:
+  - from: SES
+    to: Maternal smoking
+    evidence: ["PMID:123", "doi:10.1000/xyz"]
+    note: Well established
+  - from: Maternal smoking
+    to: Birth weight
+  - from: SES
+    to: Birth weight
+  - from: Genetic factors
+    to: Birth weight

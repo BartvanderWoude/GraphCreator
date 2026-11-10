@@ -1,0 +1,9 @@
+Graph Nodes:
+D;E;U1;U2;Z
+
+Graph Edges:
+1. E --> D
+2. U1 --> E
+3. U1 --> Z
+4. U2 --> D
+5. U2 --> Z

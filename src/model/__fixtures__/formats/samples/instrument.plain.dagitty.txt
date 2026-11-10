@@ -1,0 +1,10 @@
+dag {
+Z [pos="0.000,0.000"]
+X [exposure,pos="1.500,0.000"]
+Y [outcome,pos="3.000,0.000"]
+U [latent,pos="2.250,-1.000"]
+Z -> X
+X -> Y
+U -> X
+U -> Y
+}

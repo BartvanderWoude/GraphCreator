@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="412" height="262" viewBox="0 0 412 262">
+<title>Graph</title>
+<style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
+<rect width="412" height="262" fill="#ffffff"/>
+<line x1="82.63" y1="188.25" x2="171.05" y2="129.3" stroke="#64748b" stroke-width="1.5"/>
+<path d="M177.71,124.86 L172.72,133.6 L167.73,126.11 Z" fill="#64748b"/>
+<line x1="232.63" y1="123.75" x2="321.05" y2="182.7" stroke="#64748b" stroke-width="1.5"/>
+<path d="M327.71,187.14 L317.73,185.89 L322.72,178.4 Z" fill="#64748b"/>
+<line x1="88" y1="206" x2="314" y2="206" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,206 L313,210.5 L313,201.5 Z" fill="#64748b"/>
+<line x1="325.64" y1="66.12" x2="245.84" y2="92.72" stroke="#64748b" stroke-width="1.5"/>
+<path d="M238.26,95.25 L245.37,88.13 L248.22,96.67 Z" fill="#64748b"/>
+<line x1="356" y1="88" x2="356" y2="164" stroke="#64748b" stroke-width="1.5"/>
+<path d="M356,172 L351.5,163 L360.5,163 Z" fill="#64748b"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
+<circle cx="56" cy="206" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="56" y="210.88" fill="#24563a">E</text>
+<circle cx="206" cy="106" r="31" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
+<text x="206" y="110.88" fill="#6b4510">M</text>
+<circle cx="356" cy="206" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="356" y="210.88" fill="#23407a">D</text>
+<circle cx="356" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="356" y="60.88" fill="#0f172a">C</text>
+</g>
+</svg>

@@ -1,0 +1,24 @@
+schema: graphcreator/0.1
+name: Bad references
+nodes:
+  - name: Age
+    var_type: continuous
+    pos: [0, 0]
+  - name: Age
+    var_type: discrete
+    pos: [200, 0]
+  - name: '  '
+    pos: [400, 0]
+  - name: Smoking
+    var_type: categorical
+    levels: [no, yes]
+    pos: [600, 0]
+edges:
+  - from: Age
+    to: Smokng
+  - from: Smoking
+    to: Smoking
+  - from: Age
+    to: Smoking
+  - from: Age
+    to: Smoking

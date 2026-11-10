@@ -1,0 +1,64 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "A",
+      "name": "A",
+      "pos": [-188, -120]
+    },
+    {
+      "id": "B",
+      "name": "B",
+      "pos": [172, -114]
+    },
+    {
+      "id": "D",
+      "name": "D",
+      "role": "outcome",
+      "pos": [172, 194.1]
+    },
+    {
+      "id": "E",
+      "name": "E",
+      "role": "exposure",
+      "pos": [-188, 191.7]
+    },
+    {
+      "id": "Z",
+      "name": "Z",
+      "pos": [2, 23.8]
+    }
+  ],
+  "edges": [
+    {
+      "source": "A",
+      "target": "E"
+    },
+    {
+      "source": "A",
+      "target": "Z"
+    },
+    {
+      "source": "B",
+      "target": "D"
+    },
+    {
+      "source": "B",
+      "target": "Z"
+    },
+    {
+      "source": "E",
+      "target": "D"
+    },
+    {
+      "source": "Z",
+      "target": "D"
+    },
+    {
+      "source": "Z",
+      "target": "E"
+    }
+  ]
+}
