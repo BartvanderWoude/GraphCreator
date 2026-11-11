@@ -14,7 +14,7 @@ Adjustment sets, implied independencies, path highlighting, instrumental variabl
 ## Simulation and code export
 
 - Generate runnable simulation code from the typed model: R `simDAG` and Python DoWhy-GCM.
-- Per-node distribution hints and value ranges (min/max), per-edge coefficients or functional forms.
+- Per-node distribution hints and value ranges (min/max), numeric per-edge coefficients and noise distributions. Level shares, a node's functional form and edge sign and strength bands are designed in [SPEC.md](SPEC.md) 4.16 (waves 22–24).
 - "Sample N datasets from this DAG" with randomised edge strengths and nonlinearities (link to synthetic-SCM priors for tabular foundation models).
 
 ## Graph model
