@@ -3032,7 +3032,7 @@ Check after the wave: all checks, then in the browser:
     - a `parent-levels` map that gives every compared level the same sign gets no warning.
   - Node messages use the trimmed name and edge messages use `node.name`, as the existing messages do.
 
-#### Phase 52: Node simulation editor [x]
+#### Phase 52: Node simulation editor [x] (66c8a4f)
 
 - **Goal:** the node editor's Simulation section edits shares and form, and levels keep their shares.
 - **Depends on:** phase 49.
@@ -3054,7 +3054,7 @@ Check after the wave: all checks, then in the browser:
   - The Form field's visible label is "Form", with the info tip "About functional form" (the Type / "Variable type" pattern); the trigger's `aria-label` is "Functional form". The "none" option's internal value is `'none'`.
   - Shares is a `role="group"` labelled "Shares" with the "About shares" tip, as Levels is. The rows are a `<ul aria-label="Share list">`. Remove shares is a small ghost button aligned with the fields (`-ml-2 px-2`).
 
-#### Phase 53: Edge simulation editor [ ]
+#### Phase 53: Edge simulation editor [x]
 
 - **Goal:** the edge editor's Simulation section edits sign and strength, and edge issues select their edge.
 - **Depends on:** phase 49.
@@ -3071,6 +3071,15 @@ Check after the wave: all checks, then in the browser:
   - undo.
 - **Done when:** all checks pass and the browser check works in both themes.
 - **Out of scope:** the node editor, the canvas badge.
+- **Details fixed in phase 53:**
+  - `SignEditor({ edge })` reads `signShape` and `signLevelsNode` from the live graph, so a type or level change on an end, or an undo, shows at once.
+  - **Sign control:** `role="radiogroup"` with three `role="radio"` buttons and `aria-checked`. Only the chosen button is in the tab order. Arrow keys move and choose, wrapping around, and clicking the chosen button does nothing. The `—` button is named "No sign", the others "Positive" and "Negative" (glyph `aria-hidden`). The single control is labelled by the visible "Sign" label.
+  - **Sign styling:** a chosen Positive or Negative has a `--primary` fill and `--primary-foreground` text; a chosen `—` has a `--muted` fill and `--foreground` text, so unset rows stay quiet. Segments are 28 px high inside a 32 px `--input`-bordered group.
+  - **Per-level rows:** each row has the level name (truncated, full name in `title`, `aria-hidden`) above its control, 12 px apart. The intro line uses the hint style, and the field is a `role="group"` named "Sign".
+  - **Map edits:** a row reads its value from own keys only (`Object.hasOwn`). A commit rebuilds the map with `Map` and `Object.fromEntries`; other keys keep their order, stray non-level keys included, which the editor neither shows nor drops.
+  - **Does not fit:** any stored sign on a `none` edge (a word or a map) counts as not fitting, so it gets the line and Clear sign; otherwise a word there could not be removed. Clear sign is a ghost button aligned with the fields (`-ml-2 px-2`).
+  - **Strength:** the select's `—` value is the sentinel `none`; the trigger shows only the label, and each option's description is attached with `aria-describedby`, as in `RolePicker`.
+  - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stays inside `IssuesDialog`; the edge wiring is in `TopBar`.
 
 #### Phase 54: Canvas sign badge [ ]
 

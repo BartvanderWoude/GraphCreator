@@ -398,6 +398,10 @@ export function TopBar() {
           }}
           title={issuesView?.kind === 'fixed' ? issuesView.title : 'Warnings'}
           issues={issuesView?.kind === 'fixed' ? issuesView.issues : warnings}
+          onSelectEdge={(id) => {
+            useGraphStore.getState().select({ kind: 'edge', id })
+            setIssuesView(null)
+          }}
         />
         <OpenDialog
           key={openKey}
