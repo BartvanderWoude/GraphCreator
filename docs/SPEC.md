@@ -2979,7 +2979,7 @@ Check after the wave: all checks, then in the browser:
 - the canvas shows the badges;
 - the Export dialog's Signs checkbox adds the badges to a PNG and a PDF.
 
-#### Phase 50: YAML read and write [x]
+#### Phase 50: YAML read and write [x] (e2d4ed1)
 
 - **Goal:** `.dag.yaml` files carry the simulation details, and every file `toYaml` writes is safe for YAML 1.1 readers.
 - **Depends on:** phase 49.
@@ -3003,7 +3003,7 @@ Check after the wave: all checks, then in the browser:
   - **Quoting:** after the document is built, every plain string scalar (keys included) that matches a YAML 1.1 non-string pattern is double-quoted. The patterns are PyYAML's bool, null, int, float and timestamp patterns, plus `y`/`Y`/`n`/`N`, `0o…` octals, a signed exponent, and `<<` and `=`. So a node named `Y` is written `"Y"` (PyYAML itself reads `Y` as text, but the YAML 1.1 type rules and other readers do not). Text that `yaml` already quotes keeps its own style. The helper is not exported and is tested through `toYaml`.
   - `escapes.dag.yaml` was never canonical (`toYaml` writes its list items unquoted), so the "existing fixtures unchanged" test covers the top-level fixtures without `minimal.dag.yaml`.
 
-#### Phase 51: Validation [ ]
+#### Phase 51: Validation [x]
 
 - **Goal:** `validateGraph` gives the errors and warnings of 4.16 "Validation".
 - **Depends on:** phase 49.
@@ -3013,6 +3013,24 @@ Check after the wave: all checks, then in the browser:
 - **Tests:** the `validate.test.ts` additions (section 9).
 - **Done when:** all checks pass.
 - **Out of scope:** the parser's Zod messages (phase 50).
+- **Details fixed in phase 51:**
+  - **Order:**
+    - share errors come per node, straight after that node's unit error;
+    - the simulation node warnings come in a second pass after all existing warnings, per node, shares first, then form;
+    - the sign warnings follow in edge order;
+    - on one edge, the unknown-key warnings come first (in map key order), then the reference-level warning, then the "every level" warning.
+  - **Share errors:**
+    - "with levels" means `levels` is present and not empty, so `levels: []` with shares gets the type error;
+    - the count error is checked only when the type error does not apply, and uses singular forms (`1 share for 2 levels`, `2 shares for 1 level`);
+    - the negative-share error is checked on its own (once per node), with `-0` not negative and NaN and ±Infinity counting as negative.
+  - **Shares total:** no total warning when a share is not finite. The percentage is `Math.round(total * 1000) / 10`, so `-0` prints as `0`. An empty `shares` list warns `0%` (on top of its count error).
+  - **Form:** "causes" are incoming edges from another existing node; self-edges and dangling edges do not count.
+  - **Signs:**
+    - edges with a missing endpoint and self-edges get no sign warnings, because both are errors already;
+    - on a `single` or `none` edge with a map, the keys are not checked further;
+    - the "every level" warning ignores keys that are not levels (they get their own warning);
+    - a `parent-levels` map that gives every compared level the same sign gets no warning.
+  - Node messages use the trimmed name and edge messages use `node.name`, as the existing messages do.
 
 #### Phase 52: Node simulation editor [ ]
 
