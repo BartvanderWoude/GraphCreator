@@ -16,8 +16,12 @@ const button = (page: Page, name: string) =>
 const exportDialog = (page: Page) =>
   page.getByRole('dialog', { name: 'Export image' })
 
-/** Clicks Open…, then Open file… in the dialog, and picks `file` in the file chooser. */
-async function openFile(page: Page, file: string) {
+/**
+ * Clicks Open…, then Open file… in the dialog, and picks `file` in the file chooser; over a graph
+ * with nodes it confirms the replacement. `count` is the number of nodes the file has.
+ */
+async function openFile(page: Page, file: string, count = 4) {
+  const replace = (await nodes(page).count()) > 0
   await button(page, 'Open…').click()
   const chooser = page.waitForEvent('filechooser')
   await page
@@ -25,7 +29,13 @@ async function openFile(page: Page, file: string) {
     .getByRole('button', { name: 'Open file…' })
     .click()
   await (await chooser).setFiles(file)
-  await expect(nodes(page)).toHaveCount(4)
+  if (replace) {
+    await page
+      .getByRole('dialog', { name: 'Start a new graph?' })
+      .getByRole('button', { name: 'Open' })
+      .click()
+  }
+  await expect(nodes(page)).toHaveCount(count)
 }
 
 /** Runs `action` and returns the download it starts, with its bytes. */
@@ -214,4 +224,51 @@ test('Theme and Legend change the image, and are kept when the dialog reopens', 
     'Dark',
   )
   await expect(dialog.getByRole('checkbox', { name: 'Legend' })).toBeChecked()
+})
+
+test('Signs shows only when an edge has a sign, and adds the badges to the image', async ({
+  page,
+}) => {
+  // smoking.dag.yaml has no signs: no checkbox.
+  await openFile(page, fixture('smoking.dag.yaml'))
+  await button(page, 'Export…').click()
+  const dialog = exportDialog(page)
+  await expect(dialog.getByRole('checkbox', { name: 'Legend' })).toBeVisible()
+  await expect(dialog.getByRole('checkbox', { name: 'Signs' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+
+  // simulation.dag.yaml has two positive edges and one mixed one.
+  await openFile(page, fixture('simulation.dag.yaml'), 3)
+  await button(page, 'Export…').click()
+  const signs = dialog.getByRole('checkbox', { name: 'Signs' })
+  await expect(signs).toBeChecked()
+  const preview = dialog.getByRole('img', { name: 'Preview of the image' })
+  await expect(preview).toBeVisible()
+  const svg = async () =>
+    (
+      await download(page, () =>
+        dialog.getByRole('button', { name: 'Download' }).click(),
+      )
+    ).bytes.toString('utf8')
+  const withSigns = await svg()
+  expect(withSigns.match(/>\+<\/text>/g)).toHaveLength(2)
+  expect(withSigns.match(/>±<\/text>/g)).toHaveLength(1)
+
+  await signs.click()
+  await expect(signs).not.toBeChecked()
+  const without = await svg()
+  expect(without).not.toContain('>+</text>')
+  expect(without).not.toContain('>±</text>')
+  expect(without.length).toBeLessThan(withSigns.length)
+
+  // TikZ follows the same choice, and the choice is kept when the dialog reopens.
+  await choose(page, 'Format', 'TikZ')
+  const code = dialog.getByRole('textbox', { name: 'TikZ code' })
+  await expect(code).not.toHaveValue(/\{\$\\pm\$\}/)
+  await signs.click()
+  await expect(code).toHaveValue(/\{\$\\pm\$\}/)
+  await page.keyboard.press('Escape')
+  await button(page, 'Export…').click()
+  await expect(signs).toBeChecked()
 })

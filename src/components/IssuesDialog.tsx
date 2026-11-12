@@ -80,30 +80,25 @@ export function IssueList({
 
 /**
  * Lists errors (e.g. `Could not open <file>`) or warnings (spec 5.1, 5.4, 5.9). Clicking a
- * warning that belongs to a node selects that node and closes the dialog. A warning that belongs
- * to an edge calls `onSelectEdge`, which the owner wires to select the edge and close the dialog;
- * without it, edge warnings are plain text.
+ * warning that belongs to a node or an edge selects it and closes the dialog.
  */
 export function IssuesDialog({
   open,
   onOpenChange,
   title,
   issues,
-  onSelectEdge,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   title: string
   issues: Issue[]
-  onSelectEdge?: (edgeId: string) => void
 }) {
   const select = useGraphStore((s) => s.select)
   const hint = linkHint(
     issues.some((issue) => issue.nodeId !== undefined),
-    onSelectEdge !== undefined &&
-      issues.some(
-        (issue) => issue.nodeId === undefined && issue.edgeId !== undefined,
-      ),
+    issues.some(
+      (issue) => issue.nodeId === undefined && issue.edgeId !== undefined,
+    ),
   )
 
   return (
@@ -122,7 +117,10 @@ export function IssuesDialog({
             select({ kind: 'node', id })
             onOpenChange(false)
           }}
-          onSelectEdge={onSelectEdge}
+          onSelectEdge={(id) => {
+            select({ kind: 'edge', id })
+            onOpenChange(false)
+          }}
         />
         <DialogFooter showCloseButton />
       </DialogContent>

@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11; wave 22 (phase 49: contracts) is done. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -1802,7 +1802,7 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 - `FloatingEdgeData` gains `sign?: 'positive' | 'negative' | 'mixed'` (phase 49), filled by `Canvas` from `signBadge(edge.sign)`.
 - 5.7.7 gains the row: Sign badge, edge has a sign: 16 px circle, `--background`, 1 px `--edge` border, the glyph in `--edge`; `--primary` when the edge is selected.
 
-**Issues (phase 53).** `IssueList` renders issues with an `edgeId` as buttons, like node issues, calling a new optional `onSelectEdge(edgeId)`. `IssuesDialog` passes it on, and `TopBar` wires it to `select({ kind: 'edge', id })` and closes the dialog, as it does for nodes.
+**Issues (phase 53).** `IssueList` renders issues with an `edgeId` as buttons, like node issues, calling a new optional `onSelectEdge(edgeId)`. `IssuesDialog` selects the edge (`select({ kind: 'edge', id })`) and closes itself, as it does for nodes (phase 56; phase 53 wired this in `TopBar`).
 
 **Export dialog (phase 55).** A **Signs** checkbox (label "Signs") comes after Legend for every format. It is shown only when at least one edge has a `signBadge`, is on by default and is kept while the page is open, like Legend. It passes `signs` to `toSvg`, `svgSize`, `toPdf` and `toTikz`. The preview and sizes follow it.
 
@@ -2970,7 +2970,7 @@ Phases: 49. Parallel: single phase. Check after the wave: all checks. The app ru
   - `copy.test.ts` checks the tooltip rules for every `FIELD_TIPS` entry: it starts with its term and a colon, has at most 30 words, and ends with a period.
   - Until phase 52 switches NodeEditor to `setLevels`, a levels commit through `updateNode` drops the shares.
 
-### Wave 23: Simulation parts [ ]
+### Wave 23: Simulation parts [x]
 
 Phases: 50, 51, 52, 53, 54, 55. Parallel: all six, one sub agent each in its own worktree; their files are disjoint. Land them in the order 50, 51, 52, 53, 54, 55. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
 
@@ -3079,7 +3079,7 @@ Check after the wave: all checks, then in the browser:
   - **Map edits:** a row reads its value from own keys only (`Object.hasOwn`). A commit rebuilds the map with `Map` and `Object.fromEntries`; other keys keep their order, stray non-level keys included, which the editor neither shows nor drops.
   - **Does not fit:** any stored sign on a `none` edge (a word or a map) counts as not fitting, so it gets the line and Clear sign; otherwise a word there could not be removed. Clear sign is a ghost button aligned with the fields (`-ml-2 px-2`).
   - **Strength:** the select's `—` value is the sentinel `none`; the trigger shows only the label, and each option's description is attached with `aria-describedby`, as in `RolePicker`.
-  - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stays inside `IssuesDialog`; the edge wiring is in `TopBar`.
+  - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stayed inside `IssuesDialog` and the edge wiring was in `TopBar`, until phase 56 moved both into `IssuesDialog`.
 
 #### Phase 54: Canvas sign badge [x] (4d4a014)
 
@@ -3101,7 +3101,7 @@ Check after the wave: all checks, then in the browser:
   - On hover the badge fill becomes `--muted`, as the chip's does. Its colours change in 120 ms (0 ms with reduced motion, through the global rule in `index.css`).
   - The badge ignores path marking: it stays `--edge` on a causal or biasing path unless the edge is selected.
 
-#### Phase 55: Image signs and reader doc [x]
+#### Phase 55: Image signs and reader doc [x] (d66670e)
 
 - **Goal:** exported pictures can show sign badges, and readers have [FORMAT.md](FORMAT.md).
 - **Depends on:** phase 49.
@@ -3132,11 +3132,11 @@ Check after the wave: all checks, then in the browser:
     - `discrete` means whole numbers, such as a count.
   - FORMAT.md's example is the file as GraphCreator writes it, so `levels: ["no", "yes"]` is quoted (YAML 1.1 safety); the 4.16 example was corrected to match. `docs/` is in `.prettierignore`, which keeps the example's flow maps byte-identical to `simulation.dag.yaml`.
 
-### Wave 24: Simulation integration [ ]
+### Wave 24: Simulation integration [x]
 
 Phases: 56. Parallel: single phase. Check after the wave: all checks; the browser checks below.
 
-#### Phase 56: Simulation integration and end-to-end tests [ ]
+#### Phase 56: Simulation integration and end-to-end tests [x]
 
 - **Goal:** simulation details work end to end, and the spec, IDEAS.md and memory reflect it.
 - **Depends on:** phases 50–55.
@@ -3147,6 +3147,11 @@ Phases: 56. Parallel: single phase. Check after the wave: all checks; the browse
   - update the Status line, the Open issues and `docs/IDEAS.md`.
 - **Done when:** all checks pass. In the browser (both app themes): the section opens and stays open after a reload; shares, form, sign and strength save to the file and come back from a share link; and the Issues dialog selects an edge from a sign warning.
 - **Out of scope:** simulation code generation and sampling (IDEAS.md).
+- **Details fixed in phase 56:**
+  - `IssuesDialog` selects an edge and closes itself, as it does for nodes; its `onSelectEdge` prop is gone and `TopBar` no longer wires it. `IssueList` keeps its optional `onSelectEdge`, so `OpenDialog`'s error list is unchanged.
+  - The e2e specs wait for Open's animated fit (the viewport transform equal in two reads 100 ms apart) before clicking measured canvas points.
+  - `e2e/simulation.spec.ts` has 9 tests covering section 9's list; it also checks that sign-map keys follow level edits and that the edge editor shares the section's open state. `export.spec.ts` checks the Signs checkbox (absent without signs; on by default; two `+` and one `±` badge in the SVG for `simulation.dag.yaml`; TikZ follows it; kept when the dialog reopens). `files.spec.ts` checks the changed Save as… notes.
+  - No other integration fixes were needed in phases 49–55.
 
 ## 9. Tests
 
@@ -3410,4 +3415,5 @@ Import and export (phases 31–40):
   - a JSON Schema for readers;
   - a lesson on simulation details;
   - simulation code generation and "Sample N datasets" stay in IDEAS.md.
+- **View after a reload:** the autosaved graph is not fitted to the view after a reload; it sits at its stored coordinates and can be partly hidden under the tool rail.
 - Everything in [IDEAS.md](IDEAS.md).
