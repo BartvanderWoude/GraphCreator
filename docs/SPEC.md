@@ -1238,7 +1238,7 @@ name: Surgical site infection
 nodes:
   - name: Diabetes
     var_type: categorical
-    levels: [no, yes]
+    levels: ["no", "yes"]
     shares: [0.88, 0.12]
     pos: [0, 0]
   - name: Wound class
@@ -1250,7 +1250,7 @@ nodes:
   - name: SSI
     role: outcome
     var_type: categorical
-    levels: [no, yes]
+    levels: ["no", "yes"]
     shares: [0.92, 0.08]
     form: linear
     pos: [300, 80]
@@ -2928,7 +2928,7 @@ Phases: 48. Parallel: single phase. Check after the wave: all checks; the browse
 
 Phases: 49. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except for the wording of the Save as… notes.
 
-#### Phase 49: Simulation contracts [x]
+#### Phase 49: Simulation contracts [x] (5413c84)
 
 - **Goal:** the types, helpers, store actions, UI state, texts and the section shell of 4.16 and 5.9 exist, so wave 23 can build the file format, the checks, the editors, the canvas and the images in parallel.
 - **Depends on:** phase 48.
@@ -2979,7 +2979,7 @@ Check after the wave: all checks, then in the browser:
 - the canvas shows the badges;
 - the Export dialog's Signs checkbox adds the badges to a PNG and a PDF.
 
-#### Phase 50: YAML read and write [ ]
+#### Phase 50: YAML read and write [x]
 
 - **Goal:** `.dag.yaml` files carry the simulation details, and every file `toYaml` writes is safe for YAML 1.1 readers.
 - **Depends on:** phase 49.
@@ -2994,6 +2994,14 @@ Check after the wave: all checks, then in the browser:
 - **Tests:** the `yaml.test.ts` additions (section 9).
 - **Done when:** all checks pass; both fixtures round-trip canonically; `smoking.dag.yaml` and every other existing fixture are written unchanged.
 - **Out of scope:** the semantic checks (phase 51), the UI.
+- **Details fixed in phase 50:**
+  - `simulation.dag.yaml` is the 4.16 example as `toYaml` writes it, so `levels: ["no", "yes"]` is double-quoted (the 4.16 example was corrected to match).
+  - `yaml11-names.dag.yaml` has no simulation details, only names and levels that need quoting, so the DOT, GML and networkx round-trip loops can use it; sign-map key quoting is covered by unit tests. Those loops skip `simulation.dag.yaml`, because the exchange formats leave simulation details out by design, and the new fixtures got SVG snapshots (landed with this phase).
+  - Any Zod problem inside `shares`, `form`, `sign` or `strength` gives one message for that field, with its path (`nodes.0.shares`) and line; repeats with the same path and message are merged. `.inf` and `.nan` in `shares` give the "list of numbers" error (Zod 4 rejects non-finite numbers), so the "not a finite number" case of 4.16 applies only to in-memory graphs.
+  - A sign map is read as a copy in file order; `{}` is read as no sign. On `single` and `none` edges a map is written in its stored order (there are no levels to sort by).
+  - `-0` in shares is written as `0`; other numbers as `yaml` writes them. A share below 1e-6 would be written in exponent form, which PyYAML reads as text; the editors round shares to 4 decimals, so this does not happen in practice.
+  - **Quoting:** after the document is built, every plain string scalar (keys included) that matches a YAML 1.1 non-string pattern is double-quoted. The patterns are PyYAML's bool, null, int, float and timestamp patterns, plus `y`/`Y`/`n`/`N`, `0o…` octals, a signed exponent, and `<<` and `=`. So a node named `Y` is written `"Y"` (PyYAML itself reads `Y` as text, but the YAML 1.1 type rules and other readers do not). Text that `yaml` already quotes keeps its own style. The helper is not exported and is tested through `toYaml`.
+  - `escapes.dag.yaml` was never canonical (`toYaml` writes its list items unquoted), so the "existing fixtures unchanged" test covers the top-level fixtures without `minimal.dag.yaml`.
 
 #### Phase 51: Validation [ ]
 

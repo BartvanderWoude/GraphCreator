@@ -48,21 +48,27 @@ export function isNumericType(t: VarType | undefined): boolean {
   return t !== undefined && (NUMERIC_TYPES as readonly string[]).includes(t)
 }
 
-/** One entry of the file's `nodes` list (spec 4.1). */
+/** One entry of the file's `nodes` list (spec 4.1, with the simulation details of 4.16). */
 const FileNodeSchema = z.strictObject({
   name: z.string(),
   role: z.enum(ROLES).default('other'),
   var_type: z.enum(VAR_TYPES).optional(),
   levels: z.array(z.string()).optional(),
+  shares: z.array(z.number()).optional(),
   description: z.string().optional(),
   unit: z.string().optional(),
+  form: z.enum(FORMS).optional(),
   pos: z.tuple([z.number(), z.number()]).optional(),
 })
 
-/** One entry of the file's `edges` list (spec 4.1). */
+/** One entry of the file's `edges` list (spec 4.1, with the simulation details of 4.16). */
 const FileEdgeSchema = z.strictObject({
   from: z.string(),
   to: z.string(),
+  sign: z
+    .union([z.enum(SIGNS), z.record(z.string(), z.enum(SIGNS))])
+    .optional(),
+  strength: z.enum(STRENGTHS).optional(),
   evidence: z.array(z.string()).default([]),
   note: z.string().optional(),
 })
@@ -70,7 +76,8 @@ const FileEdgeSchema = z.strictObject({
 /**
  * Zod schema of a GraphCreator YAML file (spec 4.1), the single source of truth for the file
  * shape. Unknown keys are errors at every level. Semantic rules (unique names, existing edge
- * endpoints, no cycles, levels/unit only for matching types) are checked by `parseYaml`.
+ * endpoints, no cycles, levels/unit only for matching types, shares) are checked by `parseYaml`
+ * through `validateGraph`.
  */
 export const GraphFileSchema = z.strictObject({
   schema: z.enum(KNOWN_SCHEMAS),

@@ -208,7 +208,9 @@ describe('round trip', () => {
 
   it('round-trips every valid YAML and dagitty fixture', () => {
     let count = 0
-    for (const text of Object.values(yamlFixtures)) {
+    for (const [path, text] of Object.entries(yamlFixtures)) {
+      // networkx JSON leaves the simulation details out (spec 4.16).
+      if (path.endsWith('/simulation.dag.yaml')) continue
       const result = parseYaml(text)
       if (!result.ok) continue
       expectRoundTrip(result.value)
@@ -220,7 +222,7 @@ describe('round trip', () => {
       expectRoundTrip(result.value)
       count++
     }
-    expect(count).toBe(7)
+    expect(count).toBe(8)
   })
 
   it('round-trips awkward names, every role and fractional positions', () => {

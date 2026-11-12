@@ -191,6 +191,8 @@ describe('toGml', () => {
 describe('parseGml round trip', () => {
   const graphs: [string, Graph][] = []
   for (const [path, text] of Object.entries(yamlFixtures)) {
+    // GML leaves the simulation details out (spec 4.16).
+    if (path.endsWith('/simulation.dag.yaml')) continue
     const result = parseYaml(text)
     if (result.ok) graphs.push([path, result.value])
   }
