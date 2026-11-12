@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are not implemented yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11; wave 22 (phase 49: contracts) is done. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -2924,11 +2924,11 @@ Phases: 48. Parallel: single phase. Check after the wave: all checks; the browse
   - `e2e/lessons.spec.ts` waits for the view to stop moving after a lesson starts or ends, because of the fit above. The pick feedback is the second `role="status"` in the panel (phase 42).
   - Browser walk-through (both themes): every lesson's steps 1–n were completed with the UI, including lesson 4's "Move a circle, then press Ctrl+Z" (the practice graph starts with an empty undo history, and the move is one undo step). No text in LESSONS.md needed a correction; only its Status line changed (implemented).
 
-### Wave 22: Simulation contracts [ ]
+### Wave 22: Simulation contracts [x]
 
 Phases: 49. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except for the wording of the Save as… notes.
 
-#### Phase 49: Simulation contracts [ ]
+#### Phase 49: Simulation contracts [x]
 
 - **Goal:** the types, helpers, store actions, UI state, texts and the section shell of 4.16 and 5.9 exist, so wave 23 can build the file format, the checks, the editors, the canvas and the images in parallel.
 - **Depends on:** phase 48.
@@ -2950,6 +2950,25 @@ Phases: 49. Parallel: single phase. Check after the wave: all checks. The app ru
   - the `graph.test.ts`, `graphStore.test.ts`, `uiStore.test.ts` and `copy.test.ts` additions (section 9).
 - **Done when:** all checks pass. A graph without simulation details saves byte-identically to before, and every existing YAML fixture still round-trips.
 - **Out of scope:** reading and writing the fields, the checks, the editors, the canvas and the images.
+- **Details fixed in phase 49:**
+  - `updateNode` drops `shares` whenever the resulting node has no `levels`: a type without levels, a patch with `levels: undefined`, or a node that never had levels. A patch that sets `levels` without `shares` drops `shares` even when the levels are unchanged. Shares are never rounded or clamped.
+  - `updateEdge` stores a sign map as a copy. `sign: undefined` and `{}` remove the key, and `strength: undefined` removes the strength.
+  - `equalShares(n)` returns `[]` for `n < 1`. The remainder is `round4(1 − share × (n − 1))`, so `equalShares(6)` is `[0.1667 ×5, 0.1665]`. `sharesTotal` is the plain sum; the UI and the validation round it themselves.
+  - **`setLevels`:**
+    - It throws an `Error` when `origin` and `levels` differ in length, which is a programming error. An unknown node id returns the graph unchanged.
+    - An empty new level list drops the shares (never `shares: []`). A share whose old index is out of range counts as 0.
+    - Sign-map keys that named no old level (stray keys from a file) are kept after the renamed level keys, in their original order, unless a renamed level key of the same name exists; then the level's value wins. Renamed keys come in the new level order.
+    - Maps are rebuilt with `Map` and `Object.fromEntries`, so level names such as `constructor` and `__proto__` are ordinary keys.
+    - Only edges incident to the node are rebuilt; other edges keep their objects.
+  - `signShape` treats an edge whose endpoints are both missing as `single`.
+  - **`SimulationSection` layout:**
+    - The trigger is a ghost button with `flex-1`, with the `InfoTip` beside it at the right end of the row, so no button sits inside another.
+    - The button has `-ml-2 px-2`, so its text lines up with the fields. Open, it keeps a transparent background.
+    - The chevron turns in 120 ms (none with reduced motion).
+    - The `set` marker is inside the button, so a marked, closed trigger's accessible name is "Simulation set". Tests that find it by name use a non-exact match or an unmarked section.
+    - The content is a `flex-col gap-4` column, and the root has `border-t border-border pt-4`.
+  - `copy.test.ts` checks the tooltip rules for every `FIELD_TIPS` entry: it starts with its term and a colon, has at most 30 words, and ends with a period.
+  - Until phase 52 switches NodeEditor to `setLevels`, a levels commit through `updateNode` drops the shares.
 
 ### Wave 23: Simulation parts [ ]
 

@@ -27,6 +27,19 @@ export const NUMERIC_TYPES = ['continuous', 'discrete'] as const
 export type Role = (typeof ROLES)[number]
 export type VarType = (typeof VAR_TYPES)[number]
 
+/** Whether an arrow raises or lowers its effect (spec 4.16). */
+export const SIGNS = ['positive', 'negative'] as const
+/** Size of an edge's effect, whatever its sign (spec 4.16). */
+export const STRENGTHS = ['small', 'medium', 'large'] as const
+/** How a node's causes combine (spec 4.16). */
+export const FORMS = ['linear', 'smooth', 'threshold'] as const
+
+export type Sign = (typeof SIGNS)[number]
+export type Strength = (typeof STRENGTHS)[number]
+export type Form = (typeof FORMS)[number]
+/** One sign for the edge, or one per level of its nominal end (keys are level names). */
+export type EdgeSign = Sign | Record<string, Sign>
+
 export function isLeveledType(t: VarType | undefined): boolean {
   return t !== undefined && (LEVELED_TYPES as readonly string[]).includes(t)
 }

@@ -32,29 +32,29 @@ const COPY: Record<
   yaml: {
     title: 'Save as GraphCreator',
     code: 'GraphCreator code',
-    note: 'The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence and positions.',
+    note: 'The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence, positions and simulation details.',
   },
   dagitty: {
     title: 'Save as dagitty',
     code: 'dagitty code',
-    note: 'Variable types, levels, descriptions, units and evidence are not included in dagitty files. Save as GraphCreator to keep them.',
+    note: 'Variable types, levels, descriptions, units and evidence are not included in dagitty files. Simulation details are not included either. Save as GraphCreator to keep them.',
     detailsNote:
-      'Variable types, levels, descriptions, units and evidence are added as gc.* attributes. dagitty keeps them but does not use them.',
+      'Variable types, levels, descriptions, units and evidence are added as gc.* attributes. dagitty keeps them but does not use them. Simulation details are not included.',
   },
   gml: {
     title: 'Save as GML',
     code: 'GML code',
-    note: 'The GML file keeps roles, variable types, levels, descriptions, units, evidence and positions. Node labels are names safe for R and Python, such as Maternal_smoking; DoWhy and networkx use them as variable names.',
+    note: 'The GML file keeps roles, variable types, levels, descriptions, units, evidence and positions, but not simulation details. Node labels are names safe for R and Python, such as Maternal_smoking; DoWhy and networkx use them as variable names.',
   },
   dot: {
     title: 'Save as DOT',
     code: 'DOT code',
-    note: 'The DOT file keeps roles, variable types, levels, descriptions, units, evidence and positions as attributes, and the role colors for Graphviz. Node ids are names safe for R and Python, such as Maternal_smoking.',
+    note: 'The DOT file keeps roles, variable types, levels, descriptions, units, evidence and positions as attributes, and the role colors for Graphviz, but not simulation details. Node ids are names safe for R and Python, such as Maternal_smoking.',
   },
   networkx: {
     title: 'Save as networkx JSON',
     code: 'networkx JSON code',
-    note: 'The networkx JSON keeps everything. Read it in Python with networkx.node_link_graph(data, edges="edges"). Node ids are names safe for R and Python, such as Maternal_smoking.',
+    note: 'The networkx JSON keeps everything except simulation details. Read it in Python with networkx.node_link_graph(data, edges="edges"). Node ids are names safe for R and Python, such as Maternal_smoking.',
   },
   bnlearn: {
     title: 'Save as bnlearn',

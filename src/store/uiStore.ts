@@ -106,6 +106,34 @@ export function writeDagittyDetails(
   }
 }
 
+/** localStorage key holding whether the editors' Simulation section is open (spec 5.9). */
+export const SIMULATION_OPEN_KEY = 'graphcreator:simulation-open'
+
+/** The stored Simulation section state: true only for `'1'`. Null or failing storage gives false. */
+export function readSimulationOpen(
+  storage: Pick<Storage, 'getItem'> | null,
+): boolean {
+  if (storage === null) return false
+  try {
+    return storage.getItem(SIMULATION_OPEN_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+/** Stores the Simulation section state as `'1'` or `'0'`; null or failing storage is ignored. */
+export function writeSimulationOpen(
+  storage: Pick<Storage, 'setItem'> | null,
+  open: boolean,
+): void {
+  if (storage === null) return
+  try {
+    storage.setItem(SIMULATION_OPEN_KEY, open ? '1' : '0')
+  } catch {
+    // Storage full or blocked: the section is closed again on the next visit.
+  }
+}
+
 /** Index of the last welcome slide (four slides, spec 5.7.9). */
 const LAST_WELCOME_SLIDE = 3
 
@@ -144,6 +172,10 @@ export interface UiState {
   dagittyDetails: boolean
   /** Also writes it with `writeDagittyDetails`. */
   setDagittyDetails(on: boolean): void
+  /** The editors' Simulation section is open (spec 5.9); initial value from `readSimulationOpen`. */
+  simulationOpen: boolean
+  /** Also writes it with `writeSimulationOpen`. */
+  setSimulationOpen(open: boolean): void
   /** Lessons dialog visibility (spec 5.7.11); default false. */
   lessonsOpen: boolean
   openLessons(): void
@@ -160,6 +192,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   analysisOn: readAnalysisOn(safeLocalStorage()),
   hoverNodeIds: [],
   dagittyDetails: readDagittyDetails(safeLocalStorage()),
+  simulationOpen: readSimulationOpen(safeLocalStorage()),
   lessonsOpen: false,
 
   setTool(tool) {
@@ -205,6 +238,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
   setDagittyDetails(on) {
     writeDagittyDetails(safeLocalStorage(), on)
     set({ dagittyDetails: on })
+  },
+
+  setSimulationOpen(open) {
+    writeSimulationOpen(safeLocalStorage(), open)
+    set({ simulationOpen: open })
   },
 
   openLessons() {

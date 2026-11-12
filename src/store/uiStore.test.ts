@@ -6,9 +6,12 @@ import {
   DAGITTY_DETAILS_KEY,
   readAnalysisOn,
   readDagittyDetails,
+  readSimulationOpen,
+  SIMULATION_OPEN_KEY,
   useUiStore,
   writeAnalysisOn,
   writeDagittyDetails,
+  writeSimulationOpen,
 } from './uiStore'
 
 const ui = () => useUiStore.getState()
@@ -237,5 +240,45 @@ describe('dagitty details choice', () => {
   it('writeDagittyDetails ignores null or throwing storage', () => {
     expect(() => writeDagittyDetails(null, true)).not.toThrow()
     expect(() => writeDagittyDetails(throwing, true)).not.toThrow()
+  })
+})
+
+describe('Simulation section state (phase 49)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('is closed by default and for null, throwing or unknown storage', () => {
+    expect(SIMULATION_OPEN_KEY).toBe('graphcreator:simulation-open')
+    expect(ui().simulationOpen).toBe(false)
+    expect(readSimulationOpen(null)).toBe(false)
+    expect(readSimulationOpen(throwing)).toBe(false)
+    expect(readSimulationOpen(memoryStorage())).toBe(false)
+    expect(
+      readSimulationOpen(memoryStorage({ [SIMULATION_OPEN_KEY]: 'true' })),
+    ).toBe(false)
+    expect(
+      readSimulationOpen(memoryStorage({ [SIMULATION_OPEN_KEY]: '0' })),
+    ).toBe(false)
+    expect(
+      readSimulationOpen(memoryStorage({ [SIMULATION_OPEN_KEY]: '1' })),
+    ).toBe(true)
+  })
+
+  it('setSimulationOpen writes 1 and 0', () => {
+    const storage = memoryStorage()
+    vi.stubGlobal('window', { localStorage: storage })
+    ui().setSimulationOpen(true)
+    expect(ui().simulationOpen).toBe(true)
+    expect(storage.data.get(SIMULATION_OPEN_KEY)).toBe('1')
+    expect(readSimulationOpen(storage)).toBe(true)
+    ui().setSimulationOpen(false)
+    expect(ui().simulationOpen).toBe(false)
+    expect(storage.data.get(SIMULATION_OPEN_KEY)).toBe('0')
+  })
+
+  it('writeSimulationOpen ignores null or throwing storage', () => {
+    expect(() => writeSimulationOpen(null, true)).not.toThrow()
+    expect(() => writeSimulationOpen(throwing, true)).not.toThrow()
   })
 })

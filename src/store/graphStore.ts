@@ -20,6 +20,7 @@ import { autoLayout } from '@/model/layout'
 import { nodeDiameter } from '@/model/nodeSize'
 import type { Result } from '@/model/result'
 import type { Role } from '@/model/schema'
+import { setLevels } from '@/model/simulation'
 import { lessonEvent } from './lessonEvents'
 
 /** Most graphs kept on `past` and on `future` (spec 4.10). */
@@ -50,9 +51,15 @@ export interface GraphState {
   moveNodes(moves: { id: string; pos: Position }[]): void
   /** Adds the edge when `canAddEdge` allows it; returns the check either way. */
   connect(source: string, target: string): EdgeCheck
+  /**
+   * Replaces a node's levels; shares and sign-map keys follow them (spec 4.16, `setLevels` in
+   * `simulation.ts`). `origin[i]` is the old index of new item `i`, or null for a new item. One
+   * undo step.
+   */
+  setLevels(nodeId: string, levels: string[], origin: (number | null)[]): void
   updateEdge(
     edgeId: string,
-    patch: Partial<Pick<GEdge, 'evidence' | 'note'>>,
+    patch: Partial<Pick<GEdge, 'evidence' | 'note' | 'sign' | 'strength'>>,
   ): void
   /** Removes nodes (with their incident edges) and edges; clears the selection if it was removed. */
   removeSelection(nodeIds: string[], edgeIds: string[]): void
@@ -198,6 +205,10 @@ export const useGraphStore = create<GraphState>()((set, get) => {
 
     updateNode(nodeId, patch) {
       commit(updateNode(get().graph, nodeId, patch))
+    },
+
+    setLevels(nodeId, levels, origin) {
+      commit(setLevels(get().graph, nodeId, levels, origin))
     },
 
     moveNode(nodeId, pos) {

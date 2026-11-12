@@ -23,6 +23,8 @@ export type FloatingEdgeData = {
   evidenceCount: number
   /** On an open causal or biasing path; only while `analysisOn.paths` and the paths are not truncated. */
   path?: 'causal' | 'biasing'
+  /** The edge's sign badge (spec 5.9), from `signBadge(edge.sign)`; undefined when it has no sign. */
+  sign?: 'positive' | 'negative' | 'mixed'
 }
 
 export type CircleFlowNode = Node<CircleNodeData, 'circle'>

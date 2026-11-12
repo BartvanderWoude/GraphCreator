@@ -7,6 +7,8 @@ export interface Issue {
   path?: string
   /** Internal id of the node the issue is about (set on `validateGraph` node warnings), so the UI can select it. */
   nodeId?: string
+  /** Internal id of the edge the issue is about (spec 4.16), so the UI can select it. */
+  edgeId?: string
 }
 
 /** Outcome of every parser and every operation that can fail. */
