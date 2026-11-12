@@ -10,6 +10,7 @@ import type { GNode, Graph } from '@/model/graph'
 import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES, type ExportPalette } from '@/model/palette'
 import { ROLES, type Role } from '@/model/schema'
+import { signBadge } from '@/model/simulation'
 
 /** Space around the nodes' bounding box, in px (re-exported by `imageExport.ts`). */
 export const EXPORT_MARGIN = 24
@@ -70,6 +71,12 @@ export interface SceneLegend {
   items: { role: Role; label: string; swatch: SceneCircle; text: SceneText }[]
 }
 
+/** A sign badge on an edge (4.16 "Images"): a small circle and its glyph, `+`, `−` or `±`. */
+export interface SceneBadge {
+  circle: SceneCircle
+  text: SceneText
+}
+
 /** Everything a picture shows. The image's top-left is 0,0 and y grows downward. */
 export interface Scene {
   title: string
@@ -78,6 +85,8 @@ export interface Scene {
   background: string
   /** In drawing order. */
   edges: SceneEdge[]
+  /** Sign badges (only with the `signs` option), drawn after the edges and before the circles. */
+  badges: SceneBadge[]
   circles: SceneCircle[]
   /** The wrapped name lines. */
   texts: SceneText[]
@@ -104,6 +113,15 @@ const LINE_PITCH = 16
 const BASELINE = 0.375
 /** The legend swatch's outline width. */
 const SWATCH_LINE = 1.5
+/** Sign badge (4.16 "Images", 5.9 "Canvas"): a 16 px circle with a 1 px line, 12 px glyph. */
+const BADGE_RADIUS = 8
+const BADGE_LINE = 1
+const BADGE_FONT = 12
+const BADGE_GLYPHS = {
+  positive: '+',
+  negative: '\u2212',
+  mixed: '\u00b1',
+} as const
 /** Free space the legend box keeps from circles and edges when it sits in a corner. */
 const LEGEND_CLEARANCE = 8
 
@@ -162,6 +180,37 @@ function segmentHitsBox(
 }
 
 /**
+ * A sign badge centred on `x`, `y`: the circle's 1 px line lies inside its 8 px radius, as the
+ * canvas draws a 16 px circle with a border, and the glyph's baseline follows the node text rule.
+ */
+function badgeAt(
+  x: number,
+  y: number,
+  glyph: string,
+  palette: ExportPalette,
+): SceneBadge {
+  return {
+    circle: {
+      cx: x,
+      cy: y,
+      r: BADGE_RADIUS - BADGE_LINE / 2,
+      fill: palette.background,
+      stroke: palette.edge,
+      strokeWidth: BADGE_LINE,
+    },
+    text: {
+      x,
+      y: y + BADGE_FONT * BASELINE,
+      text: glyph,
+      size: BADGE_FONT,
+      weight: 500,
+      color: palette.edge,
+      anchor: 'middle',
+    },
+  }
+}
+
+/**
  * The legend box at `x`, `y`: one row per role in `roles`, a swatch circle and the role's label,
  * the label's baseline placed as CSS would centre 12 px text in the row.
  */
@@ -210,7 +259,8 @@ function legendAt(
 /**
  * The scene for `graph` (4.11): the canvas geometry moved so the nodes' bounding box starts at
  * `EXPORT_MARGIN`, coloured by `opts.theme`, with the legend in the first free corner of the
- * bounding box or beside it.
+ * bounding box or beside it. With `opts.signs`, each drawn edge whose `signBadge` is defined gets
+ * a badge halfway between its start and its arrowhead's tip.
  */
 export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
   const palette = EXPORT_PALETTES[opts.theme ?? 'light']
@@ -220,6 +270,7 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
     height: 2 * EXPORT_MARGIN,
     background: palette.background,
     edges: [],
+    badges: [],
     circles: [],
     texts: [],
     nodeIds: [],
@@ -277,6 +328,12 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
         [bx - px, by - py],
       ],
     })
+    const badge = opts.signs ? signBadge(edge.sign) : undefined
+    if (badge) {
+      scene.badges.push(
+        badgeAt((sx + tx) / 2, (sy + ty) / 2, BADGE_GLYPHS[badge], palette),
+      )
+    }
   }
 
   for (const node of graph.nodes) {

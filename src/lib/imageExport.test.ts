@@ -11,6 +11,7 @@ import {
   toSvg,
   toTikz,
 } from './imageExport'
+import { imageScene } from './imageScene'
 
 const fixtures: Record<string, string> = import.meta.glob(
   '../model/__fixtures__/smoking.dag.yaml',
@@ -340,6 +341,84 @@ describe('theme and legend', () => {
       '\\node[anchor=west, inner sep=0pt, text=gcText, font=\\sffamily\\footnotesize] at (384,-2) {Exposure};',
     )
     expect(tikz).toContain('at (384,18) {Other};')
+  })
+})
+
+describe('sign badges', () => {
+  /** SES → Maternal smoking positive, Maternal smoking → Birth weight negative. */
+  function signed(): Graph {
+    const g = smoking()
+    g.edges[0].sign = 'positive'
+    g.edges[1].sign = { a: 'negative' }
+    g.edges[2].sign = { a: 'negative', b: 'positive' }
+    return g
+  }
+
+  it('draws a circle and a glyph per signed edge, after the edges and before the nodes', () => {
+    const svg = toSvg(signed(), { signs: true })
+    const light = EXPORT_PALETTES.light
+    expect(count(svg, /<circle /g)).toBe(4 + 3)
+    expect(svg).toContain(
+      `fill="${light.background}" stroke="${light.edge}" stroke-width="1"/>`,
+    )
+    expect(svg).toContain(`fill="${light.edge}">+</text>`)
+    expect(svg).toContain(`fill="${light.edge}">\u2212</text>`)
+    expect(svg).toContain(`fill="${light.edge}">\u00b1</text>`)
+    expect(svg).toContain(
+      'font-size="12" font-weight="500" text-anchor="middle">',
+    )
+    const first = svg.indexOf('r="7.5"')
+    expect(first).toBeGreaterThan(svg.lastIndexOf('<path '))
+    expect(svg.lastIndexOf('r="7.5"')).toBeLessThan(
+      svg.indexOf('font-size="13"'),
+    )
+    expect(balanced(svg)).toBe(true)
+    const dark = toSvg(signed(), { signs: true, theme: 'dark' })
+    expect(dark).toContain(
+      `fill="${EXPORT_PALETTES.dark.background}" stroke="${EXPORT_PALETTES.dark.edge}" stroke-width="1"/>`,
+    )
+    expect(dark).toContain(`fill="${EXPORT_PALETTES.dark.edge}">+</text>`)
+  })
+
+  it('leaves the SVG unchanged without the option or without signs', () => {
+    expect(toSvg(signed())).toBe(toSvg(smoking()))
+    expect(toSvg(signed(), { signs: false })).toBe(toSvg(smoking()))
+    expect(toSvg(smoking(), { signs: true, legend: true })).toBe(
+      toSvg(smoking(), { legend: true }),
+    )
+    expect(svgSize(signed(), { signs: true })).toEqual(svgSize(smoking()))
+  })
+
+  it('writes a TikZ badge node per signed edge after the edges', () => {
+    const g = signed()
+    const tikz = toTikz(g, { signs: true })
+    const badge =
+      /^\\node\[circle, draw=gcEdge, fill=white, line width=0\.75pt, minimum size=12pt, inner sep=0pt, font=\\sffamily\\scriptsize, text=gcEdge\] at \([-\d.]+,[-\d.]+\) \{(.*)\};$/gm
+    expect([...tikz.matchAll(badge)].map((m) => m[1])).toEqual([
+      '$+$',
+      '$-$',
+      '$\\pm$',
+    ])
+    expect(tikz.indexOf('fill=white, line width=0.75pt')).toBeGreaterThan(
+      tikz.lastIndexOf('\\draw['),
+    )
+    // At the scene's badge, in canvas coordinates: SES (150, -120) and Maternal smoking (0, 0).
+    const scene = imageScene(g, { signs: true })
+    const ox = 0 - EXPORT_MARGIN
+    const oy = -120 - EXPORT_MARGIN
+    const round = (n: number) => Math.round(n * 100) / 100
+    const { cx, cy } = scene.badges[0].circle
+    expect(tikz).toContain(`at (${round(cx + ox)},${round(cy + oy)}) {$+$};`)
+    // Without signs, the badge lines are the only difference.
+    const without = tikz
+      .split('\n')
+      .filter((line) => !line.includes('minimum size=12pt'))
+      .join('\n')
+    expect(without).toBe(toTikz(g))
+    expect(toTikz(g, { signs: false })).toBe(toTikz(g))
+    expect(toTikz(smoking(), { signs: true, legend: true })).toBe(
+      toTikz(smoking(), { legend: true }),
+    )
   })
 })
 

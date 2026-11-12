@@ -33,6 +33,7 @@ import {
 } from '@/lib/imageExport'
 import { toPdf } from '@/lib/pdfExport'
 import type { Graph } from '@/model/graph'
+import { signBadge } from '@/model/simulation'
 import { useGraphStore } from '@/store/graphStore'
 import { lessonEvent } from '@/store/lessonEvents'
 
@@ -54,7 +55,10 @@ type Scale = (typeof SCALES)[number]
 /** CSS pixels to PDF points (96 to 72 per inch, spec 4.11 "PDF"). */
 const POINTS_PER_PIXEL = 0.75
 
-/** What the dialog shows for the graph read when it opened and the current Theme and Legend. */
+/**
+ * What the dialog shows for the graph read when it opened and the current Theme, Legend and
+ * Signs.
+ */
 interface Picture {
   svg: string
   tikz: string
@@ -62,14 +66,24 @@ interface Picture {
   height: number
 }
 
-function picture(graph: Graph, theme: ImageTheme, legend: boolean): Picture {
-  const { width, height } = svgSize(graph, { theme, legend })
+function picture(
+  graph: Graph,
+  theme: ImageTheme,
+  legend: boolean,
+  signs: boolean,
+): Picture {
+  const { width, height } = svgSize(graph, { theme, legend, signs })
   return {
-    svg: toSvg(graph, { theme, legend, fontDataUrl: plexSans500 }),
-    tikz: toTikz(graph, { legend }),
+    svg: toSvg(graph, { theme, legend, signs, fontDataUrl: plexSans500 }),
+    tikz: toTikz(graph, { legend, signs }),
     width,
     height,
   }
+}
+
+/** True when at least one edge would show a sign badge (5.9 "Export dialog"). */
+function hasSigns(graph: Graph): boolean {
+  return graph.edges.some((edge) => signBadge(edge.sign) !== undefined)
 }
 
 function errorMessage(e: unknown): string {
@@ -79,8 +93,9 @@ function errorMessage(e: unknown): string {
 /**
  * Exports the graph as an SVG, PNG, PDF or TikZ image (spec 4.11, 5.4 "Export…"). The picture is
  * drawn from the graph data in the chosen theme (TikZ is always light), optionally with a legend
- * of the roles in use, and with the IBM Plex Sans font embedded in SVG and PNG. Format, Theme,
- * Scale and Legend keep their choice while the page is open. While a lesson runs, a successful
+ * of the roles in use and the edges' sign badges, and with the IBM Plex Sans font embedded in SVG
+ * and PNG. Format, Theme, Scale, Legend and Signs keep their choice while the page is open; Signs
+ * shows only when an edge has a sign. While a lesson runs, a successful
  * Copy or Download records `export-copied` or `export-downloaded` with the format (spec 4.8).
  */
 export function ExportDialog({
@@ -93,6 +108,7 @@ export function ExportDialog({
   const [format, setFormat] = useState<ImageFormat>('svg')
   const [theme, setTheme] = useState<ImageTheme>('light')
   const [legend, setLegend] = useState(false)
+  const [signs, setSigns] = useState(true)
   const [scale, setScale] = useState<Scale>(2)
   const [graph, setGraph] = useState<Graph | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
@@ -104,9 +120,10 @@ export function ExportDialog({
   }
 
   const empty = !graph || graph.nodes.length === 0
+  const signed = graph !== null && hasSigns(graph)
   const data = useMemo(
-    () => (graph && !empty ? picture(graph, theme, legend) : null),
-    [graph, empty, theme, legend],
+    () => (graph && !empty ? picture(graph, theme, legend, signs) : null),
+    [graph, empty, theme, legend, signs],
   )
   const disabled = data === null
 
@@ -136,7 +153,7 @@ export function ExportDialog({
         downloadBlob(
           filename,
           new Blob(
-            [toPdf(graph, { theme, legend }) as Uint8Array<ArrayBuffer>],
+            [toPdf(graph, { theme, legend, signs }) as Uint8Array<ArrayBuffer>],
             {
               type: 'application/pdf',
             },
@@ -243,6 +260,16 @@ export function ExportDialog({
             />
             <Label htmlFor="export-legend">Legend</Label>
           </div>
+          {signed && (
+            <div className="flex h-8 items-center gap-2">
+              <Checkbox
+                id="export-signs"
+                checked={signs}
+                onCheckedChange={(checked) => setSigns(checked === true)}
+              />
+              <Label htmlFor="export-signs">Signs</Label>
+            </div>
+          )}
           {data && format === 'png' && (
             <p className="pb-1.5 text-[13px] text-muted-foreground">
               {data.width * scale} × {data.height * scale} pixels

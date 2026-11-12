@@ -284,4 +284,97 @@ describe('imageScene', () => {
       circles: [],
     })
   })
+
+  describe('sign badges', () => {
+    /** A → B positive, C → B negative, A → C mixed per level, D → B unsigned. */
+    function signed(): Graph {
+      const g = graph(
+        [
+          node('A', 0, 0),
+          node('B', 300, 0),
+          node('C', 0, 200),
+          node('D', 300, 200),
+        ],
+        [
+          ['A', 'B'],
+          ['C', 'B'],
+          ['A', 'C'],
+          ['D', 'B'],
+        ],
+      )
+      g.edges[0].sign = 'positive'
+      g.edges[1].sign = 'negative'
+      g.edges[2].sign = { x: 'positive', y: 'negative' }
+      return g
+    }
+
+    it('has none without the option', () => {
+      expect(imageScene(signed()).badges).toEqual([])
+      expect(imageScene(signed(), { signs: false }).badges).toEqual([])
+      expect(imageScene(smoking(), { signs: true }).badges).toEqual([])
+    })
+
+    it('puts one badge per signed edge halfway between its start and its tip', () => {
+      const scene = imageScene(signed(), { signs: true })
+      expect(scene.badges.map((b) => b.text.text)).toEqual([
+        '+',
+        '\u2212',
+        '\u00b1',
+      ])
+      scene.badges.forEach((badge, i) => {
+        const e = scene.edges[i]
+        const x = (e.x1 + e.head[0][0]) / 2
+        const y = (e.y1 + e.head[0][1]) / 2
+        const light = EXPORT_PALETTES.light
+        expect(badge.circle).toEqual({
+          cx: x,
+          cy: y,
+          r: 7.5,
+          fill: light.background,
+          stroke: light.edge,
+          strokeWidth: 1,
+        })
+        expect(badge.text).toEqual({
+          x,
+          y: y + 4.5,
+          text: badge.text.text,
+          size: 12,
+          weight: 500,
+          color: light.edge,
+          anchor: 'middle',
+        })
+      })
+      // A → B starts at A's rim (x 88) and ends 2 px before B's rim (x 356 - 32 - 2), at y 56.
+      expect(scene.badges[0].circle).toMatchObject({ cx: 205, cy: 56 })
+    })
+
+    it('uses the dark palette in the dark theme', () => {
+      const dark = imageScene(signed(), { signs: true, theme: 'dark' })
+      const light = imageScene(signed(), { signs: true })
+      expect(shapes(dark)).toEqual(shapes(light))
+      const palette = EXPORT_PALETTES.dark
+      for (const badge of dark.badges) {
+        expect(badge.circle.fill).toBe(palette.background)
+        expect(badge.circle.stroke).toBe(palette.edge)
+        expect(badge.text.color).toBe(palette.edge)
+      }
+    })
+
+    it('changes nothing else, and nothing at all for a graph without signs', () => {
+      const plain = imageScene(signed(), { legend: true })
+      const scene = imageScene(signed(), { legend: true, signs: true })
+      expect({ ...scene, badges: [] }).toEqual(plain)
+      expect(imageScene(smoking(), { legend: true, signs: true })).toEqual(
+        imageScene(smoking(), { legend: true }),
+      )
+    })
+
+    it('skips an empty sign map', () => {
+      const g = signed()
+      g.edges[0].sign = {}
+      expect(
+        imageScene(g, { signs: true }).badges.map((b) => b.text.text),
+      ).toEqual(['\u2212', '\u00b1'])
+    })
+  })
 })

@@ -7,6 +7,7 @@ import type { ImageOptions } from '@/lib/imageExport'
 import {
   imageScene,
   type Scene,
+  type SceneBadge,
   type SceneCircle,
   type SceneEdge,
   type SceneLegend,
@@ -175,7 +176,19 @@ function legendOps(legend: SceneLegend): string[] {
   return ops
 }
 
-/** The page's content stream: the flip, the background, edges, circles, names and legend. */
+/**
+ * A sign badge: its circle, then its glyph. Helvetica's WinAnsi set has no minus sign (U+2212),
+ * so `−` is drawn as the en dash, which has about its width and height.
+ */
+function badgeOps(badge: SceneBadge): string[] {
+  const text = badge.text.text.replace(/\u2212/g, '\u2013')
+  return [...circleOps(badge.circle), ...textOps({ ...badge.text, text })]
+}
+
+/**
+ * The page's content stream: the flip, the background, edges, sign badges, circles, names and
+ * legend.
+ */
 function contentStream(scene: Scene): string {
   const ops = [
     `${PX_TO_PT} 0 0 -${PX_TO_PT} 0 ${num(scene.height * PX_TO_PT)} cm`,
@@ -183,6 +196,7 @@ function contentStream(scene: Scene): string {
     `0 0 ${nums(scene.width, scene.height)} re f`,
   ]
   for (const edge of scene.edges) ops.push(...edgeOps(edge))
+  for (const badge of scene.badges) ops.push(...badgeOps(badge))
   for (const circle of scene.circles) ops.push(...circleOps(circle))
   for (const text of scene.texts) ops.push(...textOps(text))
   if (scene.legend) ops.push(...legendOps(scene.legend))

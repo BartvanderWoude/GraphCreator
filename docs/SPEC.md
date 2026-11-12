@@ -3081,7 +3081,7 @@ Check after the wave: all checks, then in the browser:
   - **Strength:** the select's `—` value is the sentinel `none`; the trigger shows only the label, and each option's description is attached with `aria-describedby`, as in `RolePicker`.
   - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stays inside `IssuesDialog`; the edge wiring is in `TopBar`.
 
-#### Phase 54: Canvas sign badge [x]
+#### Phase 54: Canvas sign badge [x] (4d4a014)
 
 - **Goal:** signed edges show their badge on the canvas.
 - **Depends on:** phase 49.
@@ -3101,7 +3101,7 @@ Check after the wave: all checks, then in the browser:
   - On hover the badge fill becomes `--muted`, as the chip's does. Its colours change in 120 ms (0 ms with reduced motion, through the global rule in `index.css`).
   - The badge ignores path marking: it stays `--edge` on a causal or biasing path unless the edge is selected.
 
-#### Phase 55: Image signs and reader doc [ ]
+#### Phase 55: Image signs and reader doc [x]
 
 - **Goal:** exported pictures can show sign badges, and readers have [FORMAT.md](FORMAT.md).
 - **Depends on:** phase 49.
@@ -3118,6 +3118,19 @@ Check after the wave: all checks, then in the browser:
 - **Tests:** the `imageScene.test.ts` and `imageExport.test.ts` additions, and a `pdfExport.test.ts` case (section 9).
 - **Done when:** all checks pass; FORMAT.md's example parses with `parseYaml` (checked by hand or by a test reading the fixture it quotes).
 - **Out of scope:** the canvas badge (phase 54).
+- **Details fixed in phase 55:**
+  - The badge circle is drawn with `r` 7.5 and a 1 px line, so its outer radius is 8 (the canvas's 16 px badge, outline inside as for nodes). It sits halfway between the edge's start and its arrowhead's tip; the glyph's baseline is 4.5 px below the centre (0.375 × 12, the node text rule).
+  - `Scene.badges` is `SceneBadge[]` (`{ circle, text }`), always present (`[]` without badges). Badges do not affect the legend corner choice; edges already keep the legend 8 px away.
+  - SVG: the badges get their own `<g>` (12 px, weight 500, `text-anchor="middle"`) right after the edges, written only when there are badges, so existing output is byte-identical.
+  - PDF: Helvetica's WinAnsi set has no minus sign (U+2212), so badges draw `−` as the en dash (WinAnsi 150). `−` in node names still becomes `?`.
+  - TikZ: badge nodes come after the edges and before the legend.
+  - Export dialog: Signs follows Legend (`id="export-signs"`) and is passed to `svgSize`, `toSvg`, `toTikz` and `toPdf`.
+  - FORMAT.md adds these reader rules:
+    - a sign that does not fit the edge's shape (any sign between two nominal nodes included) counts as missing;
+    - a key for the reference level is ignored;
+    - shares whose sum is 0 count as missing, and shares are read with `float()`;
+    - `discrete` means whole numbers, such as a count.
+  - FORMAT.md's example is the file as GraphCreator writes it, so `levels: ["no", "yes"]` is quoted (YAML 1.1 safety); the 4.16 example was corrected to match. `docs/` is in `.prettierignore`, which keeps the example's flow maps byte-identical to `simulation.dag.yaml`.
 
 ### Wave 24: Simulation integration [ ]
 
