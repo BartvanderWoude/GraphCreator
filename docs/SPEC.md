@@ -3003,7 +3003,7 @@ Check after the wave: all checks, then in the browser:
   - **Quoting:** after the document is built, every plain string scalar (keys included) that matches a YAML 1.1 non-string pattern is double-quoted. The patterns are PyYAML's bool, null, int, float and timestamp patterns, plus `y`/`Y`/`n`/`N`, `0o…` octals, a signed exponent, and `<<` and `=`. So a node named `Y` is written `"Y"` (PyYAML itself reads `Y` as text, but the YAML 1.1 type rules and other readers do not). Text that `yaml` already quotes keeps its own style. The helper is not exported and is tested through `toYaml`.
   - `escapes.dag.yaml` was never canonical (`toYaml` writes its list items unquoted), so the "existing fixtures unchanged" test covers the top-level fixtures without `minimal.dag.yaml`.
 
-#### Phase 51: Validation [x]
+#### Phase 51: Validation [x] (aee3e3a)
 
 - **Goal:** `validateGraph` gives the errors and warnings of 4.16 "Validation".
 - **Depends on:** phase 49.
@@ -3032,7 +3032,7 @@ Check after the wave: all checks, then in the browser:
     - a `parent-levels` map that gives every compared level the same sign gets no warning.
   - Node messages use the trimmed name and edge messages use `node.name`, as the existing messages do.
 
-#### Phase 52: Node simulation editor [ ]
+#### Phase 52: Node simulation editor [x]
 
 - **Goal:** the node editor's Simulation section edits shares and form, and levels keep their shares.
 - **Depends on:** phase 49.
@@ -3045,6 +3045,14 @@ Check after the wave: all checks, then in the browser:
 - **Tests:** `src/components` has no unit tests; phase 56 tests the editor end to end. Check it in the browser: add shares, change one, add, rename, move and remove a level, and undo.
 - **Done when:** all checks pass and the browser check works in both themes.
 - **Out of scope:** the edge editor, the canvas.
+- **Details fixed in phase 52:**
+  - `ListEditor` origins count from the list as last committed, not the list at mount. After each commit every kept row's origin becomes its new index, and rows dropped as empty become `null`, so origins always index the current `items`, as `setLevels` expects. A commit whose values match the last one but whose origins are out of order (two equal levels swapped) still calls `onCommit`.
+  - Shares show for a categorical or ordinal node with at least two levels, or with one level when the node already has shares, so shares kept after removing levels down to one stay visible and removable.
+  - A share input shows the stored value except while being typed in, so it follows level moves without a remount. Native number spinners are hidden so 64 px fits two decimals; a `%` in `--muted-foreground` follows the input. Each row shows the level name truncated (`flex-1`) with the input at the right.
+  - The total line sits under the full-width bar (the 320 px panel has no room beside it). It is `--muted-foreground` when fine and `--warning-fg` when off by more than 0.001, with `aria-live="polite"`.
+  - Bar segments for shares of 0 are left out, so there are no doubled gaps; with a total of 0 the bar is an empty `--muted` track. Segment colours are `bg-primary/35`, `/55`, `/75` and `/95`, with `rounded-sm` corners.
+  - The Form field's visible label is "Form", with the info tip "About functional form" (the Type / "Variable type" pattern); the trigger's `aria-label` is "Functional form". The "none" option's internal value is `'none'`.
+  - Shares is a `role="group"` labelled "Shares" with the "About shares" tip, as Levels is. The rows are a `<ul aria-label="Share list">`. Remove shares is a small ghost button aligned with the fields (`-ml-2 px-2`).
 
 #### Phase 53: Edge simulation editor [ ]
 
