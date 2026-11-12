@@ -3054,7 +3054,7 @@ Check after the wave: all checks, then in the browser:
   - The Form field's visible label is "Form", with the info tip "About functional form" (the Type / "Variable type" pattern); the trigger's `aria-label` is "Functional form". The "none" option's internal value is `'none'`.
   - Shares is a `role="group"` labelled "Shares" with the "About shares" tip, as Levels is. The rows are a `<ul aria-label="Share list">`. Remove shares is a small ghost button aligned with the fields (`-ml-2 px-2`).
 
-#### Phase 53: Edge simulation editor [x]
+#### Phase 53: Edge simulation editor [x] (edf6c26)
 
 - **Goal:** the edge editor's Simulation section edits sign and strength, and edge issues select their edge.
 - **Depends on:** phase 49.
@@ -3081,7 +3081,7 @@ Check after the wave: all checks, then in the browser:
   - **Strength:** the select's `—` value is the sentinel `none`; the trigger shows only the label, and each option's description is attached with `aria-describedby`, as in `RolePicker`.
   - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stays inside `IssuesDialog`; the edge wiring is in `TopBar`.
 
-#### Phase 54: Canvas sign badge [ ]
+#### Phase 54: Canvas sign badge [x]
 
 - **Goal:** signed edges show their badge on the canvas.
 - **Depends on:** phase 49.
@@ -3094,6 +3094,12 @@ Check after the wave: all checks, then in the browser:
 - **Tests:** none at unit level; phase 56 adds e2e checks. Check in the browser: a positive, a negative and a mixed edge, with and without evidence, selected and not, in both themes.
 - **Done when:** all checks pass.
 - **Out of scope:** images (phase 55).
+- **Details fixed in phase 54:**
+  - The badge and the evidence chip sit in one row (`.gc-edge-labels`, `flex items-center gap-1`), placed with `translate(-50%, -50%)` at the midpoint, so they are centred together whether one or both show. The row has `pointer-events: none`; only the badge and chip take the pointer, so the gap between them leaves the edge clickable.
+  - The badge is a `<span role="img">` with `nodrag nopan`, `cursor: pointer` and `data-sign`. It is not in the tab order; the edge itself stays the keyboard target.
+  - The `--primary` look follows React Flow's `selected` prop (`data-selected` on the badge). Keyboard focus on the edge does not turn the badge teal, because the badge is rendered outside the edge's SVG group.
+  - On hover the badge fill becomes `--muted`, as the chip's does. Its colours change in 120 ms (0 ms with reduced motion, through the global rule in `index.css`).
+  - The badge ignores path marking: it stays `--edge` on a causal or biasing path unless the edge is selected.
 
 #### Phase 55: Image signs and reader doc [ ]
 
