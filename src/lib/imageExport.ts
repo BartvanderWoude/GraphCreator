@@ -20,10 +20,14 @@ export { EXPORT_MARGIN, EXPORT_PALETTES, type ImageTheme }
 
 export type ImageFormat = 'svg' | 'png' | 'pdf' | 'tikz'
 
-/** Picture options (spec 4.11 "PDF, legend and dark theme"). Defaults: light, no legend. */
+/**
+ * Picture options (spec 4.11 "PDF, legend and dark theme", 4.16 "Images"). Defaults: light, no
+ * legend, no sign badges.
+ */
 export interface ImageOptions {
   theme?: ImageTheme
   legend?: boolean
+  signs?: boolean
 }
 
 /** TikZ is always drawn in the light theme's colours: LaTeX documents are printed on white. */
@@ -130,6 +134,12 @@ export function toSvg(
     )
   }
 
+  if (scene.badges.length > 0) {
+    out.push(svgFontGroup(scene.badges[0].text))
+    for (const b of scene.badges) out.push(svgCircle(b.circle), svgText(b.text))
+    out.push('</g>')
+  }
+
   // Each circle is followed by its name lines; the scene keeps both in node order.
   const lineCounts = new Map(
     graph.nodes.map((n) => [n.id, wrapLabel(n.name).lines.length]),
@@ -208,13 +218,28 @@ function canvasCentre(node: GNode): { x: number; y: number } {
   return { x: node.pos.x + d / 2, y: node.pos.y + d / 2 }
 }
 
+/** TikZ math for a badge glyph: `+`, `−` (U+2212) and `±`. */
+const TIKZ_GLYPHS: Record<string, string> = {
+  '+': '$+$',
+  '\u2212': '$-$',
+  '\u00b1': '$\\pm$',
+}
+
 /**
  * The graph as a TikZ picture for a LaTeX document with `tikz` and `arrows.meta`. Coordinates
  * are canvas pixels (`x=0.75pt, y=-0.75pt`: 96 px per inch, y down); TikZ finds the rims itself.
- * With `legend`, the scene's legend box is drawn where the scene places it. Always light.
+ * With `legend`, the scene's legend box is drawn where the scene places it; with `signs`, the
+ * scene's sign badges follow the edges. Always light.
  */
-export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
-  const scene = imageScene(graph, { theme: 'light', legend: opts.legend })
+export function toTikz(
+  graph: Graph,
+  opts: { legend?: boolean; signs?: boolean } = {},
+): string {
+  const scene = imageScene(graph, {
+    theme: 'light',
+    legend: opts.legend,
+    signs: opts.signs,
+  })
   const legend = scene.legend
   const title = (graph.name ?? 'Graph').replace(/\s+/g, ' ')
   const out: string[] = [
@@ -271,11 +296,17 @@ export function toTikz(graph: Graph, opts: { legend?: boolean } = {}): string {
     )
   }
 
+  // Scene coordinates start at the bounding box minus the margin; TikZ uses canvas ones.
+  const ox = Math.min(...graph.nodes.map((n) => n.pos.x)) - EXPORT_MARGIN
+  const oy = Math.min(...graph.nodes.map((n) => n.pos.y)) - EXPORT_MARGIN
+  const at = (x: number, y: number) => `(${num(x + ox)},${num(y + oy)})`
+  for (const { circle, text } of scene.badges) {
+    out.push(
+      `\\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\\sffamily\\scriptsize, text=gcEdge] at ${at(circle.cx, circle.cy)} {${TIKZ_GLYPHS[text.text]}};`,
+    )
+  }
+
   if (legend) {
-    // Scene coordinates start at the bounding box minus the margin; TikZ uses canvas ones.
-    const ox = Math.min(...graph.nodes.map((n) => n.pos.x)) - EXPORT_MARGIN
-    const oy = Math.min(...graph.nodes.map((n) => n.pos.y)) - EXPORT_MARGIN
-    const at = (x: number, y: number) => `(${num(x + ox)},${num(y + oy)})`
     out.push(
       `\\draw[gcBorder, fill=white, rounded corners=3pt] ${at(legend.x, legend.y)} rectangle ${at(legend.x + legend.width, legend.y + legend.height)};`,
     )

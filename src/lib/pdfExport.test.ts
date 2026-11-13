@@ -37,6 +37,7 @@ function scene(over: Partial<Scene> = {}): Scene {
         ],
       },
     ],
+    badges: [],
     circles: [circle(60, 60, 29), circle(240, 60, 29)],
     texts: [
       text(60, 64.88, 'AV'),
@@ -161,6 +162,38 @@ describe('sceneToPdf', () => {
       '1 1 1 rg 0.886 0.91 0.941 RG 1 w\n204 120 m\n292 120 l\n',
     )
     expect(body).toContain('1 0 0 -1 226 142 Tm (Exposure) Tj ET')
+  })
+
+  it('draws a sign badge after the edges and before the nodes, − as an en dash', () => {
+    const badge = (glyph: string): Scene['badges'][number] => ({
+      circle: {
+        cx: 150,
+        cy: 60,
+        r: 7.5,
+        fill: '#ffffff',
+        stroke: '#64748b',
+        strokeWidth: 1,
+      },
+      text: { ...text(150, 64.5, glyph), size: 12, color: '#64748b' },
+    })
+    const body = stream(
+      latin1(
+        sceneToPdf(
+          scene({ legend: null, badges: [badge('+'), badge('\u2212')] }),
+        ),
+      ),
+    )
+    // Two badge circles and two node circles, filled and stroked.
+    expect(count(body, /^h B$/gm)).toBe(4)
+    expect(body).toContain('1 1 1 rg 0.392 0.455 0.545 RG 1 w\n157.5 60 m\n')
+    // `+` is 584 units wide: 584 × 12 / 1000 / 2 = 3.504; the en dash is 556 units.
+    expect(body).toContain('BT /F1 12 Tf 1 0 0 -1 146.5 64.5 Tm (+) Tj ET')
+    expect(body).toContain('BT /F1 12 Tf 1 0 0 -1 146.66 64.5 Tm (\x96) Tj ET')
+    const edge = body.indexOf(' l h f')
+    const plus = body.indexOf('(+) Tj')
+    expect(edge).toBeLessThan(body.indexOf('157.5 60 m'))
+    expect(plus).toBeLessThan(body.indexOf('89 60 m'))
+    expect(body).toContain('0.392 0.455 0.545 rg\nBT /F1 12 Tf')
   })
 
   it('starts a centred line at the AFM-measured offset', () => {

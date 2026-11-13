@@ -1,5 +1,5 @@
 import { MAX_SETS, PATH_LIMIT, type PathKind } from '@/model/analysis/types'
-import type { Role, VarType } from '@/model/schema'
+import type { Form, Role, Sign, Strength, VarType } from '@/model/schema'
 import type { AnalysisKey } from '@/store/uiStore'
 
 /** Interface texts (spec 5.7.8). The store keeps the keys; the UI shows these labels. */
@@ -43,9 +43,52 @@ export const FIELD_TIPS = {
   evidence:
     'Evidence: references that support this arrow, such as PMID:123 or doi:10.1000/xyz. One reference per line.',
   note: 'Note: why you drew this arrow, or what is uncertain about it.',
+  simulation:
+    'Simulation: optional details for generating synthetic data from this DAG. Other tools read them from the GraphCreator file.',
+  shares:
+    'Shares: how common each level is in the population, such as 12% with diabetes. For a variable with causes, the overall shares you expect.',
+  form: "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs.",
+  sign: 'Sign: whether the cause raises (positive) or lowers (negative) the effect. For categorical and ordinal variables, later levels count as higher.',
+  strength:
+    'Strength: how large the effect is, from small to large. A simulator turns these bands into effect sizes.',
 } as const satisfies Record<string, string>
 
 export type FieldTip = keyof typeof FIELD_TIPS
+
+/** Edge sign labels (spec 5.9). */
+export const SIGN_LABELS: Record<Sign, string> = {
+  positive: 'Positive',
+  negative: 'Negative',
+}
+
+/** Edge strength labels (spec 5.9). */
+export const STRENGTH_LABELS: Record<Strength, string> = {
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
+}
+
+/** One-line description of each strength band, shown in the Strength select. */
+export const STRENGTH_DESCRIPTIONS: Record<Strength, string> = {
+  small: 'A weak effect, about 0.1 to 0.3 on a standardized scale.',
+  medium: 'A moderate effect, about 0.3 to 0.6.',
+  large: 'A strong effect, about 0.6 to 1.',
+}
+
+/** Functional form labels (spec 5.9). */
+export const FORM_LABELS: Record<Form, string> = {
+  linear: 'Linear',
+  smooth: 'Smooth',
+  threshold: 'Threshold',
+}
+
+/** One-line description of each functional form, shown in the Functional form select. */
+export const FORM_DESCRIPTIONS: Record<Form, string> = {
+  linear: 'Effects add up in straight lines.',
+  smooth: 'Effects curve: they can grow, level off or bend.',
+  threshold:
+    'Effects switch at cut-offs, such as a risk that jumps above an age.',
+}
 
 /** Cheat sheet shown in the side panel when nothing is selected. */
 export const PANEL_HELP: {

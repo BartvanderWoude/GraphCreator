@@ -19,6 +19,26 @@ const ARROW_OVERLAP = 1
 /** Width of the invisible line that picks up hover and clicks. */
 const INTERACTION_WIDTH = 12
 
+/** The sign badge's glyph, accessible name and title, by `FloatingEdgeData.sign` (spec 5.9). */
+const SIGN_BADGES = {
+  positive: { glyph: '+', label: 'Positive effect', title: 'Sign: positive' },
+  negative: {
+    glyph: '\u2212',
+    label: 'Negative effect',
+    title: 'Sign: negative',
+  },
+  mixed: {
+    glyph: '\u00B1',
+    label: 'Mixed effects per level',
+    title: 'Sign: mixed',
+  },
+} as const
+
+/** Selects the edge in the store, as a click on its line does. */
+function selectEdge(id: string) {
+  useGraphStore.getState().select({ kind: 'edge', id })
+}
+
 /** The circle a measured React Flow node occupies, in flow coordinates; null until measured. */
 function circleOf(node: InternalNode | undefined): Circle | null {
   const width = node?.measured.width
@@ -37,13 +57,15 @@ function circleOf(node: InternalNode | undefined): Circle | null {
  * the centres leaves the source circle; the arrowhead's tip ends 2 px before the target's rim.
  * Moving a circle re-aims the edge because it reads both nodes from React Flow's store.
  * An edge on an open causal or biasing path carries `data-path` on its line and arrowhead, and
- * canvas.css draws the path look from it.
+ * canvas.css draws the path look from it. A signed edge shows its sign badge at the midpoint,
+ * next to the evidence chip when it has one (spec 5.9 "Canvas").
  */
 export function FloatingEdge({
   id,
   source,
   target,
   data,
+  selected,
 }: EdgeProps<FloatingFlowEdge>) {
   const sourceCircle = circleOf(useInternalNode(source))
   const targetCircle = circleOf(useInternalNode(target))
@@ -62,6 +84,7 @@ export function FloatingEdge({
   const markerId = `gc-arrow-${id}`
   const evidenceCount = data?.evidenceCount ?? 0
   const pathKind = data?.path
+  const sign = data?.sign ? SIGN_BADGES[data.sign] : undefined
 
   return (
     <>
@@ -93,23 +116,42 @@ export function FloatingEdge({
         markerEnd={`url(#${markerId})`}
         interactionWidth={INTERACTION_WIDTH}
       />
-      {evidenceCount > 0 && (
+      {(sign || evidenceCount > 0) && (
         <EdgeLabelRenderer>
-          <button
-            type="button"
-            className="gc-evidence-chip nodrag nopan absolute inline-flex h-5 cursor-pointer items-center gap-1 rounded-sm border border-input bg-background px-1.5 font-mono text-[11px] leading-none text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          {/* Badge and chip sit side by side, 4 px apart, centred together on the midpoint. */}
+          <div
+            className="gc-edge-labels absolute flex items-center gap-1"
             style={{
               transform: `translate(-50%, -50%) translate(${(sx + tx) / 2}px, ${(sy + ty) / 2}px)`,
-              pointerEvents: 'all',
             }}
-            aria-label={`${evidenceCount} evidence ${evidenceCount === 1 ? 'item' : 'items'}`}
-            onClick={() =>
-              useGraphStore.getState().select({ kind: 'edge', id })
-            }
           >
-            <Bookmark size={10} strokeWidth={1.75} aria-hidden="true" />
-            {evidenceCount}
-          </button>
+            {sign && (
+              <span
+                role="img"
+                className="gc-sign-badge nodrag nopan"
+                data-sign={data?.sign}
+                data-selected={selected ? '' : undefined}
+                style={{ pointerEvents: 'all' }}
+                aria-label={sign.label}
+                title={sign.title}
+                onClick={() => selectEdge(id)}
+              >
+                {sign.glyph}
+              </span>
+            )}
+            {evidenceCount > 0 && (
+              <button
+                type="button"
+                className="gc-evidence-chip nodrag nopan inline-flex h-5 cursor-pointer items-center gap-1 rounded-sm border border-input bg-background px-1.5 font-mono text-[11px] leading-none text-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                style={{ pointerEvents: 'all' }}
+                aria-label={`${evidenceCount} evidence ${evidenceCount === 1 ? 'item' : 'items'}`}
+                onClick={() => selectEdge(id)}
+              >
+                <Bookmark size={10} strokeWidth={1.75} aria-hidden="true" />
+                {evidenceCount}
+              </button>
+            )}
+          </div>
         </EdgeLabelRenderer>
       )}
     </>

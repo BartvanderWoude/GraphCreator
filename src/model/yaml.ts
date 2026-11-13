@@ -6,6 +6,7 @@ import {
   LineCounter,
   parseDocument,
   Scalar,
+  visit,
   type Node as YamlNode,
 } from 'yaml'
 import type { core } from 'zod'
@@ -13,7 +14,15 @@ import type { GEdge, GNode, Graph } from './graph'
 import { newId } from './graph'
 import { autoLayout } from './layout'
 import type { Issue, Result } from './result'
-import { GraphFileSchema, KNOWN_SCHEMAS, SCHEMA_ID } from './schema'
+import {
+  FORMS,
+  GraphFileSchema,
+  KNOWN_SCHEMAS,
+  SCHEMA_ID,
+  STRENGTHS,
+  type EdgeSign,
+} from './schema'
+import { signLevelsNode } from './simulation'
 import { validateGraph } from './validate'
 
 const LAYOUT_WARNING =
@@ -125,6 +134,14 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
+/** Messages for any problem inside a simulation-detail field (spec 4.16 "File"). */
+const SIMULATION_MESSAGES: Record<string, string> = {
+  shares: 'shares must be a list of numbers.',
+  form: `form must be one of ${FORMS.join(', ')}.`,
+  sign: 'sign must be positive or negative, or a map from levels to positive or negative.',
+  strength: `strength must be one of ${STRENGTHS.join(', ')}.`,
+}
+
 /** Turns one Zod issue into user-facing issues (an unknown-keys issue gives one per key). */
 function zodIssues(issue: core.$ZodIssue, raw: unknown, lines: Lines): Issue[] {
   const path = issue.path.filter(
@@ -152,6 +169,19 @@ function zodIssues(issue: core.$ZodIssue, raw: unknown, lines: Lines): Issue[] {
     })
   }
 
+  // Simulation details (spec 4.16): one message per field, whatever went wrong inside it.
+  const simulation = SIMULATION_MESSAGES[String(field[0])]
+  if (subject && simulation) {
+    const fieldPath = path.slice(0, 3)
+    return [
+      {
+        message: `${subject}: ${simulation}`,
+        path: fieldPath.join('.'),
+        line: lines.of(fieldPath),
+      },
+    ]
+  }
+
   let message: string
   if (field[0] === 'pos' && field.length <= 2) {
     message = sentence('pos must be a list of two numbers, like [0, 0].')
@@ -172,6 +202,13 @@ function zodIssues(issue: core.$ZodIssue, raw: unknown, lines: Lines): Issue[] {
     message = sentence(name ? `${name}: ${body}.` : `${body}.`)
   }
   return [{ message, path: dotted || undefined, line: lines.of(path) }]
+}
+
+/** A sign from the file: a word as it is, a map as a copy in file order, `{}` as absent (spec 4.16). */
+function readSign(sign: EdgeSign | undefined): EdgeSign | undefined {
+  if (sign === undefined || typeof sign === 'string') return sign
+  const entries = Object.entries(sign)
+  return entries.length === 0 ? undefined : Object.fromEntries(entries)
 }
 
 /** Empty or whitespace-only strings become undefined (spec 3.2). */
@@ -242,10 +279,17 @@ export function parseYaml(text: string): Result<Graph> {
   // 3. Shape.
   const parsed = GraphFileSchema.safeParse(raw)
   if (!parsed.success) {
-    return {
-      ok: false,
-      errors: parsed.error.issues.flatMap((i) => zodIssues(i, raw, lines)),
-    }
+    // Several problems inside one simulation field (two bad shares) give one issue.
+    const seen = new Set<string>()
+    const errors = parsed.error.issues
+      .flatMap((i) => zodIssues(i, raw, lines))
+      .filter((issue) => {
+        const key = `${issue.path ?? ''}\n${issue.message}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    return { ok: false, errors }
   }
   const file = parsed.data
 
@@ -264,6 +308,8 @@ export function parseYaml(text: string): Result<Graph> {
     }
     if (n.var_type !== undefined) node.varType = n.var_type
     if (n.levels !== undefined) node.levels = [...n.levels]
+    if (n.shares !== undefined) node.shares = [...n.shares]
+    if (n.form !== undefined) node.form = n.form
     const description = optionalText(n.description)
     if (description !== undefined) node.description = description
     const unit = optionalText(n.unit)
@@ -303,6 +349,9 @@ export function parseYaml(text: string): Result<Graph> {
     }
     const note = optionalText(e.note)
     if (note !== undefined) edge.note = note
+    const sign = readSign(e.sign)
+    if (sign !== undefined) edge.sign = sign
+    if (e.strength !== undefined) edge.strength = e.strength
     edges.push(edge)
   })
 
@@ -343,16 +392,81 @@ function roundPx(v: number): number {
   return Math.round(v) || 0
 }
 
+/** A number as JavaScript writes it, with `-0` as `0`. */
+function noNegativeZero(v: number): number {
+  return Object.is(v, -0) ? 0 : v
+}
+
+/**
+ * Plain text that a YAML 1.1 reader (PyYAML) resolves to something other than a string: a
+ * boolean, null, an integer (also `0x`, `0o`, `0b`, `_` and base 60 forms), a float (also `.inf`,
+ * `.nan`), a timestamp, or the merge (`<<`) and value (`=`) keys. Patterns follow PyYAML's
+ * resolver and the YAML 1.1 type definitions.
+ */
+const YAML11_NON_STRING = new RegExp(
+  '^(?:' +
+    [
+      // bool (YAML 1.1 also counts y and n)
+      'y|Y|yes|Yes|YES|n|N|no|No|NO|true|True|TRUE|false|False|FALSE|on|On|ON|off|Off|OFF',
+      // null
+      '~|null|Null|NULL',
+      // int
+      '[-+]?0b[01_]+',
+      '[-+]?0o?[0-7_]+',
+      '[-+]?(?:0|[1-9][0-9_]*)',
+      '[-+]?0x[0-9a-fA-F_]+',
+      '[-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+',
+      // float
+      '[-+]?[0-9][0-9_]*\\.[0-9_]*(?:[eE][-+]?[0-9]+)?',
+      '[-+]?\\.[0-9_]+(?:[eE][-+]?[0-9]+)?',
+      '[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\\.[0-9_]*',
+      '[-+]?\\.(?:inf|Inf|INF)',
+      '\\.(?:nan|NaN|NAN)',
+      // timestamp
+      '[0-9]{4}-[0-9]{2}-[0-9]{2}',
+      '[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt]|[ \\t]+)[0-9]{1,2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]*)?(?:[ \\t]*(?:Z|[-+][0-9]{1,2}(?::[0-9]{2})?))?',
+      // merge and value keys
+      '<<|=',
+    ].join('|') +
+    ')$',
+)
+
+/** Whether a YAML 1.1 reader would read `text`, written plain, as something other than text. */
+function isYaml11NonString(text: string): boolean {
+  return YAML11_NON_STRING.test(text)
+}
+
 /**
  * Writes a graph as canonical GraphCreator YAML (spec 4.1): keys in table order, undefined,
  * default and empty fields omitted, flow style for `levels`, `pos` and `evidence`, positions
  * rounded to integers, trailing newline. For a canonical file `toYaml(parseYaml(text).value) === text`.
  * Evidence items are always double-quoted (they often contain `:`), as in the spec example.
  * Edges whose endpoints are not in the graph are skipped.
+ *
+ * Simulation details (spec 4.16) follow the same rules: `shares` and a sign map in flow style, the
+ * map's keys in the level order of `signLevelsNode` and any other keys after them.
+ * Text that a YAML 1.1 reader would take for a boolean, null, number or date is double-quoted.
  */
 export function toYaml(graph: Graph): string {
   const nameById = new Map(graph.nodes.map((n) => [n.id, n.name]))
   const doc = new Document({})
+  const writeSign = (g: Graph, e: GEdge) => {
+    const sign = e.sign
+    if (sign === undefined || typeof sign === 'string') return sign
+    const entries = new Map(Object.entries(sign))
+    if (entries.size === 0) return undefined
+    const ordered = new Map<string, unknown>()
+    for (const level of signLevelsNode(g, e)?.levels ?? []) {
+      const value = entries.get(level)
+      if (value !== undefined && !ordered.has(level)) ordered.set(level, value)
+    }
+    for (const [key, value] of entries) {
+      if (!ordered.has(key)) ordered.set(key, value)
+    }
+    const map = doc.createNode(ordered)
+    map.flow = true
+    return map
+  }
   const flow = (items: unknown[], quote = false) => {
     const seq = doc.createNode(items)
     seq.flow = true
@@ -371,8 +485,10 @@ export function toYaml(graph: Graph): string {
     if (n.role !== 'other') out.role = n.role
     if (n.varType !== undefined) out.var_type = n.varType
     if (n.levels !== undefined) out.levels = flow(n.levels)
+    if (n.shares !== undefined) out.shares = flow(n.shares.map(noNegativeZero))
     if (n.description !== undefined) out.description = n.description
     if (n.unit !== undefined) out.unit = n.unit
+    if (n.form !== undefined) out.form = n.form
     out.pos = flow([roundPx(n.pos.x), roundPx(n.pos.y)])
     return out
   })
@@ -381,11 +497,21 @@ export function toYaml(graph: Graph): string {
     const to = nameById.get(e.target)
     if (from === undefined || to === undefined) return []
     const out: Record<string, unknown> = { from, to }
+    const sign = writeSign(graph, e)
+    if (sign !== undefined) out.sign = sign
+    if (e.strength !== undefined) out.strength = e.strength
     if (e.evidence.length > 0) out.evidence = flow(e.evidence, true)
     if (e.note !== undefined) out.note = e.note
     return [out]
   })
   doc.contents = doc.createNode(file)
+  visit(doc, {
+    Scalar(_key, node) {
+      if (typeof node.value === 'string' && isYaml11NonString(node.value)) {
+        node.type = Scalar.QUOTE_DOUBLE
+      }
+    },
+  })
   return doc.toString({ flowCollectionPadding: false, lineWidth: 0 })
 }
 

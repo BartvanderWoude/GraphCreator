@@ -322,3 +322,45 @@
     animation: none;
   }
 }
+
+/* ---- Sign badge (5.9 "Canvas", 5.7.7) ---------------------------------------------------- */
+
+/* The row that holds the sign badge and the evidence chip at an edge's midpoint. Only its items
+   take the pointer, so the gap between them leaves the edge underneath clickable. */
+.react-flow .gc-edge-labels {
+  pointer-events: none;
+}
+
+/* A 16 px circle with the glyph +, − or ± in Plex Sans 12 px / 500, in the edge colour. */
+.react-flow .gc-sign-badge {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: var(--background);
+  color: var(--edge);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 120ms,
+    color 120ms,
+    background-color 120ms;
+}
+.react-flow .gc-sign-badge:hover {
+  background: var(--muted);
+}
+
+/* The edge is selected: teal border and glyph, like its line. */
+.react-flow .gc-sign-badge[data-selected] {
+  border-color: var(--primary);
+  color: var(--primary);
+}

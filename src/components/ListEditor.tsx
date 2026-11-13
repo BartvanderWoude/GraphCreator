@@ -7,13 +7,20 @@ import { cn } from 'cn'
 interface Row {
   key: number
   value: string
+  /** Index of this row's item in the last committed list, or `null` for a row added since. */
+  origin: number | null
 }
 
 export interface ListEditorProps {
   /** Committed items. Read once on mount; key the editor to reset it. */
   items: string[]
-  /** Called with the non-empty items whenever the list is committed and changed. */
-  onCommit(items: string[]): void
+  /**
+   * Called with the non-empty items whenever the list is committed and changed. `origin[i]` is
+   * the index in `items` of the row that became item `i`, or `null` for a row added since (spec
+   * 5.9). Rows keep their origin through moves and edits. After each commit the origins count
+   * from the committed list, which the caller is expected to pass back as `items`.
+   */
+  onCommit(items: string[], origin: (number | null)[]): void
   /** Accessible name of the list, also used for item and button labels (e.g. "Level"). */
   itemLabel: string
   /** Text of the add button, e.g. "Add level". */
@@ -38,23 +45,30 @@ export function ListEditor({
   mono = false,
 }: ListEditorProps) {
   const [rows, setRows] = useState<Row[]>(() =>
-    items.map((value, key) => ({ key, value })),
+    items.map((value, key) => ({ key, value, origin: key })),
   )
   const nextKey = useRef(items.length)
   const committed = useRef<string[]>(items)
   const focusKey = useRef<number | null>(null)
 
   const commit = (next: Row[]) => {
-    const values = next.map((r) => r.value.trim()).filter((v) => v !== '')
+    const kept = next.filter((r) => r.value.trim() !== '')
+    const values = kept.map((r) => r.value.trim())
+    const origin = kept.map((r) => r.origin)
     const prev = committed.current
     if (
       values.length === prev.length &&
-      values.every((v, i) => v === prev[i])
+      values.every((v, i) => v === prev[i]) &&
+      origin.every((o, i) => o === i)
     ) {
       return
     }
     committed.current = values
-    onCommit(values)
+    onCommit(values, origin)
+    // The committed list is the new reference: kept rows point at their new index, and rows
+    // dropped as empty count as new from here on.
+    const index = new Map(kept.map((r, i) => [r.key, i]))
+    setRows(next.map((r) => ({ ...r, origin: index.get(r.key) ?? null })))
   }
 
   const change = (next: Row[]) => {
@@ -63,9 +77,10 @@ export function ListEditor({
   }
 
   const add = () => {
-    const row: Row = { key: nextKey.current++, value: '' }
+    const row: Row = { key: nextKey.current++, value: '', origin: null }
     focusKey.current = row.key
-    setRows([...rows, row])
+    // Functional update: Enter commits (which rebases the origins) right before adding.
+    setRows((current) => [...current, row])
   }
 
   const remove = (index: number) => change(rows.filter((_, i) => i !== index))

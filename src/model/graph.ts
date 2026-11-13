@@ -1,6 +1,14 @@
 import { findPath } from './cycle'
 import type { Result } from './result'
-import { isLeveledType, isNumericType, type Role, type VarType } from './schema'
+import {
+  isLeveledType,
+  isNumericType,
+  type EdgeSign,
+  type Form,
+  type Role,
+  type Strength,
+  type VarType,
+} from './schema'
 
 export { findCycle, findPath } from './cycle'
 
@@ -22,6 +30,13 @@ export interface GNode {
   description?: string
   /** Only for continuous/discrete. */
   unit?: string
+  /**
+   * Simulation detail (spec 4.16): the proportion of each level, in level order. Only with
+   * `levels`, one per level, each finite and >= 0.
+   */
+  shares?: number[]
+  /** Simulation detail (spec 4.16): how the node's causes combine. */
+  form?: Form
   /** Canvas px, top-left of the node box. */
   pos: Position
 }
@@ -36,6 +51,13 @@ export interface GEdge {
   /** Free text, e.g. 'PMID:123'; may be empty. */
   evidence: string[]
   note?: string
+  /**
+   * Simulation detail (spec 4.16): one sign, or one per level of the edge's nominal end. A map is
+   * never empty (an empty map is stored as undefined).
+   */
+  sign?: EdgeSign
+  /** Simulation detail (spec 4.16): the size of the effect, whatever its sign. */
+  strength?: Strength
 }
 
 export interface Graph {
@@ -127,8 +149,11 @@ export function renameNode(
 
 /**
  * Applies `patch` to a node. Empty description/unit become undefined. Afterwards fields not
- * allowed for the node's type are dropped: `levels` unless categorical/ordinal, `unit` unless
- * continuous/discrete. Pass `varType: undefined` to make a node untyped.
+ * allowed for the node's type are dropped: `levels` and `shares` unless categorical/ordinal,
+ * `unit` unless continuous/discrete. A patch that sets `levels` without `shares` also drops
+ * `shares` (use `setLevels` in `simulation.ts` to keep them on their levels). Pass
+ * `varType: undefined` to make a node untyped, `form: undefined` to remove the form. Numbers are
+ * neither rounded nor clamped.
  */
 export function updateNode(
   graph: Graph,
@@ -143,9 +168,21 @@ export function updateNode(
       if ('description' in patch)
         next.description = optionalText(patch.description)
       if ('unit' in patch) next.unit = optionalText(patch.unit)
-      if (!isLeveledType(next.varType)) delete next.levels
+      if ('levels' in patch && !('shares' in patch)) delete next.shares
+      if (!isLeveledType(next.varType)) {
+        delete next.levels
+        delete next.shares
+      }
+      if (next.levels === undefined) delete next.shares
       if (!isNumericType(next.varType)) delete next.unit
-      for (const key of ['varType', 'levels', 'description', 'unit'] as const) {
+      for (const key of [
+        'varType',
+        'levels',
+        'description',
+        'unit',
+        'shares',
+        'form',
+      ] as const) {
         if (key in next && next[key] === undefined) delete next[key]
       }
       return next
@@ -231,11 +268,22 @@ export function addEdge(
   }
 }
 
-/** Applies `patch` to an edge. An empty note becomes undefined. */
+/** True for `undefined` and for a sign map without keys. */
+function noSign(sign: EdgeSign | undefined): boolean {
+  return (
+    sign === undefined ||
+    (typeof sign === 'object' && Object.keys(sign).length === 0)
+  )
+}
+
+/**
+ * Applies `patch` to an edge. An empty note becomes undefined. `sign: undefined` or an empty sign
+ * map removes the sign, and `strength: undefined` removes the strength.
+ */
 export function updateEdge(
   graph: Graph,
   edgeId: string,
-  patch: Partial<Pick<GEdge, 'evidence' | 'note'>>,
+  patch: Partial<Pick<GEdge, 'evidence' | 'note' | 'sign' | 'strength'>>,
 ): Graph {
   return {
     ...graph,
@@ -248,6 +296,12 @@ export function updateEdge(
         if (note === undefined) delete next.note
         else next.note = note
       }
+      if ('sign' in patch) {
+        if (noSign(patch.sign)) delete next.sign
+        else if (typeof patch.sign === 'object') next.sign = { ...patch.sign }
+      }
+      if ('strength' in patch && patch.strength === undefined)
+        delete next.strength
       return next
     }),
   }

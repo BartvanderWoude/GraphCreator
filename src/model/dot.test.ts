@@ -406,6 +406,8 @@ describe('round trip', () => {
     .map((path) => path.replace('./__fixtures__/', ''))
     .sort()
     .filter((name) => {
+      // DOT leaves the simulation details out (spec 4.16).
+      if (name === 'simulation.dag.yaml') return false
       const text = fixture(name)
       const result = name.endsWith('.dag.yaml')
         ? parseYaml(text)

@@ -284,3 +284,105 @@ describe('updateEdge and removeEdges', () => {
     expect(removeEdges(g, ['e1']).edges.map((e) => e.id)).toEqual(['e2'])
   })
 })
+
+describe('simulation details in updateNode (phase 49)', () => {
+  const base = updateNode(build(['A']), 'n1', {
+    varType: 'categorical',
+    levels: ['no', 'yes'],
+    shares: [0.88, 0.12],
+    form: 'threshold',
+  })
+
+  it('keeps shares and form on a leveled node, unrounded', () => {
+    expect(base.nodes[0]).toMatchObject({
+      levels: ['no', 'yes'],
+      shares: [0.88, 0.12],
+      form: 'threshold',
+    })
+    const odd = updateNode(base, 'n1', { shares: [0.123456, 1.5] })
+    expect(odd.nodes[0].shares).toEqual([0.123456, 1.5])
+  })
+
+  it('drops shares with levels when the type has none', () => {
+    for (const varType of ['continuous', 'discrete', undefined] as const) {
+      const node = updateNode(base, 'n1', { varType }).nodes[0]
+      expect('levels' in node).toBe(false)
+      expect('shares' in node).toBe(false)
+      expect(node.form).toBe('threshold')
+    }
+    const ordinal = updateNode(base, 'n1', { varType: 'ordinal' }).nodes[0]
+    expect(ordinal.shares).toEqual([0.88, 0.12])
+  })
+
+  it('drops shares when a patch sets levels alone', () => {
+    const node = updateNode(base, 'n1', { levels: ['no', 'yes', 'maybe'] })
+      .nodes[0]
+    expect(node.levels).toEqual(['no', 'yes', 'maybe'])
+    expect('shares' in node).toBe(false)
+    const removed = updateNode(base, 'n1', { levels: undefined }).nodes[0]
+    expect('levels' in removed).toBe(false)
+    expect('shares' in removed).toBe(false)
+    const both = updateNode(base, 'n1', {
+      levels: ['a', 'b', 'c'],
+      shares: [0.2, 0.3, 0.5],
+    }).nodes[0]
+    expect(both.shares).toEqual([0.2, 0.3, 0.5])
+  })
+
+  it('removes shares and form given as undefined', () => {
+    const node = updateNode(base, 'n1', { shares: undefined, form: undefined })
+      .nodes[0]
+    expect('shares' in node).toBe(false)
+    expect('form' in node).toBe(false)
+    expect(node.levels).toEqual(['no', 'yes'])
+  })
+
+  it('keeps unrelated patches from touching the details', () => {
+    const node = updateNode(base, 'n1', { description: 'Self-reported' })
+      .nodes[0]
+    expect(node).toMatchObject({
+      shares: [0.88, 0.12],
+      form: 'threshold',
+      description: 'Self-reported',
+    })
+  })
+})
+
+describe('simulation details in updateEdge (phase 49)', () => {
+  const g = build(['A', 'B'], [['A', 'B']])
+
+  it('sets and removes sign and strength', () => {
+    const set = updateEdge(g, 'e1', { sign: 'negative', strength: 'large' })
+    expect(set.edges[0]).toMatchObject({ sign: 'negative', strength: 'large' })
+    const cleared = updateEdge(set, 'e1', {
+      sign: undefined,
+      strength: undefined,
+    }).edges[0]
+    expect('sign' in cleared).toBe(false)
+    expect('strength' in cleared).toBe(false)
+    expect(g.edges[0]).toEqual({
+      id: 'e1',
+      source: 'n1',
+      target: 'n2',
+      evidence: [],
+    })
+  })
+
+  it('stores a sign map as a copy, and an empty map as no sign', () => {
+    const map = { x: 'positive' as const, y: 'negative' as const }
+    const withMap = updateEdge(g, 'e1', { sign: map })
+    expect(withMap.edges[0].sign).toEqual(map)
+    expect(withMap.edges[0].sign).not.toBe(map)
+    const emptied = updateEdge(withMap, 'e1', { sign: {} }).edges[0]
+    expect('sign' in emptied).toBe(false)
+  })
+
+  it('leaves sign and strength alone when the patch does not name them', () => {
+    const set = updateEdge(g, 'e1', { sign: 'positive', strength: 'small' })
+    expect(updateEdge(set, 'e1', { note: 'Known' }).edges[0]).toMatchObject({
+      sign: 'positive',
+      strength: 'small',
+      note: 'Known',
+    })
+  })
+})

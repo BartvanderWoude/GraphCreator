@@ -36,6 +36,7 @@ import {
   type Graph,
 } from '@/model/graph'
 import { nodeDiameter } from '@/model/nodeSize'
+import { signBadge } from '@/model/simulation'
 import { useGraphStore, type GraphState } from '@/store/graphStore'
 import { lessonEvent } from '@/store/lessonEvents'
 import { useLessonStore } from '@/store/lessonStore'
@@ -156,12 +157,14 @@ function syncFlow(
     const old = oldEdges.get(g.id)
     const evidenceCount = g.evidence.length
     const path = pathMarks.get(g.id)
+    const sign = signBadge(g.sign)
     if (
       old &&
       old.source === g.source &&
       old.target === g.target &&
       old.data?.evidenceCount === evidenceCount &&
-      old.data?.path === path
+      old.data?.path === path &&
+      old.data?.sign === sign
     ) {
       return old
     }
@@ -170,7 +173,11 @@ function syncFlow(
       type: 'floating',
       source: g.source,
       target: g.target,
-      data: path ? { evidenceCount, path } : { evidenceCount },
+      data: {
+        evidenceCount,
+        ...(path !== undefined && { path }),
+        ...(sign !== undefined && { sign }),
+      },
       selected: old?.selected ?? false,
     }
   })

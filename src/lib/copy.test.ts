@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { ANALYSIS_KEYS } from '@/store/uiStore'
-import { ANALYSIS_TEXT, ANALYSIS_TITLES, joinNames } from './copy'
+import { FORMS, SIGNS, STRENGTHS } from '@/model/schema'
+import {
+  ANALYSIS_TEXT,
+  ANALYSIS_TITLES,
+  FIELD_TIPS,
+  FORM_DESCRIPTIONS,
+  FORM_LABELS,
+  joinNames,
+  SIGN_LABELS,
+  STRENGTH_DESCRIPTIONS,
+  STRENGTH_LABELS,
+} from './copy'
 
 describe('joinNames', () => {
   it('joins zero, one, two and three names', () => {
@@ -83,6 +94,68 @@ describe('ANALYSIS_TEXT templates', () => {
     expect(t.setsTruncated).toBe('Showing the first 100 sets.')
     expect(t.pathsTruncated).toBe(
       'There are more than 500 paths, too many to list or highlight.',
+    )
+  })
+})
+
+describe('simulation texts (phase 49)', () => {
+  /** The term each tip starts with. */
+  const TERMS: Record<keyof typeof FIELD_TIPS, string> = {
+    role: 'Role',
+    varType: 'Variable type',
+    levels: 'Levels',
+    unit: 'Unit',
+    evidence: 'Evidence',
+    note: 'Note',
+    simulation: 'Simulation',
+    shares: 'Shares',
+    form: 'Functional form',
+    sign: 'Sign',
+    strength: 'Strength',
+  }
+
+  it.each(Object.entries(TERMS))(
+    'the %s tip starts with its term and has at most 30 words',
+    (key, term) => {
+      const tip = FIELD_TIPS[key as keyof typeof FIELD_TIPS]
+      expect(tip.startsWith(`${term}: `)).toBe(true)
+      expect(tip.split(/\s+/).length).toBeLessThanOrEqual(30)
+      expect(tip.endsWith('.')).toBe(true)
+    },
+  )
+
+  it('has the 5.9 tips', () => {
+    expect(FIELD_TIPS.simulation).toBe(
+      'Simulation: optional details for generating synthetic data from this DAG. Other tools read them from the GraphCreator file.',
+    )
+    expect(FIELD_TIPS.form).toBe(
+      "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs.",
+    )
+  })
+
+  it('labels and describes every sign, strength and form', () => {
+    expect(SIGNS.map((s) => SIGN_LABELS[s])).toEqual(['Positive', 'Negative'])
+    expect(STRENGTHS.map((s) => STRENGTH_LABELS[s])).toEqual([
+      'Small',
+      'Medium',
+      'Large',
+    ])
+    expect(FORMS.map((f) => FORM_LABELS[f])).toEqual([
+      'Linear',
+      'Smooth',
+      'Threshold',
+    ])
+    for (const text of [
+      ...Object.values(STRENGTH_DESCRIPTIONS),
+      ...Object.values(FORM_DESCRIPTIONS),
+    ]) {
+      expect(text.endsWith('.')).toBe(true)
+    }
+    expect(STRENGTH_DESCRIPTIONS.small).toBe(
+      'A weak effect, about 0.1 to 0.3 on a standardized scale.',
+    )
+    expect(FORM_DESCRIPTIONS.threshold).toBe(
+      'Effects switch at cut-offs, such as a risk that jumps above an age.',
     )
   })
 })

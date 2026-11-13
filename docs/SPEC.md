@@ -1,12 +1,12 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
 Epidemiologists draw causal DAGs (directed acyclic graphs) to reason about confounding and to report their assumptions. DAGitty is the standard tool, but it treats a DAG as a picture: nodes carry roles and positions, nothing more. GraphCreator is its own browser-based DAG editor in which the DAG is a **documented model**. Every variable can carry a type (categorical, ordinal, continuous, discrete), ordered levels, a description and a unit, and every edge can carry evidence and a note. Its native format is a versioned YAML file. It is compatible with DAGitty through import and export of the dagitty text format, but it is not a DAGitty clone.
 
-v1 delivers: drawing, typed variables and metadata, the YAML format, dagitty import/export and auto-layout. Causal analysis follows in waves 13–15 (4.13–4.14, 5.8). Simulation-code export and everything else listed in [IDEAS.md](IDEAS.md) come later.
+v1 delivers: drawing, typed variables and metadata, the YAML format, dagitty import/export and auto-layout. Causal analysis follows in waves 13–15 (4.13–4.14, 5.8). Simulation details that synthetic-data tools read from the YAML file follow in waves 22–24 (4.16, 5.9). Simulation-code export and everything else listed in [IDEAS.md](IDEAS.md) come later.
 
 Constraints that hold for the whole project:
 
@@ -83,6 +83,8 @@ export type Role = (typeof ROLES)[number]
 export type VarType = (typeof VAR_TYPES)[number]
 ```
 
+Phase 49 adds `SIGNS`, `STRENGTHS`, `FORMS`, their types and `EdgeSign` (4.16).
+
 ### 3.2 In-memory graph (`src/model/graph.ts`)
 
 The in-memory model gives every node and edge an internal `id` (stable across renames, never written to files). Files refer to nodes by name.
@@ -119,6 +121,7 @@ Rules:
 - **Roles:** exactly one per node. Any number of nodes may be exposure or outcome; no warning.
 - **Types** are optional. `levels` may exist only for categorical/ordinal; `unit` only for continuous/discrete.
 - Optional string fields are stored as `undefined`, never as `''` (editors convert an emptied field to `undefined`).
+- **Simulation details** (phase 49): `GNode.shares` and `form`, and `GEdge.sign` and `strength`, with their rules in 4.16.
 
 ### 3.3 Results and issues (`src/model/result.ts`)
 
@@ -190,6 +193,8 @@ edges:
 | `edges[].note` | string | no | |
 
 Unknown keys at any level are errors (Zod `.strict()`), so typos are caught: `Unknown field "nodse" at top level.`
+
+Phase 50 adds `nodes[].shares`, `nodes[].form`, `edges[].sign` and `edges[].strength`, as well as YAML 1.1-safe quoting of text (4.16 "File").
 
 `src/model/schema.ts` exports `GraphFileSchema` (Zod) and `type GraphFile = z.infer<typeof GraphFileSchema>`. No hand-written type duplicates the file shape.
 
@@ -362,6 +367,7 @@ export function validateGraph(graph: Graph): { errors: Issue[]; warnings: Issue[
   - `Node "SES" has no variable type.` (one per untyped node)
   - `Node "SES" is categorical but has fewer than two levels.` (categorical/ordinal with 0–1 levels; says `ordinal` for ordinal nodes)
   - `Node "SES" has duplicate levels ("low").` (all duplicated levels, comma-separated)
+- Phase 51 adds the simulation-detail errors and warnings of 4.16 "Validation".
 
 ### 4.5 Layout (`src/model/layout.ts`)
 
@@ -403,6 +409,8 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 
 **Redesign (phase 10):** `renameNode` keeps the circle's centre in place. On success it shifts `pos` by `(nodeDiameter(oldName) - nodeDiameter(newName)) / 2` on both axes, rounded, so a circle that grows does so around its centre. All other actions are unchanged.
 
+**Simulation details (phase 49):** `setLevels(nodeId, levels, origin)`, and `sign`/`strength` in `updateEdge`'s patch (4.16 "Store").
+
 ### 4.7 UI store (`src/store/uiStore.ts`, phase 10)
 
 State that belongs to the editor, not to the graph. Never autosaved.
@@ -425,6 +433,8 @@ export interface UiState {
 }
 export const useUiStore: UseBoundStore<StoreApi<UiState>>
 ```
+
+Phase 49 adds `simulationOpen` (4.16 "UI store").
 
 ### 4.8 Lesson store (`src/store/lessonStore.ts`, phase 10)
 
@@ -554,6 +564,8 @@ The picture is built from the graph data with the canvas geometry, not by captur
 - **`src/lib/download.ts`** gains `downloadBlob(filename: string, blob: Blob): void`; `downloadText` uses it.
 
 Details fixed in phase 22: each wrapped line is its own `<text>` inside one `<g>` carrying the font attributes, with its baseline 4.875 px below the middle of its 16 px line (from IBM Plex Sans's ascent and descent, matching the CSS layout; no `dominant-baseline`). Numbers have at most two decimals; an edge between coincident centres is skipped. In TikZ the `\definecolor` lines come before `\begin{tikzpicture}`, colours are upper-case hex, `\`, `^` and `~` become `\textbackslash{}`, `\textasciicircum{}` and `\textasciitilde{}`, and a wrapped line starting with `[` or `*` gets a leading `{}` so `\\` does not read it as an argument. TikZ centres the 1.5 pt stroke on the circle, so circles are about 0.75 pt wider than on the canvas. SVG Copy copies the downloaded text, embedded font included (about 32 kB). Format and Scale keep their choice while the page is open. Format and Scale also have visible labels. Failed SVG and TikZ downloads toast `Could not download the file: …` as `CodeDialog` does.
+
+Phase 55 adds the `signs` option and `Scene.badges` (4.16 "Images").
 
 #### PDF, legend and dark theme (phases 31, 37, 38)
 
@@ -1142,6 +1154,187 @@ Details fixed in phase 36:
 - Tetrad numbers only the edges it writes, so skipped edges leave no gaps. bnlearn lists each parent once.
 - Line breaks in the graph name become one space in Mermaid's `%%` comment. `class` lines join ids with `,` and no spaces (`class v1,v4 selected`).
 
+### 4.16 Simulation details (`src/model/simulation.ts`, phases 49–56)
+
+Optional facts that let a simulator generate synthetic data from a GraphCreator file:
+
+- how common each level of a variable is (**shares**);
+- how a variable's causes combine (**form**);
+- whether an arrow raises or lowers its effect (**sign**);
+- how strong the effect is (**strength**).
+
+GraphCreator defines this representation, and simulators read the `.dag.yaml` file directly. A synthetic-data project that turns DAGs into tabular data sets is the first reader. [FORMAT.md](FORMAT.md) (phase 55) describes the format for such readers.
+
+Every field is optional. A graph without them behaves as before, and its file is byte-identical to before. `schema` stays `graphcreator/0.1`, and the fields are added to it. Proper versioning waits until this first version is final (section 10). Only the YAML file carries the fields; share links and autosave get them for free, because both use `toYaml`. The exchange formats (4.2 details, 4.15) leave them out, and their notes say so (5.9 "Dialog notes").
+
+#### Constants and types (`src/model/schema.ts`, `src/model/graph.ts`)
+
+```ts
+export const SIGNS = ['positive', 'negative'] as const
+export const STRENGTHS = ['small', 'medium', 'large'] as const
+export const FORMS = ['linear', 'smooth', 'threshold'] as const
+export type Sign = (typeof SIGNS)[number]
+export type Strength = (typeof STRENGTHS)[number]
+export type Form = (typeof FORMS)[number]
+/** One sign for the edge, or one per level of its nominal end (keys are level names). */
+export type EdgeSign = Sign | Record<string, Sign>
+
+// additions to GNode (3.2)
+shares?: number[]       // only with levels; same length and order as levels; each finite and >= 0
+form?: Form
+// additions to GEdge (3.2)
+sign?: EdgeSign         // a map is never empty (an empty map is stored as undefined)
+strength?: Strength
+```
+
+**Nominal.** A node is *nominal* when its `varType` is `categorical` and it has three or more levels. An ordinal node is never nominal: its levels are ordered, so one sign has a meaning.
+
+#### Meaning
+
+- **Shares** are the proportions of a categorical or ordinal variable's levels in the population, in level order: `levels: [no, yes]` with `shares: [0.88, 0.12]` means 12 % "yes". On a node with causes, they are the overall proportions the simulator should aim for (by choosing intercepts or thresholds), for example "SSI occurs in 8 %". Shares should add up to 1. When they do not, GraphCreator warns, and readers treat them as weights and normalise.
+- **Form** says how a node's causes combine:
+  - `linear`: effects add up in straight lines.
+  - `smooth`: effects curve. They can grow, level off or bend. A neural-network mechanism fits here.
+  - `threshold`: effects switch at cut-offs. A tree mechanism fits here.
+  - Noise is left to the simulator. A form on a node without causes means nothing (warning).
+- **Strength** is the size of the effect, whatever its sign. The bands are named. As guidance on a standardised scale (a standardised coefficient or comparable), small is about 0.1–0.3, medium 0.3–0.6 and large 0.6–1.0. A reader may use other numbers, but these are the shared default. With per-level signs, the strength applies to each signed level.
+- **Sign**, by the shape of the edge (`signShape` below):
+  - `single`, when neither end is nominal: one word. `positive` means a higher cause gives a higher effect, and `negative` a lower one. For categorical and ordinal variables, a later level counts as higher. A binary `[no, yes]` variable therefore reads naturally ("yes" is higher).
+  - `child-levels`, when only the child is nominal: a map from child levels to signs. `positive` means the cause makes that level more likely, `negative` less likely. Levels left out are unspecified.
+  - `parent-levels`, when only the parent is nominal: a map from parent levels to signs. The first parent level is the *reference* and has no key. `B: negative` means that moving from the reference level to B lowers the child.
+  - `none`, when both ends are nominal: no sign is allowed (a level × level table is too detailed to edit). A sign gives a warning; strength is still allowed.
+- `sign` and `strength` are independent; either can be set alone.
+
+#### Helpers (`src/model/simulation.ts`, pure, phase 49)
+
+```ts
+export type SignShape = 'single' | 'child-levels' | 'parent-levels' | 'none'
+export function isNominal(node: GNode): boolean
+export function signShape(graph: Graph, edge: GEdge): SignShape     // missing endpoints count as not nominal
+/** The node whose levels key a sign map: the child for 'child-levels', the parent for 'parent-levels', else undefined. */
+export function signLevelsNode(graph: Graph, edge: GEdge): GNode | undefined
+export function signBadge(sign: EdgeSign | undefined): 'positive' | 'negative' | 'mixed' | undefined
+export function equalShares(n: number): number[]                     // n >= 1; each 1/n rounded to 4 decimals, the last takes the remainder
+export function sharesTotal(shares: number[]): number
+export function setLevels(graph: Graph, nodeId: string, levels: string[], origin: (number | null)[]): Graph
+export function hasSimulationDetails(item: GNode | GEdge): boolean   // shares, form, sign or strength set
+```
+
+- `signBadge`: a word gives itself. A map whose values are all the same gives that value, and a map with both values gives `'mixed'`. `undefined` and an empty map give `undefined`.
+- `equalShares(3)` is `[0.3333, 0.3333, 0.3334]`; `equalShares(2)` is `[0.5, 0.5]`. The remainder is rounded to 4 decimals as well.
+- `setLevels` replaces the node's levels. `origin[i]` is the index in the old `levels` that new item `i` came from, or `null` for a new item, and `origin` has the same length as `levels`.
+  - **Shares:** when the node has them, new item `i` gets the old share at `origin[i]`, or 0 for a new item.
+  - **Sign maps:** for each incident edge whose `signLevelsNode` (computed on the old graph) is this node, a key that named old level `origin[i]` is renamed to `levels[i]`, and keys of removed levels are dropped. A map left empty becomes `undefined`. Other edges are untouched.
+  - The levels themselves go through the same normalisation as `updateNode` (3.2), so `setLevels` on a node without a leveled type drops them.
+- `updateNode` (3.2 addition): `shares` is dropped whenever `levels` is (a type without levels). A patch that sets `levels` without `shares` also drops `shares`: callers that want shares to follow their levels use `setLevels`. `form: undefined` in a patch removes the form.
+- `updateEdge` (3.2 addition): the patch type becomes `Partial<Pick<GEdge, 'evidence' | 'note' | 'sign' | 'strength'>>`. `sign: undefined` and `strength: undefined` remove the key, and an empty sign map counts as `undefined`.
+- Neither `updateNode`/`updateEdge` nor `setLevels` rounds or clamps numbers. The editors do that (5.9).
+
+#### File (4.1 additions, phase 50)
+
+```yaml
+schema: graphcreator/0.1
+name: Surgical site infection
+nodes:
+  - name: Diabetes
+    var_type: categorical
+    levels: ["no", "yes"]
+    shares: [0.88, 0.12]
+    pos: [0, 0]
+  - name: Wound class
+    var_type: categorical
+    levels: [clean, clean-contaminated, contaminated]
+    shares: [0.6, 0.3, 0.1]
+    form: threshold
+    pos: [0, 160]
+  - name: SSI
+    role: outcome
+    var_type: categorical
+    levels: ["no", "yes"]
+    shares: [0.92, 0.08]
+    form: linear
+    pos: [300, 80]
+edges:
+  - from: Diabetes
+    to: SSI
+    sign: positive
+    strength: medium
+  - from: Diabetes
+    to: Wound class
+    sign: {clean: negative, contaminated: positive}
+    strength: small
+  - from: Wound class
+    to: SSI
+    sign: {clean-contaminated: positive, contaminated: positive}
+    strength: large
+```
+
+| Field | Type | Required | Rules |
+|---|---|---|---|
+| `nodes[].shares` | list of numbers | no | Only with `levels`; one per level, in level order; each ≥ 0. Flow style. |
+| `nodes[].form` | enum `FORMS` | no | |
+| `edges[].sign` | `positive` or `negative`, or a map from level names to `positive`/`negative` | no | A map is written in flow style, with its keys in the level order of `signLevelsNode` and any other keys after them in their original order. An empty map `{}` is read as absent. |
+| `edges[].strength` | enum `STRENGTHS` | no | |
+
+- **Key order** when writing: node `name, role, var_type, levels, shares, description, unit, form, pos`; edge `from, to, sign, strength, evidence, note`.
+- **Numbers** in `shares` are written as JavaScript writes them (`0.12`, `1`), never as `-0`.
+- **Zod** (`GraphFileSchema`): `shares: z.array(z.number())`, `form: z.enum(FORMS)`, `sign: z.union([z.enum(SIGNS), z.record(z.string(), z.enum(SIGNS))])`, `strength: z.enum(STRENGTHS)`, all optional. Messages follow 4.1:
+  - `Node "SES": shares must be a list of numbers.`
+  - `Node "SES": form must be one of linear, smooth, threshold.`
+  - `Edge from "A" to "B": sign must be positive or negative, or a map from levels to positive or negative.`
+  - `Edge from "A" to "B": strength must be one of small, medium, large.`
+- **YAML 1.1 safety** (applies to every file `toYaml` writes, not only those with simulation details). Python's PyYAML reads YAML 1.1, where `yes`, `no`, `on`, `off`, `y`, `n`, `true`, `false`, `null` and `~` (in any of their spellings: lower case, Capitalised, UPPER), numbers in 1.1 forms (`1_000`, `0x1F`, `0o17`, `1:30`, `.inf`, `.nan`) and dates (`2024-01-31`) are not text. `toYaml` writes any string scalar that YAML 1.1 would read as one of these in double quotes: names, `from`/`to`, levels, sign-map keys and every other text field. Strings that YAML 1.2 already quotes stay as they are. The canonical round trip (4.1) still holds.
+
+#### Validation (4.4 additions, phase 51)
+
+`validateGraph` adds these issues. `parseYaml` reports the errors as it reports other semantic errors (step 4) and the warnings with the others (step 7).
+
+Errors, after the unit error and in node order. The editors never produce them, so they come only from files:
+- `Node "SES" has shares, but only categorical and ordinal variables with levels can have shares.`
+- `Node "SES" has 2 shares for 3 levels.`
+- `Node "SES" has a negative share.` (also for a share that is not a finite number).
+
+Warnings, after the existing ones: node warnings in node order, then edge warnings in edge order. Node warnings carry `nodeId` and edge warnings carry `edgeId` (3.3 addition below).
+- Shares that do not add up to 1 within 0.001: `The shares of "SES" add up to 90%, not 100%.` The percentage is rounded to one decimal, without trailing zeros (`99.5%`, `90%`).
+- `Node "SES" has a functional form but no causes.`
+- A sign on a `none` edge (a word or a map): `The edge from "A" to "B" has a sign, but "A" and "B" are both categorical with more than two levels, so a sign has no clear meaning.`
+- A word on a `child-levels` or `parent-levels` edge: `The edge from "A" to "B" has one sign, but "B" is categorical with more than two levels. Give a sign per level instead.` (the name is that of the nominal end).
+- A map on a `single` edge: `The edge from "A" to "B" has a sign per level, but neither "A" nor "B" is categorical with more than two levels. Give one sign instead.`
+- A map key that is not a level of the nominal end: `The edge from "A" to "B" has a sign for level "X", but "B" has no such level.` (one warning per key).
+- A map key equal to the reference level on a `parent-levels` edge: `The edge from "A" to "B" has a sign for "O", but "O" is the reference level of "A" and cannot have a sign.`
+- A `child-levels` map that covers every child level with the same sign: `The edge from "A" to "B" makes every level of "B" more likely, but their chances add up to 100%, so at least one must become less likely.` For `negative`, the warning reads `less likely` … `more likely`.
+
+**3.3 addition (phase 49):** `Issue` gains `edgeId?: string`, set on issues about one edge. `IssueList` and `IssuesDialog` show such issues as buttons that select the edge (5.9).
+
+#### Store (4.6 and 4.10 additions, phase 49)
+
+```ts
+setLevels(nodeId: string, levels: string[], origin: (number | null)[]): void   // delegates to simulation.setLevels
+```
+
+- `updateNode` takes `shares` and `form` in its patch as it is, and `updateEdge` takes `sign` and `strength` (3.2 additions above).
+- `setLevels` is recorded in the undo history like `updateNode` (4.10): one step, nothing recorded when the graph does not change.
+
+#### UI store (4.7 addition, phase 49)
+
+The pattern of `dagittyDetails` (5.4):
+```ts
+export const SIMULATION_OPEN_KEY = 'graphcreator:simulation-open'
+simulationOpen: boolean                 // initial value from readSimulationOpen(safeLocalStorage())
+setSimulationOpen(open: boolean): void  // also writes
+export function readSimulationOpen(storage: Pick<Storage, 'getItem'> | null): boolean   // true only for the stored text '1'
+export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, open: boolean): void   // '1' or '0'; ignores null or throwing storage
+```
+
+#### Images (4.11 addition, phase 55)
+
+- `ImageOptions` gains `signs?: boolean` (default false).
+- With `signs`, every edge whose `signBadge` is defined gets a badge at the midpoint between its two drawn end points: a circle of radius 8, filled with the palette's background, with a 1 px stroke in the edge colour, and the character `+`, `−` (U+2212) or `±` at 12 px, weight 500, in the edge colour, centred.
+- `Scene` gains `badges: { circle: SceneCircle; text: SceneText }[]`, drawn after the edges and before the circles. The `circles[i]`/`nodeIds[i]` pairing is unchanged.
+- `toSvg` and `sceneToPdf` draw the badges.
+- `toTikz(graph, { legend, signs })` adds one `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (<x>,<y>) {$+$};` per badge (`$-$`, `$\pm$`), after the edges.
+- The legend does not explain the badges.
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -1188,6 +1381,7 @@ Details fixed in phase 36:
 - **EdgeEditor:** heading `From → To` (names), Evidence (ListEditor of strings), Note (textarea), Delete edge button.
 - **ListEditor:** one text input per item, with add, remove, move up and move down buttons; Enter in the last input adds a new item. Empty items are dropped on commit.
 - Text fields commit on blur (and Enter for single-line fields), not per keystroke.
+- **Simulation section** (phases 52–53): at the bottom of both editors, closed by default (5.9).
 
 ### 5.4 Files and dialogs
 
@@ -1383,6 +1577,7 @@ Pure and deterministic (no DOM), so `autoLayout` and the store can use it.
 | Circle | highlighted from the Analysis tab (phase 26) | the hover rim, as in the hover row |
 | Connection line | while dragging | 1.75 px `--primary`, dashed `6 4` |
 | Evidence chip | edge has evidence | 20 px high, `--background`, 1 px `--input` border, `rounded-sm`, `Bookmark` 10 px and the count in Plex Mono 11 px |
+| Sign badge (phase 54) | edge has a sign | 16 px circle, `--background`, 1 px `--edge` border, `+`/`−`/`±` in Plex Sans 12 px weight 500 in `--edge`; `--primary` border and glyph when the edge is selected (5.9) |
 
 #### 5.7.8 Voice and copy
 
@@ -1414,6 +1609,8 @@ GraphCreator speaks like a careful colleague reviewing your DAG: precise, neutra
 | `FIELD_TIPS.evidence` | "Evidence: references that support this arrow, such as PMID:123 or doi:10.1000/xyz. One reference per line." |
 | `FIELD_TIPS.note` | "Note: why you drew this arrow, or what is uncertain about it." |
 | `PANEL_HELP` | typed `{ title: string; rows: readonly { action: string; how: string }[] }`: the title "Nothing selected." (kept from v1; `e2e/smoke.spec.ts` and `e2e/canvas.spec.ts` check it) followed by four rows: "Add a node" / "Double-click the canvas or press N"; "Connect" / "Drag from the rim of a circle, or press C"; "Delete" / "Select, then press Delete"; "Select several" / "Shift-click"; from phase 21 a fifth row "Undo" / "Press Ctrl+Z" |
+
+Phase 49 adds the simulation texts of 5.9 "Copy".
 
 #### 5.7.9 Welcome slides (`WelcomeDialog.tsx`)
 
@@ -1563,6 +1760,77 @@ While a lesson step has `pointer`, each entry whose node exists in the graph sho
 **During a lesson** the tab analyses the practice graph like any other graph.
 
 Details fixed in phase 29: a count shows `(0)` for an empty list and is left out when the list cannot be computed (truncated paths, `'needs-single'`, sections hidden by the empty state). Hovering an independence row highlights a, b and the conditioning set; an adjustment row's hover area includes its button. Intro lines use body text; only `Showing the first 100 sets.` is muted. Every Report sentence is its own `<p>`. `SidePanel` switches to Edit through a `useGraphStore.subscribe` on `selection`, so clicking a node that is already selected does not switch (the selection does not change); a selection from IssuesDialog always does. "Show all" resets when the tab is left, because the tab content unmounts.
+
+### 5.9 Simulation details in the editor (phases 49–56)
+
+The fields of 4.16 are edited in a **Simulation** section at the bottom of both editors. It is closed by default, so people who only draw see the calm editor of 5.3.
+
+**Section (`SimulationSection.tsx`, phase 49).**
+- `SimulationSection({ marked, children })` is built on the shadcn `collapsible` (added in phase 49 with `npx shadcn@latest add collapsible`; it uses the installed `radix-ui`).
+- It sits under the editor's last field, above the Delete button, after a 1 px `--border` line.
+- Its trigger is a full-width ghost button reading "Simulation", in the editor heading style (15 px, semibold), with a `ChevronRight` icon that turns 90° when open and `aria-expanded`. It carries the info tip `FIELD_TIPS.simulation`.
+- The open state is `uiStore.simulationOpen`, shared by both editors and kept across visits.
+- When the section is closed and `marked` is true (the editor passes `hasSimulationDetails(item)`), the trigger shows the muted text `set` in Plex Mono 13 px after the title, so hidden details are not forgotten.
+
+**Node editor (phase 52).** The section holds these fields, in this order:
+- **Shares**, shown for a categorical or ordinal node with at least two levels.
+  - **Without shares:** the muted line `No shares yet.` and an outline button **Add shares**, which sets `equalShares(levels.length)`.
+  - **With shares** (`SharesEditor.tsx`): one row per level, with the level name (truncated, full name in `title`) and a number input of 64 px. The input's `aria-label` is `Share of <level>`, it has a `%` suffix, `min 0`, `max 100` and `step 0.1`, and it shows `share × 100` rounded to two decimals.
+  - **Committing a share** (blur or Enter; Escape reverts) clamps the value to 0–100 and stores `round(value / 100, 4 decimals)`. Empty or non-numeric text reverts.
+  - **Bar and total:** below the rows sits a stacked bar, 12 px high and full width, with one segment per level. Its widths are proportional to the shares (normalised when the total is not 100 %), its colours step through `--primary` at 35 %, 55 %, 75 % and 95 % strength (repeating), and segments are split by 1 px gaps. The bar is `aria-hidden`. Next to it is the text `Total 100%`, using the 4.16 rounding. When the total is off by more than 0.1 %, the text is in `--warning-fg` and reads `Total 90%: shares should add up to 100%.`.
+  - A ghost button **Remove shares** removes them.
+  - Shares follow their levels when levels are added, removed, renamed or moved, because NodeEditor's Levels list commits through `setLevels` (`ListEditor` addition below).
+- **Form**, shown when the node has at least one incoming edge or already has a form. It is a select (`aria-label="Functional form"`) with `—` (none), Linear, Smooth and Threshold. Each option shows its label and `FORM_DESCRIPTIONS` line, as in `RolePicker`.
+- When neither field applies (an untyped, continuous or discrete root node), the section body is the muted line `Add causes or levels to describe how to simulate this variable.`
+
+**Edge editor (phase 53).** The section holds these fields, in this order:
+- **Sign** (`SignEditor.tsx`). Its control is a segmented group (`role="radiogroup"`) of three toggle buttons, `—`, `Positive` (with a `+` glyph) and `Negative` (with a `−` glyph), labelled by its row. What it shows depends on `signShape`:
+  - **`single`:** one control, labelled "Sign".
+  - **`child-levels`:** the intro line `Effect on each level of <child>:`, then one row per child level with that control, labelled `Sign for <level>`.
+  - **`parent-levels`:** the intro line `Each level of <parent> compared with <first level>:`, then one row per parent level except the first.
+  - **`none`:** the muted line `A sign is not available, because both variables are categorical with more than two levels.`
+  - **Stored sign that does not fit the shape** (a word on a level shape, a map on `single` or `none`): the muted line `This sign does not fit the variable types any more.` and a ghost button **Clear sign**, in place of the controls.
+  - **Committing:** a click on a map row updates that key (`—` removes it); a map left empty is stored as no sign.
+- **Strength:** a select (`aria-label="Strength"`) with `—`, Small, Medium and Large, each with its `STRENGTH_DESCRIPTIONS` line.
+
+**`ListEditor` addition (phase 52).** `onCommit(items, origin)` gains a second argument: `origin[i]` is the index in the `items` prop of the row that became item `i`, or `null` for a row added since mount. Rows keep their origin through moves and edits. Existing callers ignore the argument.
+
+**Canvas (phase 54).**
+- Each edge with a `signBadge` shows a badge at its midpoint: a 16 px circle with a `--background` fill and a 1 px `--edge` border, and the glyph `+`, `−` or `±` in Plex Sans 12 px, weight 500, `--edge`. It has `role="img"` and `aria-label` `Positive effect`, `Negative effect` or `Mixed effects per level`, and the `title` `Sign: positive` and so on.
+- When the edge also has an evidence chip, the badge and the chip sit side by side with a 4 px gap, centred together on the midpoint (badge first).
+- A click on the badge selects the edge, like the chip. A selected edge's badge has a `--primary` border and glyph.
+- `FloatingEdgeData` gains `sign?: 'positive' | 'negative' | 'mixed'` (phase 49), filled by `Canvas` from `signBadge(edge.sign)`.
+- 5.7.7 gains the row: Sign badge, edge has a sign: 16 px circle, `--background`, 1 px `--edge` border, the glyph in `--edge`; `--primary` when the edge is selected.
+
+**Issues (phase 53).** `IssueList` renders issues with an `edgeId` as buttons, like node issues, calling a new optional `onSelectEdge(edgeId)`. `IssuesDialog` selects the edge (`select({ kind: 'edge', id })`) and closes itself, as it does for nodes (phase 56; phase 53 wired this in `TopBar`).
+
+**Export dialog (phase 55).** A **Signs** checkbox (label "Signs") comes after Legend for every format. It is shown only when at least one edge has a `signBadge`, is on by default and is kept while the page is open, like Legend. It passes `signs` to `toSvg`, `svgSize`, `toPdf` and `toTikz`. The preview and sizes follow it.
+
+**Dialog notes (5.4 addition, phase 49).** `CodeDialog`'s `COPY` notes change only by the added words:
+- **GraphCreator:** "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence, positions and simulation details."
+- **dagitty:** "Variable types, levels, descriptions, units and evidence are not included in dagitty files. Simulation details are not included either. Save as GraphCreator to keep them."
+- **dagitty details note:** "Variable types, levels, descriptions, units and evidence are added as gc.* attributes. dagitty keeps them but does not use them. Simulation details are not included."
+- **GML:** "The GML file keeps roles, variable types, levels, descriptions, units, evidence and positions, but not simulation details. Node labels are names safe for R and Python, such as Maternal_smoking; DoWhy and networkx use them as variable names."
+- **DOT:** "The DOT file keeps roles, variable types, levels, descriptions, units, evidence and positions as attributes, and the role colors for Graphviz, but not simulation details. Node ids are names safe for R and Python, such as Maternal_smoking."
+- **networkx JSON:** "The networkx JSON keeps everything except simulation details. Read it in Python with networkx.node_link_graph(data, edges=\"edges\"). Node ids are names safe for R and Python, such as Maternal_smoking."
+- bnlearn, Tetrad and Mermaid are unchanged.
+
+**Copy (5.7.8 addition, phase 49).** `src/lib/copy.ts` adds these texts:
+
+| Key | Text |
+|---|---|
+| `SIGN_LABELS` | positive "Positive", negative "Negative" |
+| `STRENGTH_LABELS` | small "Small", medium "Medium", large "Large" |
+| `STRENGTH_DESCRIPTIONS` | small "A weak effect, about 0.1 to 0.3 on a standardized scale.", medium "A moderate effect, about 0.3 to 0.6.", large "A strong effect, about 0.6 to 1." |
+| `FORM_LABELS` | linear "Linear", smooth "Smooth", threshold "Threshold" |
+| `FORM_DESCRIPTIONS` | linear "Effects add up in straight lines.", smooth "Effects curve: they can grow, level off or bend.", threshold "Effects switch at cut-offs, such as a risk that jumps above an age." |
+| `FIELD_TIPS.simulation` | "Simulation: optional details for generating synthetic data from this DAG. Other tools read them from the GraphCreator file." |
+| `FIELD_TIPS.shares` | "Shares: how common each level is in the population, such as 12% with diabetes. For a variable with causes, the overall shares you expect." |
+| `FIELD_TIPS.form` | "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs." |
+| `FIELD_TIPS.sign` | "Sign: whether the cause raises (positive) or lowers (negative) the effect. For categorical and ordinal variables, later levels count as higher." |
+| `FIELD_TIPS.strength` | "Strength: how large the effect is, from small to large. A simulator turns these bands into effect sizes." |
+
+Shares, Form, Sign and Strength carry info tips (`About shares`, `About functional form`, `About sign`, `About strength`) as in 5.3.
 
 ## 6. Project setup and conventions
 
@@ -1724,6 +1992,26 @@ Details fixed in phase 29: a count shows `(0)` for an empty list and is left out
 | Key idea and pointer look | A Key idea box in the panel and a pulsing teal label on the canvas above the named nodes | The hover rim only; a bold lead sentence; dimming the rest of the canvas | User's choice, picked from four drawn options. |
 | Wrong picks | The node's own explanation, and a Show answer link after two wrong picks | Explanation only; a generic "Try again"; silent | User's choice. |
 | Lesson progress | Finished lessons get a checkmark, kept in this browser; no resuming mid-lesson | Checkmarks and resuming; nothing kept | Recommended option. |
+| Simulation details: where | Optional fields in the native `.dag.yaml`, read directly by simulators | A separate simulation-template export; both | Recommended option (2026-11-11). GraphCreator defines the representation and simulators adapt to it. One file, positions included, no sidecar. |
+| Simulation details: which | Level shares, node form, edge sign, edge strength | Also noise families, numeric coefficients, a "keep this node" flag | User's choice. Noise and sampler policy belong to the simulator. |
+| Simulation details: editor | A collapsible Simulation section in both editors, closed by default and remembered | Always visible; an app-wide switch | Recommended option. It keeps the editor calm for people who only draw. |
+| Effect strength | Named bands `small`/`medium`/`large`, with standardised ranges as guidance in FORMAT.md | A numeric `[low, high]` range; band or range | Recommended option; easier for clinicians to fill in. |
+| File shape | Flat keys (`shares`, `form`, `sign`, `strength`) | A nested `sim:` block | Recommended option; it matches the existing flat style. |
+| Shares | Proportions summing to 1, in a list parallel to `levels` | Percentages; levels as objects | Recommended option; readers use them as probabilities, and the levels format is unchanged. |
+| Shares not adding up to 1 | A warning; readers normalise | An error in the file | Recommended option; a half-edited graph can still be saved and reopened. |
+| Shares on nodes with causes | Allowed, meaning the target overall proportions | Root nodes only | Recommended option; outcome prevalence is useful. |
+| Sign words | `positive` / `negative` | Quoted `"+"` / `"-"` | Recommended option. A bare `-` starts a YAML list. |
+| Functional form values | `linear` / `smooth` / `threshold` | `linear` / `nonlinear`; the other project's `linear` / `mlp` / `tree` | Recommended option. Clinician-friendly, and it maps one-to-one onto common mechanism families. |
+| Signs on nominal variables | A sign per level: per child level ("raises or lowers the chance of this level"), or per parent level compared with the first level | A warning; disabling the sign | User's choice: a cause can raise one level and lower another. |
+| Both ends nominal | No sign (warning); strength allowed | A nested level × level map | Recommended option; too detailed to edit. |
+| Schema version | Stays `graphcreator/0.1`; the new fields are added to it | `0.2` only when needed; always `0.2` | User's choice. Versioning is decided after the first version is final. |
+| Simulation details in other formats | YAML only; the notes of the other formats say so | Also networkx JSON; all rich formats | Recommended option. |
+| Reader documentation | `docs/FORMAT.md` | Also a JSON Schema; also a Python reference test | Recommended option (user's selection). |
+| Form on root nodes | Editable only with causes; a leftover form gives a warning | Always editable | Recommended option. |
+| Sign on the canvas | A small `+`/`−`/`±` badge at the edge's midpoint | Editor only; badge plus width by strength; a text label | User's choice, picked from four drawn options. |
+| Shares input | Percent fields with a stacked-bar preview and a total | Percent fields only; a draggable stacked bar | User's choice, picked from three drawn options. |
+| Signs in images | A Signs checkbox in the Export dialog | Always when set; not now | User's choice. |
+| YAML 1.1 safety | `toYaml` quotes text that YAML 1.1 (PyYAML) would read as a boolean, null, number or date | Leave it to readers | Python readers get the names as text, such as a level called `yes`. |
 
 ## 8. Implementation phases
 
@@ -1733,7 +2021,7 @@ General rules for every phase:
 
 - Read the whole spec first; sections 3–7 and the decisions table are binding.
 - Only create or change the files the phase owns. All other files are read-only for it. Code against the contracts of earlier phases; don't change them.
-- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`; phase 24 adds `tabs` and `switch`; phase 31 adds `checkbox`). If another is needed, stop and report it.
+- Use only the shadcn/ui components already in `src/components/ui/` (phase 1 added `button`, `input`, `select`, `textarea`, `dialog`, `dropdown-menu`, `sonner`; phase 3 adds `label` and `badge`; phase 10 adds `tooltip`; phase 24 adds `tabs` and `switch`; phase 31 adds `checkbox`; phase 49 adds `collapsible`). If another is needed, stop and report it.
 - Don't add npm dependencies; everything needed is installed (section 6). The only exception is phase 10, which swaps the font packages (5.7.3).
 - "All checks" means `npm run typecheck`, `npm run lint`, `npm test` and `npm run test:e2e`.
 
@@ -1789,6 +2077,14 @@ General rules for every phase:
 | 46 | Causal lessons 5–9 | 41 | 20 | `src/lessons/{dag-basics,confounding,mediators,colliders,selection}.ts` and their tests |
 | 47 | Causal lessons 10–14 | 41 | 20 | `src/lessons/{latent,adjustment,testing,instruments,reporting}.ts` and their tests |
 | 48 | Lessons integration and end-to-end tests | 42, 43, 44, 45, 46, 47 | 21 | `e2e/lessons.spec.ts`, fixes in any file of phases 41–47, this spec's Status line and Open issues, `docs/LESSONS.md` (corrections only), `docs/IDEAS.md` |
+| 49 | Simulation contracts | 48 | 22 | `src/model/schema.ts`, `graph.ts` (+ test), `result.ts`, `simulation.ts` (+ test), `src/store/graphStore.ts` (+ test), `src/store/uiStore.ts` (+ test), `src/lib/copy.ts` (+ `copy.test.ts`), `src/components/canvas/types.ts`, `src/components/SimulationSection.tsx`, `src/components/ui/collapsible.tsx`, `src/components/CodeDialog.tsx` (the notes only), `e2e/*.spec.ts` (note texts only, if a test checks a changed note) |
+| 50 | YAML read and write | 49 | 23 | `src/model/yaml.ts`, `yaml.test.ts`, `src/model/schema.ts` (`GraphFileSchema` only), `src/model/__fixtures__/{simulation,yaml11-names}.dag.yaml` |
+| 51 | Validation | 49 | 23 | `src/model/validate.ts`, `validate.test.ts` |
+| 52 | Node simulation editor | 49 | 23 | `src/components/NodeEditor.tsx`, `SharesEditor.tsx`, `ListEditor.tsx` |
+| 53 | Edge simulation editor | 49 | 23 | `src/components/EdgeEditor.tsx`, `SignEditor.tsx`, `IssuesDialog.tsx`, `TopBar.tsx` (the `onSelectEdge` wiring only) |
+| 54 | Canvas sign badge | 49 | 23 | `src/components/Canvas.tsx`, `canvas/FloatingEdge.tsx`, `canvas/canvas.css` |
+| 55 | Image signs and reader doc | 49 | 23 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/components/ExportDialog.tsx`, `docs/FORMAT.md` |
+| 56 | Simulation integration and end-to-end tests | 50, 51, 52, 53, 54, 55 | 24 | `e2e/simulation.spec.ts`, `e2e/export.spec.ts`, `e2e/files.spec.ts`, fixes in any file of phases 49–55, this spec's Status line and Open issues, `docs/IDEAS.md` |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -2628,6 +2924,235 @@ Phases: 48. Parallel: single phase. Check after the wave: all checks; the browse
   - `e2e/lessons.spec.ts` waits for the view to stop moving after a lesson starts or ends, because of the fit above. The pick feedback is the second `role="status"` in the panel (phase 42).
   - Browser walk-through (both themes): every lesson's steps 1–n were completed with the UI, including lesson 4's "Move a circle, then press Ctrl+Z" (the practice graph starts with an empty undo history, and the move is one undo step). No text in LESSONS.md needed a correction; only its Status line changed (implemented).
 
+### Wave 22: Simulation contracts [x]
+
+Phases: 49. Parallel: single phase. Check after the wave: all checks. The app runs unchanged, except for the wording of the Save as… notes.
+
+#### Phase 49: Simulation contracts [x] (5413c84)
+
+- **Goal:** the types, helpers, store actions, UI state, texts and the section shell of 4.16 and 5.9 exist, so wave 23 can build the file format, the checks, the editors, the canvas and the images in parallel.
+- **Depends on:** phase 48.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `Graph`, `GNode`, `GEdge`, `Issue` (3.2–3.3), `updateNode` and `updateEdge` (3.2), the undo recording (4.10), `readDagittyDetails` as the storage pattern (5.4), `safeLocalStorage` (`src/lib/welcome.ts`), `InfoTip`.
+- **Work:**
+  - **`schema.ts`:** `SIGNS`, `STRENGTHS`, `FORMS` and their types, and `EdgeSign` (4.16). `GraphFileSchema` stays as it is; phase 50 adds the fields.
+  - **`graph.ts`:** the `GNode` and `GEdge` additions, and the `updateNode` and `updateEdge` rules (4.16 "Helpers").
+  - **`result.ts`:** `Issue.edgeId`.
+  - **`simulation.ts`:** every helper of 4.16, for real.
+  - **`graphStore.ts`:** `setLevels`, recorded in the history.
+  - **`uiStore.ts`:** the `simulationOpen` addition.
+  - **`copy.ts`:** the 5.9 texts.
+  - **`canvas/types.ts`:** `FloatingEdgeData.sign`.
+  - **`SimulationSection.tsx`** and **`ui/collapsible.tsx`:** for real (5.9). No editor mounts it yet.
+  - **`CodeDialog.tsx`:** the note texts only.
+- **Tests:**
+  - `simulation.test.ts`;
+  - the `graph.test.ts`, `graphStore.test.ts`, `uiStore.test.ts` and `copy.test.ts` additions (section 9).
+- **Done when:** all checks pass. A graph without simulation details saves byte-identically to before, and every existing YAML fixture still round-trips.
+- **Out of scope:** reading and writing the fields, the checks, the editors, the canvas and the images.
+- **Details fixed in phase 49:**
+  - `updateNode` drops `shares` whenever the resulting node has no `levels`: a type without levels, a patch with `levels: undefined`, or a node that never had levels. A patch that sets `levels` without `shares` drops `shares` even when the levels are unchanged. Shares are never rounded or clamped.
+  - `updateEdge` stores a sign map as a copy. `sign: undefined` and `{}` remove the key, and `strength: undefined` removes the strength.
+  - `equalShares(n)` returns `[]` for `n < 1`. The remainder is `round4(1 − share × (n − 1))`, so `equalShares(6)` is `[0.1667 ×5, 0.1665]`. `sharesTotal` is the plain sum; the UI and the validation round it themselves.
+  - **`setLevels`:**
+    - It throws an `Error` when `origin` and `levels` differ in length, which is a programming error. An unknown node id returns the graph unchanged.
+    - An empty new level list drops the shares (never `shares: []`). A share whose old index is out of range counts as 0.
+    - Sign-map keys that named no old level (stray keys from a file) are kept after the renamed level keys, in their original order, unless a renamed level key of the same name exists; then the level's value wins. Renamed keys come in the new level order.
+    - Maps are rebuilt with `Map` and `Object.fromEntries`, so level names such as `constructor` and `__proto__` are ordinary keys.
+    - Only edges incident to the node are rebuilt; other edges keep their objects.
+  - `signShape` treats an edge whose endpoints are both missing as `single`.
+  - **`SimulationSection` layout:**
+    - The trigger is a ghost button with `flex-1`, with the `InfoTip` beside it at the right end of the row, so no button sits inside another.
+    - The button has `-ml-2 px-2`, so its text lines up with the fields. Open, it keeps a transparent background.
+    - The chevron turns in 120 ms (none with reduced motion).
+    - The `set` marker is inside the button, so a marked, closed trigger's accessible name is "Simulation set". Tests that find it by name use a non-exact match or an unmarked section.
+    - The content is a `flex-col gap-4` column, and the root has `border-t border-border pt-4`.
+  - `copy.test.ts` checks the tooltip rules for every `FIELD_TIPS` entry: it starts with its term and a colon, has at most 30 words, and ends with a period.
+  - Until phase 52 switches NodeEditor to `setLevels`, a levels commit through `updateNode` drops the shares.
+
+### Wave 23: Simulation parts [x]
+
+Phases: 50, 51, 52, 53, 54, 55. Parallel: all six, one sub agent each in its own worktree; their files are disjoint. Land them in the order 50, 51, 52, 53, 54, 55. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`.
+
+Check after the wave: all checks, then in the browser:
+- open `simulation.dag.yaml`, change the shares and signs in both editors, and save. The file contains the edits, and reopening it restores them;
+- the canvas shows the badges;
+- the Export dialog's Signs checkbox adds the badges to a PNG and a PDF.
+
+#### Phase 50: YAML read and write [x] (e2d4ed1)
+
+- **Goal:** `.dag.yaml` files carry the simulation details, and every file `toYaml` writes is safe for YAML 1.1 readers.
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.16 (types, "File"), `validateGraph` (4.4; phase 51 adds the new checks in parallel).
+- **Work:**
+  - add the four fields to `FileNodeSchema` and `FileEdgeSchema`, with the Zod messages of 4.16;
+  - read them into `GNode` and `GEdge`, an empty sign map being absent;
+  - write them in the key order and styles of 4.16, ordering map keys with `signLevelsNode`;
+  - add the YAML 1.1 quoting to `toYaml`;
+  - add `src/model/__fixtures__/simulation.dag.yaml` (the 4.16 example, canonical) and `yaml11-names.dag.yaml` (names and levels `yes`, `No`, `on`, `1_000`, `2024-01-31`, `~`).
+- **Tests:** the `yaml.test.ts` additions (section 9).
+- **Done when:** all checks pass; both fixtures round-trip canonically; `smoking.dag.yaml` and every other existing fixture are written unchanged.
+- **Out of scope:** the semantic checks (phase 51), the UI.
+- **Details fixed in phase 50:**
+  - `simulation.dag.yaml` is the 4.16 example as `toYaml` writes it, so `levels: ["no", "yes"]` is double-quoted (the 4.16 example was corrected to match).
+  - `yaml11-names.dag.yaml` has no simulation details, only names and levels that need quoting, so the DOT, GML and networkx round-trip loops can use it; sign-map key quoting is covered by unit tests. Those loops skip `simulation.dag.yaml`, because the exchange formats leave simulation details out by design, and the new fixtures got SVG snapshots (landed with this phase).
+  - Any Zod problem inside `shares`, `form`, `sign` or `strength` gives one message for that field, with its path (`nodes.0.shares`) and line; repeats with the same path and message are merged. `.inf` and `.nan` in `shares` give the "list of numbers" error (Zod 4 rejects non-finite numbers), so the "not a finite number" case of 4.16 applies only to in-memory graphs.
+  - A sign map is read as a copy in file order; `{}` is read as no sign. On `single` and `none` edges a map is written in its stored order (there are no levels to sort by).
+  - `-0` in shares is written as `0`; other numbers as `yaml` writes them. A share below 1e-6 would be written in exponent form, which PyYAML reads as text; the editors round shares to 4 decimals, so this does not happen in practice.
+  - **Quoting:** after the document is built, every plain string scalar (keys included) that matches a YAML 1.1 non-string pattern is double-quoted. The patterns are PyYAML's bool, null, int, float and timestamp patterns, plus `y`/`Y`/`n`/`N`, `0o…` octals, a signed exponent, and `<<` and `=`. So a node named `Y` is written `"Y"` (PyYAML itself reads `Y` as text, but the YAML 1.1 type rules and other readers do not). Text that `yaml` already quotes keeps its own style. The helper is not exported and is tested through `toYaml`.
+  - `escapes.dag.yaml` was never canonical (`toYaml` writes its list items unquoted), so the "existing fixtures unchanged" test covers the top-level fixtures without `minimal.dag.yaml`.
+
+#### Phase 51: Validation [x] (aee3e3a)
+
+- **Goal:** `validateGraph` gives the errors and warnings of 4.16 "Validation".
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `signShape`, `signLevelsNode`, `isNominal` and `sharesTotal` (4.16), `Issue.edgeId`.
+- **Work:** add the checks in the stated order, with the exact messages, `nodeId` on node issues and `edgeId` on edge issues.
+- **Tests:** the `validate.test.ts` additions (section 9).
+- **Done when:** all checks pass.
+- **Out of scope:** the parser's Zod messages (phase 50).
+- **Details fixed in phase 51:**
+  - **Order:**
+    - share errors come per node, straight after that node's unit error;
+    - the simulation node warnings come in a second pass after all existing warnings, per node, shares first, then form;
+    - the sign warnings follow in edge order;
+    - on one edge, the unknown-key warnings come first (in map key order), then the reference-level warning, then the "every level" warning.
+  - **Share errors:**
+    - "with levels" means `levels` is present and not empty, so `levels: []` with shares gets the type error;
+    - the count error is checked only when the type error does not apply, and uses singular forms (`1 share for 2 levels`, `2 shares for 1 level`);
+    - the negative-share error is checked on its own (once per node), with `-0` not negative and NaN and ±Infinity counting as negative.
+  - **Shares total:** no total warning when a share is not finite. The percentage is `Math.round(total * 1000) / 10`, so `-0` prints as `0`. An empty `shares` list warns `0%` (on top of its count error).
+  - **Form:** "causes" are incoming edges from another existing node; self-edges and dangling edges do not count.
+  - **Signs:**
+    - edges with a missing endpoint and self-edges get no sign warnings, because both are errors already;
+    - on a `single` or `none` edge with a map, the keys are not checked further;
+    - the "every level" warning ignores keys that are not levels (they get their own warning);
+    - a `parent-levels` map that gives every compared level the same sign gets no warning.
+  - Node messages use the trimmed name and edge messages use `node.name`, as the existing messages do.
+
+#### Phase 52: Node simulation editor [x] (66c8a4f)
+
+- **Goal:** the node editor's Simulation section edits shares and form, and levels keep their shares.
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `SimulationSection`, `equalShares`, `sharesTotal`, `hasSimulationDetails`, the store's `updateNode` and `setLevels`, the copy texts (5.9).
+- **Work:**
+  - the Node editor part of 5.9, with `SharesEditor.tsx` as its own component;
+  - the `ListEditor` `origin` argument;
+  - NodeEditor's Levels list commits through `setLevels`.
+- **Tests:** `src/components` has no unit tests; phase 56 tests the editor end to end. Check it in the browser: add shares, change one, add, rename, move and remove a level, and undo.
+- **Done when:** all checks pass and the browser check works in both themes.
+- **Out of scope:** the edge editor, the canvas.
+- **Details fixed in phase 52:**
+  - `ListEditor` origins count from the list as last committed, not the list at mount. After each commit every kept row's origin becomes its new index, and rows dropped as empty become `null`, so origins always index the current `items`, as `setLevels` expects. A commit whose values match the last one but whose origins are out of order (two equal levels swapped) still calls `onCommit`.
+  - Shares show for a categorical or ordinal node with at least two levels, or with one level when the node already has shares, so shares kept after removing levels down to one stay visible and removable.
+  - A share input shows the stored value except while being typed in, so it follows level moves without a remount. Native number spinners are hidden so 64 px fits two decimals; a `%` in `--muted-foreground` follows the input. Each row shows the level name truncated (`flex-1`) with the input at the right.
+  - The total line sits under the full-width bar (the 320 px panel has no room beside it). It is `--muted-foreground` when fine and `--warning-fg` when off by more than 0.001, with `aria-live="polite"`.
+  - Bar segments for shares of 0 are left out, so there are no doubled gaps; with a total of 0 the bar is an empty `--muted` track. Segment colours are `bg-primary/35`, `/55`, `/75` and `/95`, with `rounded-sm` corners.
+  - The Form field's visible label is "Form", with the info tip "About functional form" (the Type / "Variable type" pattern); the trigger's `aria-label` is "Functional form". The "none" option's internal value is `'none'`.
+  - Shares is a `role="group"` labelled "Shares" with the "About shares" tip, as Levels is. The rows are a `<ul aria-label="Share list">`. Remove shares is a small ghost button aligned with the fields (`-ml-2 px-2`).
+
+#### Phase 53: Edge simulation editor [x] (edf6c26)
+
+- **Goal:** the edge editor's Simulation section edits sign and strength, and edge issues select their edge.
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `SimulationSection`, `signShape`, `signLevelsNode`, `hasSimulationDetails`, the store's `updateEdge` and `select`, the copy texts, `Issue.edgeId`.
+- **Work:**
+  - the Edge editor part of 5.9, with `SignEditor.tsx` as its own component;
+  - the Issues part of 5.9 (`IssueList`, `IssuesDialog`, and in `TopBar.tsx` only the wiring of `onSelectEdge`).
+- **Tests:** none at unit level; check in the browser:
+  - a single sign;
+  - per child level and per parent level, on a graph with a three-level categorical node;
+  - the `none` case, and Clear sign after changing a type;
+  - strength;
+  - undo.
+- **Done when:** all checks pass and the browser check works in both themes.
+- **Out of scope:** the node editor, the canvas badge.
+- **Details fixed in phase 53:**
+  - `SignEditor({ edge })` reads `signShape` and `signLevelsNode` from the live graph, so a type or level change on an end, or an undo, shows at once.
+  - **Sign control:** `role="radiogroup"` with three `role="radio"` buttons and `aria-checked`. Only the chosen button is in the tab order. Arrow keys move and choose, wrapping around, and clicking the chosen button does nothing. The `—` button is named "No sign", the others "Positive" and "Negative" (glyph `aria-hidden`). The single control is labelled by the visible "Sign" label.
+  - **Sign styling:** a chosen Positive or Negative has a `--primary` fill and `--primary-foreground` text; a chosen `—` has a `--muted` fill and `--foreground` text, so unset rows stay quiet. Segments are 28 px high inside a 32 px `--input`-bordered group.
+  - **Per-level rows:** each row has the level name (truncated, full name in `title`, `aria-hidden`) above its control, 12 px apart. The intro line uses the hint style, and the field is a `role="group"` named "Sign".
+  - **Map edits:** a row reads its value from own keys only (`Object.hasOwn`). A commit rebuilds the map with `Map` and `Object.fromEntries`; other keys keep their order, stray non-level keys included, which the editor neither shows nor drops.
+  - **Does not fit:** any stored sign on a `none` edge (a word or a map) counts as not fitting, so it gets the line and Clear sign; otherwise a word there could not be removed. Clear sign is a ghost button aligned with the fields (`-ml-2 px-2`).
+  - **Strength:** the select's `—` value is the sentinel `none`; the trigger shows only the label, and each option's description is attached with `aria-describedby`, as in `RolePicker`.
+  - **Issues:** the dialog hint reads "Click an item to select its node.", "…its edge." or "…its node or edge.", depending on what is clickable. An issue with both a `nodeId` and an `edgeId` selects the node. Edge issues are plain text unless `onSelectEdge` is passed, so `OpenDialog` is unchanged. Node select-and-close stayed inside `IssuesDialog` and the edge wiring was in `TopBar`, until phase 56 moved both into `IssuesDialog`.
+
+#### Phase 54: Canvas sign badge [x] (4d4a014)
+
+- **Goal:** signed edges show their badge on the canvas.
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `signBadge`, `FloatingEdgeData.sign`, the store's `select`.
+- **Work:**
+  - the Canvas part of 5.9;
+  - `Canvas` passes `sign` in the edge data and includes it in its "data unchanged" comparison;
+  - `FloatingEdge` draws the badge, alone or next to the evidence chip.
+- **Tests:** none at unit level; phase 56 adds e2e checks. Check in the browser: a positive, a negative and a mixed edge, with and without evidence, selected and not, in both themes.
+- **Done when:** all checks pass.
+- **Out of scope:** images (phase 55).
+- **Details fixed in phase 54:**
+  - The badge and the evidence chip sit in one row (`.gc-edge-labels`, `flex items-center gap-1`), placed with `translate(-50%, -50%)` at the midpoint, so they are centred together whether one or both show. The row has `pointer-events: none`; only the badge and chip take the pointer, so the gap between them leaves the edge clickable.
+  - The badge is a `<span role="img">` with `nodrag nopan`, `cursor: pointer` and `data-sign`. It is not in the tab order; the edge itself stays the keyboard target.
+  - The `--primary` look follows React Flow's `selected` prop (`data-selected` on the badge). Keyboard focus on the edge does not turn the badge teal, because the badge is rendered outside the edge's SVG group.
+  - On hover the badge fill becomes `--muted`, as the chip's does. Its colours change in 120 ms (0 ms with reduced motion, through the global rule in `index.css`).
+  - The badge ignores path marking: it stays `--edge` on a causal or biasing path unless the edge is selected.
+
+#### Phase 55: Image signs and reader doc [x] (d66670e)
+
+- **Goal:** exported pictures can show sign badges, and readers have [FORMAT.md](FORMAT.md).
+- **Depends on:** phase 49.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `signBadge`, `ImageOptions`, `Scene` (4.11), 4.16 "Images", and all of 4.1 and 4.16 for the doc.
+- **Work:**
+  - **Images:** the `signs` option and `Scene.badges` in `imageScene.ts`; drawing them in `toSvg`, `toTikz` (`imageExport.ts`) and `sceneToPdf` (`pdfExport.ts`); the Signs checkbox in `ExportDialog.tsx` (5.9).
+  - **`docs/FORMAT.md`:** the reader-facing description of the whole `.dag.yaml` format. It has:
+    - a full example (the 4.16 example);
+    - the field tables of 4.1 and 4.16 in reader terms;
+    - the meanings of roles, types, levels, shares, form, sign and strength;
+    - the reader rules: level order defines the class index and what counts as higher; the first level is the reference for `parent-levels` signs; normalise shares; ignore sign-map keys that are not levels; sort the nodes topologically yourself (file order is not topological); names are any text, so use them as given (`Kidney disease`); map roles to your own concepts (for example `outcome` → target, `latent` → hidden); `exposure`, `adjusted`, `selected` and `other` carry no simulation meaning;
+    - a short Python reading example with PyYAML's `safe_load`.
+- **Tests:** the `imageScene.test.ts` and `imageExport.test.ts` additions, and a `pdfExport.test.ts` case (section 9).
+- **Done when:** all checks pass; FORMAT.md's example parses with `parseYaml` (checked by hand or by a test reading the fixture it quotes).
+- **Out of scope:** the canvas badge (phase 54).
+- **Details fixed in phase 55:**
+  - The badge circle is drawn with `r` 7.5 and a 1 px line, so its outer radius is 8 (the canvas's 16 px badge, outline inside as for nodes). It sits halfway between the edge's start and its arrowhead's tip; the glyph's baseline is 4.5 px below the centre (0.375 × 12, the node text rule).
+  - `Scene.badges` is `SceneBadge[]` (`{ circle, text }`), always present (`[]` without badges). Badges do not affect the legend corner choice; edges already keep the legend 8 px away.
+  - SVG: the badges get their own `<g>` (12 px, weight 500, `text-anchor="middle"`) right after the edges, written only when there are badges, so existing output is byte-identical.
+  - PDF: Helvetica's WinAnsi set has no minus sign (U+2212), so badges draw `−` as the en dash (WinAnsi 150). `−` in node names still becomes `?`.
+  - TikZ: badge nodes come after the edges and before the legend.
+  - Export dialog: Signs follows Legend (`id="export-signs"`) and is passed to `svgSize`, `toSvg`, `toTikz` and `toPdf`.
+  - FORMAT.md adds these reader rules:
+    - a sign that does not fit the edge's shape (any sign between two nominal nodes included) counts as missing;
+    - a key for the reference level is ignored;
+    - shares whose sum is 0 count as missing, and shares are read with `float()`;
+    - `discrete` means whole numbers, such as a count.
+  - FORMAT.md's example is the file as GraphCreator writes it, so `levels: ["no", "yes"]` is quoted (YAML 1.1 safety); the 4.16 example was corrected to match. `docs/` is in `.prettierignore`, which keeps the example's flow maps byte-identical to `simulation.dag.yaml`.
+
+### Wave 24: Simulation integration [x]
+
+Phases: 56. Parallel: single phase. Check after the wave: all checks; the browser checks below.
+
+#### Phase 56: Simulation integration and end-to-end tests [x]
+
+- **Goal:** simulation details work end to end, and the spec, IDEAS.md and memory reflect it.
+- **Depends on:** phases 50–55.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - write `e2e/simulation.spec.ts` and the `export.spec.ts` and `files.spec.ts` additions (section 9);
+  - fix integration problems in any file of phases 49–55;
+  - update the Status line, the Open issues and `docs/IDEAS.md`.
+- **Done when:** all checks pass. In the browser (both app themes): the section opens and stays open after a reload; shares, form, sign and strength save to the file and come back from a share link; and the Issues dialog selects an edge from a sign warning.
+- **Out of scope:** simulation code generation and sampling (IDEAS.md).
+- **Details fixed in phase 56:**
+  - `IssuesDialog` selects an edge and closes itself, as it does for nodes; its `onSelectEdge` prop is gone and `TopBar` no longer wires it. `IssueList` keeps its optional `onSelectEdge`, so `OpenDialog`'s error list is unchanged.
+  - The e2e specs wait for Open's animated fit (the viewport transform equal in two reads 100 ms apart) before clicking measured canvas points.
+  - `e2e/simulation.spec.ts` has 9 tests covering section 9's list; it also checks that sign-map keys follow level edits and that the edge editor shares the section's open state. `export.spec.ts` checks the Signs checkbox (absent without signs; on by default; two `+` and one `±` badge in the SVG for `simulation.dag.yaml`; TikZ follows it; kept when the dialog reopens). `files.spec.ts` checks the changed Save as… notes.
+  - No other integration fixes were needed in phases 49–55.
+
 ## 9. Tests
 
 - `src/model/graph.test.ts`: `newId` and `defaultNodeName` pick the smallest unused value; `addNode` returns a new graph and leaves the input unchanged; `renameNode` trims, refuses empty and duplicate names (case-sensitive: `Age` vs `age` allowed) and keeps edges; `updateNode` clears `levels`/`unit` when the type changes; `removeNodes` removes incident edges; `canAddEdge` returns `self`, `duplicate` and `cycle` with the exact messages, including the cycle path text; `addEdge` creates an edge with `evidence: []`.
@@ -2834,6 +3359,39 @@ Import and export (phases 31–40):
   - lesson 4: Save → Download, Save as… → dagitty… → Copy, Export as PDF, Share and Ctrl+Z each complete their step;
   - every lesson can be started from the dialog and closed again, leaving the user's graph unchanged.
 
+- `src/model/simulation.test.ts` (phase 49):
+  - `isNominal` and `signShape` for every combination of categorical (2 and 3 levels), ordinal (3 levels), continuous and untyped ends, and a missing endpoint;
+  - `signLevelsNode` per shape;
+  - `signBadge` for a word, a uniform map, a mixed map, an empty map and `undefined`;
+  - `equalShares(1..4)` (sums to 1 exactly after rounding) and `sharesTotal`;
+  - `setLevels`: shares follow an added, removed, renamed and moved level; sign-map keys on `child-levels` and `parent-levels` edges are renamed and dropped, and a map left empty is removed; edges where the node is not the levels node are untouched; a node without a leveled type drops the levels.
+- `src/model/graph.test.ts` (phase 49 additions): `updateNode` drops `shares` with `levels` and when a patch sets `levels` alone, and removes `form: undefined`; `updateEdge` sets and removes `sign` and `strength`, and an empty map removes `sign`.
+- `src/store/graphStore.test.ts` (phase 49 additions): `setLevels` delegates, is one undo step, and records nothing when nothing changes.
+- `src/store/uiStore.test.ts` (phase 49 additions): `readSimulationOpen` and `writeSimulationOpen` as the `dagittyDetails` cases.
+- `src/lib/copy.test.ts` (phase 49 additions): the new tips follow the tooltip rules (start with the term, at most 30 words).
+- `src/model/yaml.test.ts` (phase 50 additions):
+  - `simulation.dag.yaml` and `yaml11-names.dag.yaml` round-trip canonically;
+  - a sign map is written in level order whatever its order in memory;
+  - every Zod message of 4.16;
+  - `{}` as a sign is read as absent;
+  - PyYAML-unsafe text (`yes`, `No`, `ON`, `~`, `null`, `1_000`, `0x1F`, `1:30`, `.inf`, `2024-01-31`) is double-quoted in names, levels, sign keys and descriptions, and safe text is not;
+  - every existing fixture is written unchanged.
+- `src/model/validate.test.ts` (phase 51 additions): each error and warning of 4.16 with its exact message, `nodeId` or `edgeId`, and order; a fully specified valid graph (the 4.16 example) gives none.
+- `src/lib/imageScene.test.ts` and `imageExport.test.ts` (phase 55 additions): `signs` off gives no badges; on, one badge per signed edge at the midpoint with the right glyph, in both themes; `toSvg` draws them after the edges; `toTikz` writes the badge nodes; a graph without signs is unchanged with the option on.
+- `src/lib/pdfExport.test.ts` (phase 55 addition): a scene with a badge writes its circle and glyph.
+- `e2e/simulation.spec.ts` (phase 56):
+  - the Simulation section is closed by default, opens, and is still open after a reload; the `set` marker shows on a closed section of a node with shares;
+  - Add shares gives equal shares; editing one updates the total and its warning; the saved file has the shares;
+  - adding, moving and removing a level keeps the other shares on their levels;
+  - Form shows only for a node with causes;
+  - a single sign shows a `+` badge on the canvas; per-level signs on an edge into a three-level categorical node show `±`; the `none` case shows its line;
+  - changing the child to ordinal shows Clear sign, and the sign warning in the Issues dialog selects the edge;
+  - opening `simulation.dag.yaml` and saving it gives the same text;
+  - a share link keeps the simulation details;
+  - undo reverts a share edit and a sign edit.
+- `e2e/export.spec.ts` (phase 56 additions): the Signs checkbox shows only when an edge has a sign, and toggling it changes the SVG text.
+- `e2e/files.spec.ts` (phase 56 additions): the changed Save as… notes.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the app is on GitHub Pages for now (6, CI). Open: whether to move to an EU host (GitHub logs visitors' IP addresses in the US) and whether to use a custom domain. A custom domain means building with `BASE_PATH=/`, and share links made on the `github.io` address stop working after a move.
@@ -2850,4 +3408,12 @@ Import and export (phases 31–40):
 - **Legend label weight:** the legend asks for weight 400, but only IBM Plex Sans 500 is embedded, so with the embedded font the labels render at 500. Embedding the 400 face (about 30 kB more) would fix it.
 - **Formats without positions or roles:** Mermaid lays the graph out itself, and bnlearn and Tetrad keep only the structure, Tetrad dropping the latent role as well. The dialog notes say so.
 - **Real-tool reference:** `src/model/__fixtures__/formats/reference.json` was made with the tool versions recorded in it. If a later networkx, pydot, causal-learn, bnlearn or dagitty reads the samples differently, decide case by case before regenerating.
+- **Simulation details (4.16):**
+  - the schema version: decide how to version the format (for example `graphcreator/0.2`) once the first version is final;
+  - using signs in the analysis, such as the expected direction of bias;
+  - simulation details in the exchange formats (networkx JSON first);
+  - a JSON Schema for readers;
+  - a lesson on simulation details;
+  - simulation code generation and "Sample N datasets" stay in IDEAS.md.
+- **View after a reload:** the autosaved graph is not fitted to the view after a reload; it sits at its stored coordinates and can be partly hidden under the tool rail.
 - Everything in [IDEAS.md](IDEAS.md).

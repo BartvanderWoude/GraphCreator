@@ -640,3 +640,94 @@ describe('graphStore setAdjustedSet', () => {
     expect(store().past).toEqual([])
   })
 })
+
+describe('graphStore setLevels (phase 49)', () => {
+  /** A categorical node with shares, an edge into it with a per-level sign map, no history. */
+  function load(): Graph {
+    store().replaceGraph({
+      nodes: [
+        {
+          id: 'n1',
+          name: 'Wound class',
+          role: 'other',
+          varType: 'categorical',
+          levels: ['clean', 'dirty', 'mixed'],
+          shares: [0.6, 0.3, 0.1],
+          pos: { x: 0, y: 0 },
+        },
+        { id: 'n2', name: 'Diabetes', role: 'other', pos: { x: 0, y: 0 } },
+      ],
+      edges: [
+        {
+          id: 'e1',
+          source: 'n2',
+          target: 'n1',
+          evidence: [],
+          sign: { clean: 'negative', mixed: 'positive' },
+        },
+      ],
+    })
+    return store().graph
+  }
+
+  it('delegates to the model: shares and sign keys follow the levels', () => {
+    load()
+    const graph = expectReplaced(() =>
+      store().setLevels('n1', ['mixed', 'clean', 'new'], [2, 0, null]),
+    )
+    expect(graph.nodes[0]).toMatchObject({
+      levels: ['mixed', 'clean', 'new'],
+      shares: [0.1, 0.6, 0],
+    })
+    expect(graph.edges[0].sign).toEqual({
+      mixed: 'positive',
+      clean: 'negative',
+    })
+  })
+
+  it('is one undo step', () => {
+    const before = load()
+    store().setLevels('n1', ['clean', 'dirty'], [0, 1])
+    expect(store().past).toEqual([before])
+    expect(store().future).toEqual([])
+    store().undo()
+    expect(store().graph).toBe(before)
+  })
+
+  it('records nothing when nothing changes', () => {
+    const before = load()
+    store().setLevels('n1', ['clean', 'dirty', 'mixed'], [0, 1, 2])
+    expect(store().graph).toBe(before)
+    store().setLevels('n9', ['x'], [null])
+    expect(store().graph).toBe(before)
+    expect(store().past).toEqual([])
+  })
+})
+
+describe('graphStore simulation patches (phase 49)', () => {
+  it('updateNode takes shares and form, updateEdge sign and strength', () => {
+    store().replaceGraph(sample())
+    store().updateNode('n1', {
+      varType: 'categorical',
+      levels: ['no', 'yes'],
+      shares: [0.88, 0.12],
+      form: 'linear',
+    })
+    store().updateEdge('e1', { sign: 'positive', strength: 'medium' })
+    expect(store().graph.nodes[0]).toMatchObject({
+      shares: [0.88, 0.12],
+      form: 'linear',
+    })
+    expect(store().graph.edges[0]).toMatchObject({
+      sign: 'positive',
+      strength: 'medium',
+    })
+    expect(store().past).toHaveLength(2)
+    const before = store().graph
+    store().updateEdge('e1', { sign: 'positive' })
+    store().updateEdge('e1', { sign: {} as Record<string, never> })
+    expect(store().graph).not.toBe(before)
+    expect(store().graph.edges[0].sign).toBeUndefined()
+    expect(store().past).toHaveLength(3)
+  })
+})

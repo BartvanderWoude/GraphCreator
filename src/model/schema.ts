@@ -27,6 +27,19 @@ export const NUMERIC_TYPES = ['continuous', 'discrete'] as const
 export type Role = (typeof ROLES)[number]
 export type VarType = (typeof VAR_TYPES)[number]
 
+/** Whether an arrow raises or lowers its effect (spec 4.16). */
+export const SIGNS = ['positive', 'negative'] as const
+/** Size of an edge's effect, whatever its sign (spec 4.16). */
+export const STRENGTHS = ['small', 'medium', 'large'] as const
+/** How a node's causes combine (spec 4.16). */
+export const FORMS = ['linear', 'smooth', 'threshold'] as const
+
+export type Sign = (typeof SIGNS)[number]
+export type Strength = (typeof STRENGTHS)[number]
+export type Form = (typeof FORMS)[number]
+/** One sign for the edge, or one per level of its nominal end (keys are level names). */
+export type EdgeSign = Sign | Record<string, Sign>
+
 export function isLeveledType(t: VarType | undefined): boolean {
   return t !== undefined && (LEVELED_TYPES as readonly string[]).includes(t)
 }
@@ -35,21 +48,27 @@ export function isNumericType(t: VarType | undefined): boolean {
   return t !== undefined && (NUMERIC_TYPES as readonly string[]).includes(t)
 }
 
-/** One entry of the file's `nodes` list (spec 4.1). */
+/** One entry of the file's `nodes` list (spec 4.1, with the simulation details of 4.16). */
 const FileNodeSchema = z.strictObject({
   name: z.string(),
   role: z.enum(ROLES).default('other'),
   var_type: z.enum(VAR_TYPES).optional(),
   levels: z.array(z.string()).optional(),
+  shares: z.array(z.number()).optional(),
   description: z.string().optional(),
   unit: z.string().optional(),
+  form: z.enum(FORMS).optional(),
   pos: z.tuple([z.number(), z.number()]).optional(),
 })
 
-/** One entry of the file's `edges` list (spec 4.1). */
+/** One entry of the file's `edges` list (spec 4.1, with the simulation details of 4.16). */
 const FileEdgeSchema = z.strictObject({
   from: z.string(),
   to: z.string(),
+  sign: z
+    .union([z.enum(SIGNS), z.record(z.string(), z.enum(SIGNS))])
+    .optional(),
+  strength: z.enum(STRENGTHS).optional(),
   evidence: z.array(z.string()).default([]),
   note: z.string().optional(),
 })
@@ -57,7 +76,8 @@ const FileEdgeSchema = z.strictObject({
 /**
  * Zod schema of a GraphCreator YAML file (spec 4.1), the single source of truth for the file
  * shape. Unknown keys are errors at every level. Semantic rules (unique names, existing edge
- * endpoints, no cycles, levels/unit only for matching types) are checked by `parseYaml`.
+ * endpoints, no cycles, levels/unit only for matching types, shares) are checked by `parseYaml`
+ * through `validateGraph`.
  */
 export const GraphFileSchema = z.strictObject({
   schema: z.enum(KNOWN_SCHEMAS),

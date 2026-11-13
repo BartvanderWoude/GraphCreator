@@ -320,3 +320,386 @@ describe('fileSlug', () => {
     expect(fileSlug(name)).toBe(slug)
   })
 })
+
+describe('simulation details (spec 4.16)', () => {
+  const sim = () => ok(parseYaml(fixture('simulation.dag.yaml')))
+
+  it('reads shares, form, sign and strength', () => {
+    const { value: g } = sim()
+    expect(g.nodes[0]).toEqual({
+      id: 'n1',
+      name: 'Diabetes',
+      role: 'other',
+      varType: 'categorical',
+      levels: ['no', 'yes'],
+      shares: [0.88, 0.12],
+      pos: { x: 0, y: 0 },
+    })
+    expect(g.nodes[1]).toMatchObject({
+      shares: [0.6, 0.3, 0.1],
+      form: 'threshold',
+    })
+    expect(g.nodes[2].form).toBe('linear')
+    expect(g.edges[0]).toEqual({
+      id: 'e1',
+      source: 'n1',
+      target: 'n3',
+      evidence: [],
+      sign: 'positive',
+      strength: 'medium',
+    })
+    expect(g.edges[1]).toMatchObject({
+      sign: { clean: 'negative', contaminated: 'positive' },
+      strength: 'small',
+    })
+    expect(g.edges[2].strength).toBe('large')
+  })
+
+  it.each(['simulation.dag.yaml', 'yaml11-names.dag.yaml'])(
+    'round-trips %s canonically',
+    (name) => {
+      const text = fixture(name)
+      expect(toYaml(ok(parseYaml(text)).value)).toBe(text)
+    },
+  )
+
+  it('writes every existing fixture unchanged', () => {
+    let count = 0
+    for (const [path, text] of Object.entries(fixtures)) {
+      // minimal.dag.yaml leaves out nodes and edges, which toYaml always writes.
+      if (path.endsWith('/minimal.dag.yaml')) continue
+      const result = parseYaml(text)
+      if (!result.ok) continue
+      expect(toYaml(result.value), path).toBe(text)
+      count++
+    }
+    expect(count).toBeGreaterThanOrEqual(3)
+  })
+
+  it('reads an empty sign map as no sign', () => {
+    const { value: g } = ok(
+      parseYaml(
+        'schema: graphcreator/0.1\nnodes:\n  - name: A\n    var_type: continuous\n    pos: [0, 0]\n  - name: B\n    var_type: continuous\n    pos: [1, 0]\nedges:\n  - from: A\n    to: B\n    sign: {}\n',
+      ),
+    )
+    expect(g.edges[0]).toEqual({
+      id: 'e1',
+      source: 'n1',
+      target: 'n2',
+      evidence: [],
+    })
+    expect(toYaml(g)).not.toContain('sign')
+  })
+
+  it('writes a sign map in level order, other keys after', () => {
+    // Diabetes → Wound class is a child-levels edge.
+    const g = sim().value
+    g.edges[1].sign = {
+      stray: 'positive',
+      contaminated: 'positive',
+      clean: 'negative',
+      'clean-contaminated': 'negative',
+    }
+    expect(toYaml(g)).toContain(
+      '    sign: {clean: negative, clean-contaminated: negative, contaminated: positive, stray: positive}\n',
+    )
+
+    const parentLevels: Graph = {
+      nodes: [
+        {
+          id: 'a',
+          name: 'A',
+          role: 'other',
+          varType: 'categorical',
+          levels: ['O', 'B', 'AB'],
+          pos: { x: 0, y: 0 },
+        },
+        {
+          id: 'b',
+          name: 'B',
+          role: 'other',
+          varType: 'continuous',
+          pos: { x: 0, y: 0 },
+        },
+      ],
+      edges: [
+        {
+          id: 'e',
+          source: 'a',
+          target: 'b',
+          evidence: [],
+          sign: { AB: 'positive', B: 'negative' },
+        },
+      ],
+    }
+    expect(toYaml(parentLevels)).toContain(
+      '    sign: {B: negative, AB: positive}\n',
+    )
+    // On a single edge there are no levels to order by: the map keeps its order.
+    parentLevels.nodes[0].varType = 'ordinal'
+    expect(toYaml(parentLevels)).toContain(
+      '    sign: {AB: positive, B: negative}\n',
+    )
+  })
+
+  it('writes keys in the order of the spec and -0 as 0', () => {
+    const g: Graph = {
+      nodes: [
+        {
+          id: 'a',
+          name: 'A',
+          role: 'exposure',
+          varType: 'ordinal',
+          levels: ['low', 'high'],
+          shares: [-0, 1],
+          description: 'Text',
+          form: 'smooth',
+          pos: { x: 0, y: 0 },
+        },
+        {
+          id: 'b',
+          name: 'B',
+          role: 'other',
+          varType: 'continuous',
+          unit: 'kg',
+          form: 'linear',
+          pos: { x: 0, y: 0 },
+        },
+      ],
+      edges: [
+        {
+          id: 'e',
+          source: 'a',
+          target: 'b',
+          evidence: ['PMID:1'],
+          note: 'Note',
+          strength: 'large',
+          sign: 'negative',
+        },
+      ],
+    }
+    expect(toYaml(g)).toBe(
+      [
+        'schema: graphcreator/0.1',
+        'nodes:',
+        '  - name: A',
+        '    role: exposure',
+        '    var_type: ordinal',
+        '    levels: [low, high]',
+        '    shares: [0, 1]',
+        '    description: Text',
+        '    form: smooth',
+        '    pos: [0, 0]',
+        '  - name: B',
+        '    var_type: continuous',
+        '    unit: kg',
+        '    form: linear',
+        '    pos: [0, 0]',
+        'edges:',
+        '  - from: A',
+        '    to: B',
+        '    sign: negative',
+        '    strength: large',
+        '    evidence: ["PMID:1"]',
+        '    note: Note',
+        '',
+      ].join('\n'),
+    )
+  })
+
+  const base = [
+    'schema: graphcreator/0.1',
+    'nodes:',
+    '  - name: SES',
+    '    var_type: ordinal',
+    '    levels: [low, mid, high]',
+    '    pos: [0, 0]',
+    '  - name: A',
+    '    var_type: continuous',
+    '    pos: [1, 0]',
+    'edges:',
+    '  - from: SES',
+    '    to: A',
+  ]
+  const shares = 'Node "SES": shares must be a list of numbers.'
+  const sign =
+    'Edge from "SES" to "A": sign must be positive or negative, or a map from levels to positive or negative.'
+  const strength =
+    'Edge from "SES" to "A": strength must be one of small, medium, large.'
+
+  it.each([
+    ['shares as text', 5, '    shares: many', shares, 'nodes.0.shares'],
+    [
+      'text items in shares',
+      5,
+      '    shares: [0.2, a, b]',
+      shares,
+      'nodes.0.shares',
+    ],
+    [
+      'an infinite share',
+      5,
+      '    shares: [.inf, 0, 0]',
+      shares,
+      'nodes.0.shares',
+    ],
+    [
+      'an unknown form',
+      5,
+      '    form: curvy',
+      'Node "SES": form must be one of linear, smooth, threshold.',
+      'nodes.0.form',
+    ],
+    [
+      'a sign word that is not a sign',
+      12,
+      '    sign: up',
+      sign,
+      'edges.0.sign',
+    ],
+    [
+      'a sign map with a bad value',
+      12,
+      '    sign: {low: up}',
+      sign,
+      'edges.0.sign',
+    ],
+    ['a sign list', 12, '    sign: [positive]', sign, 'edges.0.sign'],
+    [
+      'an unknown strength',
+      12,
+      '    strength: huge',
+      strength,
+      'edges.0.strength',
+    ],
+    ['a numeric strength', 12, '    strength: 3', strength, 'edges.0.strength'],
+  ])('reports %s', (_label, at, line, message, path) => {
+    const lines = [...base]
+    lines.splice(at, 0, line)
+    expect(errors(parseYaml(`${lines.join('\n')}\n`))).toEqual([
+      { message, path, line: at + 1 },
+    ])
+  })
+})
+
+describe('YAML 1.1 safety', () => {
+  const unsafe = [
+    'yes',
+    'No',
+    'ON',
+    'off',
+    'y',
+    'N',
+    'True',
+    'FALSE',
+    '~',
+    'null',
+    'Null',
+    '1_000',
+    '0x1F',
+    '0o17',
+    '017',
+    '0b101',
+    '1:30',
+    '190:20:30.15',
+    '1_000.5',
+    '.5',
+    '.inf',
+    '-.Inf',
+    '.NaN',
+    '2024-01-31',
+    '2001-12-14t21:59:43.10-05:00',
+    '<<',
+    '=',
+  ]
+  const safe = [
+    'yess',
+    'Yes please',
+    'nO',
+    'oN',
+    'On time',
+    'never',
+    '1st visit',
+    'a.b',
+    '1.2.3',
+    '2024-01',
+    'clean-contaminated',
+    'x=1',
+  ]
+
+  function graphWith(text: string): Graph {
+    return {
+      nodes: [
+        {
+          id: 'a',
+          name: text,
+          role: 'other',
+          varType: 'categorical',
+          levels: [text, 'mid', 'last'],
+          description: text,
+          pos: { x: 0, y: 0 },
+        },
+        {
+          id: 'b',
+          name: 'Child',
+          role: 'other',
+          varType: 'continuous',
+          pos: { x: 0, y: 0 },
+        },
+      ],
+      edges: [
+        {
+          id: 'e',
+          source: 'a',
+          target: 'b',
+          evidence: [],
+          sign: { [text]: 'positive' },
+          note: text,
+        },
+      ],
+    }
+  }
+
+  it.each(unsafe)('double-quotes %j everywhere', (text) => {
+    const out = toYaml(graphWith(text))
+    const q = `"${text}"`
+    expect(out).toContain(`  - name: ${q}\n`)
+    expect(out).toContain(`    levels: [${q}, mid, last]\n`)
+    expect(out).toContain(`    description: ${q}\n`)
+    expect(out).toContain(`  - from: ${q}\n`)
+    expect(out).toContain(`    sign: {${q}: positive}\n`)
+    expect(out).toContain(`    note: ${q}\n`)
+    const back = ok(parseYaml(out)).value
+    expect(back.nodes[0].name).toBe(text)
+    expect(back.nodes[0].levels).toEqual([text, 'mid', 'last'])
+    expect(back.edges[0].sign).toEqual({ [text]: 'positive' })
+  })
+
+  it.each(safe)('leaves %j plain', (text) => {
+    const out = toYaml(graphWith(text))
+    expect(out).toContain(`  - name: ${text}\n`)
+    expect(out).toContain(`    levels: [${text}, mid, last]\n`)
+    expect(out).toContain(`    sign: {${text}: positive}\n`)
+    expect(out).toContain(`    note: ${text}\n`)
+  })
+
+  it('quotes the graph name and units too', () => {
+    const g: Graph = {
+      name: 'Off',
+      nodes: [
+        {
+          id: 'a',
+          name: 'A',
+          role: 'other',
+          varType: 'continuous',
+          unit: '1:30',
+          pos: { x: 0, y: 0 },
+        },
+      ],
+      edges: [],
+    }
+    const out = toYaml(g)
+    expect(out).toContain('name: "Off"\n')
+    expect(out).toContain('    unit: "1:30"\n')
+  })
+})

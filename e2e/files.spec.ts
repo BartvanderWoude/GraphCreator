@@ -305,3 +305,48 @@ test('autosave keeps an opened graph across a reload', async ({ page }) => {
     toolbar(page).getByRole('textbox', { name: 'Graph name' }),
   ).toHaveValue('Smoking and birth weight')
 })
+
+test('the Save as… notes say which formats keep the simulation details', async ({
+  page,
+}) => {
+  await openFile(page, fixture('smoking.dag.yaml'))
+  await expect(nodes(page)).toHaveCount(4)
+  const notes: [string, string][] = [
+    [
+      'GraphCreator',
+      'The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence, positions and simulation details.',
+    ],
+    [
+      'dagitty',
+      'Variable types, levels, descriptions, units and evidence are not included in dagitty files. Simulation details are not included either. Save as GraphCreator to keep them.',
+    ],
+    [
+      'GML',
+      'The GML file keeps roles, variable types, levels, descriptions, units, evidence and positions, but not simulation details. Node labels are names safe for R and Python, such as Maternal_smoking; DoWhy and networkx use them as variable names.',
+    ],
+    [
+      'DOT',
+      'The DOT file keeps roles, variable types, levels, descriptions, units, evidence and positions as attributes, and the role colors for Graphviz, but not simulation details. Node ids are names safe for R and Python, such as Maternal_smoking.',
+    ],
+    [
+      'networkx JSON',
+      'The networkx JSON keeps everything except simulation details. Read it in Python with networkx.node_link_graph(data, edges="edges"). Node ids are names safe for R and Python, such as Maternal_smoking.',
+    ],
+  ]
+  for (const [label, note] of notes) {
+    await button(page, 'Save as…').click()
+    await page.getByRole('menuitem', { name: `${label}…`, exact: true }).click()
+    const dialog = page.getByRole('dialog', { name: `Save as ${label}` })
+    await expect(dialog).toContainText(note)
+    if (label === 'dagitty') {
+      await dialog
+        .getByRole('checkbox', { name: 'Include GraphCreator details' })
+        .click()
+      await expect(dialog).toContainText(
+        'Variable types, levels, descriptions, units and evidence are added as gc.* attributes. dagitty keeps them but does not use them. Simulation details are not included.',
+      )
+    }
+    await page.keyboard.press('Escape')
+    await expect(dialog).toHaveCount(0)
+  }
+})
