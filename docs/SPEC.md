@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the node lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are not built yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are not built yet. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -122,7 +122,7 @@ Rules:
 - **Types** are optional. `levels` may exist only for categorical/ordinal; `unit` only for continuous/discrete.
 - Optional string fields are stored as `undefined`, never as `''` (editors convert an emptied field to `undefined`).
 - **Simulation details** (phase 49): `GNode.shares` and `form`, and `GEdge.sign` and `strength`, with their rules in 4.16.
-- **Node lock** (phase 57): `Graph.locked?: boolean`, stored as `true` or absent, never `false`. Its rules are in 4.17.
+- **Graph lock** (phase 57): `Graph.locked?: boolean`, stored as `true` or absent, never `false`. A locked graph is read-only; the rules are in 4.17.
 
 ### 3.3 Results and issues (`src/model/result.ts`)
 
@@ -416,7 +416,7 @@ Details fixed in phase 3: `setGraphName` with a blank name removes the `name` ke
 
 **Simulation details (phase 49):** `setLevels(nodeId, levels, origin)`, and `sign`/`strength` in `updateEdge`'s patch (4.16 "Store").
 
-**Node lock (phase 57):** `setLocked(on)`, and the guards on adding, deleting and editing nodes (4.17 "Store").
+**Graph lock (phase 57):** `setLocked(on)`, and the rule that a locked graph changes through no action but `setLocked` and `replaceGraph` (4.17 "Store").
 
 ### 4.7 UI store (`src/store/uiStore.ts`, phase 10)
 
@@ -1342,13 +1342,13 @@ export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, op
 - `toTikz(graph, { legend, signs })` adds one `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (<x>,<y>) {$+$};` per badge (`$-$`, `$\pm$`), after the edges.
 - The legend does not explain the badges.
 
-### 4.17 Equal circles, name preview and node lock (phases 57–62)
+### 4.17 Equal circles, name preview and graph lock (phases 57–62)
 
 These are three changes from GitHub issues, agreed on 2026-11-13:
 
 - **#5:** every circle has the same size, and long names get a smaller font (5.7.6). This replaces circles sized by their names. It is the only style; there is no switch.
 - **#3:** the circle shows the name as it is being typed in the editor (5.3).
-- **#4:** a graph can lock its nodes, for example after the variables were imported from study metadata (5.10).
+- **#4:** a graph can be locked, for example after the variables were imported from study metadata. A locked graph is read-only: nothing about it can be changed, positions included (5.10).
 
 #### Size (`src/model/nodeSize.ts`, phase 57)
 
@@ -1370,16 +1370,16 @@ The contract is in 5.7.6.
 
 ```ts
 setLocked(on: boolean): void            // sets or removes graph.locked; recorded in the history
-export const NODE_LOCKED_MESSAGE = 'Nodes are locked.'
+export const GRAPH_LOCKED_MESSAGE = 'This graph is locked.'
 ```
 
-While `graph.locked` is true:
-- **Do nothing:** `addNodeAt` (returns `''`), `setLevels` and `setAdjustedSet`, because the adjusted set changes roles.
-- **`renameNode`:** returns `{ ok: false, errors: [{ message: NODE_LOCKED_MESSAGE, nodeId }] }` and changes nothing.
-- **`updateNode`:** ignores the locked keys `role`, `varType`, `levels`, `unit` and `description`, and applies the rest of the patch: `shares` and `form`. A patch with only locked keys records nothing.
-- **`removeSelection(nodeIds, edgeIds)`:** ignores `nodeIds` and removes the edges.
-- **Unchanged:** `moveNode`, `moveNodes`, `layout`, `connect`, `updateEdge`, `setGraphName`, undo and redo.
-- `setLocked` with the current state records nothing (4.10). Undo can therefore unlock a graph, which is accepted.
+**The rule:** while `graph.locked` is true, every action that would change `graph` does nothing, with two exceptions, `setLocked` (so the graph can be unlocked) and `replaceGraph` (so New, Open, a share link and a lesson still work).
+
+- **Do nothing:** `addNodeAt` (returns `''`), `updateNode`, `setLevels`, `setAdjustedSet`, `removeSelection`, `moveNode`, `moveNodes`, `layout`, `connect` (returns `{ ok: false, reason: 'locked', message: GRAPH_LOCKED_MESSAGE }`; `EdgeCheck.reason` (4.3) gains `'locked'`, which only the store produces, never the pure `canAddEdge`), `updateEdge` and `setGraphName`. None of them records history.
+- **`renameNode`:** returns `{ ok: false, errors: [{ message: GRAPH_LOCKED_MESSAGE, nodeId }] }` and changes nothing.
+- **Still work:** `select`, `focusName` and `clearFocusName` (they do not change the graph), `undo`, `redo`, `setLocked` and `replaceGraph`.
+- **Backstop:** the internal `commit` ignores a new graph when the current graph is locked and the new one is locked too. Unlocking passes, because its new graph is not locked, and `replaceGraph` does not go through `commit`. So an action that forgets its own guard still cannot change a locked graph.
+- `setLocked` with the current state records nothing (4.10). The first undo after locking therefore unlocks the graph, and further undos work on it as usual. This is how a lock applied by mistake is taken back.
 - Lessons are not affected. A lesson's `replaceGraph` swaps in its own practice graph, which is never locked, and puts the user's graph back afterwards with its lock.
 
 #### UI store (4.7 addition, phase 57)
@@ -1395,10 +1395,10 @@ setNamePreview(preview: { id: string; name: string } | null): void
 
 | Key | Text |
 |---|---|
-| `NODE_LOCK.label` | "Lock nodes" |
-| `NODE_LOCK.tip` | "Lock nodes: variables cannot be added, deleted or edited. Arrows stay editable." |
-| `NODE_LOCK.note` | "Nodes are locked. Unlock them in the tool rail to edit this variable." |
-| `NODE_LOCK.reason` | "Not available while nodes are locked." |
+| `GRAPH_LOCK.label` | "Lock graph" |
+| `GRAPH_LOCK.tip` | "Lock graph: nothing in the graph can be changed. Variables, arrows and their positions stay as they are." |
+| `GRAPH_LOCK.note` | "This graph is locked. Unlock it in the tool rail to make changes." |
+| `GRAPH_LOCK.reason` | "Not available while the graph is locked." |
 
 ## 5. Behaviour
 
@@ -1426,14 +1426,14 @@ setNamePreview(preview: { id: string; name: string } | null): void
 
 ### 5.2 Canvas interactions
 
-- **Add node:** double-click empty canvas (React Flow zoom-on-double-click is disabled), or the Add node tool (N): with it active, the next click on empty canvas adds a node there and the tool returns to Select. The rail's Add node button with the tool already active adds a node at the viewport centre. The new node is centred on the click point (its box is `NODE_DIAMETER` wide), gets `defaultNodeName`, becomes selected, and the side panel's name field is focused with its text selected. While nodes are locked, nothing adds a node (5.10).
-- **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true.
-- **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source.
+- **Add node:** double-click empty canvas (React Flow zoom-on-double-click is disabled), or the Add node tool (N): with it active, the next click on empty canvas adds a node there and the tool returns to Select. The rail's Add node button with the tool already active adds a node at the viewport centre. The new node is centred on the click point (its box is `NODE_DIAMETER` wide), gets `defaultNodeName`, becomes selected, and the side panel's name field is focused with its text selected. While the graph is locked, nothing adds a node (5.10).
+- **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true. While the graph is locked, no connection can be started (5.10).
+- **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source. While the graph is locked, the Connect tool is disabled (5.10).
 - **Shortcuts:** V, N, C set the tool; L runs auto-layout and fits the view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source. Ctrl+Z or ⌘+Z undoes; Ctrl+Shift+Z, ⌘+Shift+Z and Ctrl+Y redo (4.10, phase 21); they call `preventDefault`. Shortcuts are ignored while focus is in a text field, select or textarea, and while a dialog is open, so Ctrl+Z inside a field is the browser's own text undo.
 - **Rename by double-click:** double-clicking a circle while the Select tool is active calls `focusName`: the node is selected and the side panel's name field is focused with its text selected, as after adding a node. It never adds a node (the pane double-click handler only reacts to the pane itself).
 - **Select:** click a node or edge. Multi-select with Shift-click or box-select is React Flow default and is only used for deletion and moving.
-- **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`. While nodes are locked, it removes only the selected edges (5.10).
-- **Move:** dragging updates positions; the store commits on drag stop, with one `moveNodes` call for all dragged nodes (one undo step; `moveNode` per node until phase 21).
+- **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`. While the graph is locked, it removes nothing (5.10).
+- **Move:** dragging updates positions; the store commits on drag stop, with one `moveNodes` call for all dragged nodes (one undo step; `moveNode` per node until phase 21). While the graph is locked, circles cannot be dragged (5.10).
 - **Node look (`canvas/CircleNode.tsx`):** a circle of diameter `NODE_DIAMETER` with the wrapped name centred inside, at the label's own font size (`nodeLabel`, 5.7.6; full name in `title` when truncated). While the node's name is being edited, the circle shows the draft (5.3). The fill, outline and text colours come from the role (5.7.2); colour is the only role cue on the canvas, by the user's choice. The node's accessible name is `<name>, <Role label>` (for example `SES, Adjusted`) and the element keeps `data-role`. An untyped node shows a small yellow warning dot on its rim, top right, with `title="No variable type"` and the same `aria-label`. States are in 5.7.7.
 - **Edges (`canvas/FloatingEdge.tsx`):** straight lines. An edge starts on the source circle's rim, where the line between the two centres crosses it, and its closed arrowhead ends 2 px before the target's rim (`edgeEndpoints`, phase 11). Moving a circle re-aims its edges. An edge with evidence shows a chip at its midpoint: a bookmark icon and the number of evidence items (`aria-label="2 evidence items"`). Clicking the chip selects the edge.
 - **Saved indicator (`SavedIndicator.tsx`):** a chip in the canvas's bottom-right corner, driven by `useUiStore().autosave`: `on` → teal check and "Saved in this browser"; `blocked` → warning style, "Not saved: browser storage is blocked"; `paused` → muted, "Practice graph: not saved".
@@ -1447,7 +1447,7 @@ setNamePreview(preview: { id: string; name: string } | null): void
 - **ListEditor:** one text input per item, with add, remove, move up and move down buttons; Enter in the last input adds a new item. Empty items are dropped on commit.
 - Text fields commit on blur (and Enter for single-line fields), not per keystroke.
 - **Name preview (phase 59, GitHub #3):** while the Name field holds a draft that differs from the stored name, the editor sets `uiStore.namePreview` to `{ id, name: draft }`, and the circle on the canvas shows the draft, wrapped and sized by `nodeLabel` (5.7.6). A draft that is empty after trimming shows the stored name. The store, the history and autosave change only on commit, as before, so a rename is one undo step. The preview is cleared when the draft equals the stored name again, on a successful commit, on Escape and when the editor unmounts. A failed commit (an empty or duplicate name) keeps the draft and the preview, with the error message under the field. Only the circle follows the draft; edge headings, the Analysis tab and the warnings use the stored name.
-- **Locked nodes (phase 59):** see 5.10.
+- **Locked graph (phase 59):** every field of both editors is read-only; see 5.10.
 - **Simulation section** (phases 52–53): at the bottom of both editors, closed by default (5.9).
 
 ### 5.4 Files and dialogs
@@ -1901,27 +1901,30 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 
 Shares, Form, Sign and Strength carry info tips (`About shares`, `About functional form`, `About sign`, `About strength`) as in 5.3.
 
-### 5.10 Node lock (phases 58–62, GitHub #4)
+### 5.10 Graph lock (phases 58–62, GitHub #4)
 
-A graph whose variables came from study metadata should keep them as they are while people draw the arrows. The lock is part of the graph (4.17), so it travels with the file, autosave and share links.
+A graph whose variables came from study metadata should be safe from accidental edits. A locked graph is **read-only**: no variable, arrow, simulation detail, position or graph name can change, and auto-layout does not run. The lock is part of the graph (4.17), so it travels with the file, autosave and share links.
+
+Everything that only looks at the graph still works: selecting, hovering, panning, zooming, Fit view, the Analysis tab, Save, Export, Share, New, Open, lessons and the theme.
 
 **Rail toggle (phase 60).**
-- After Redo, a divider and an icon-only toggle button: accessible name and tooltip "Lock nodes", with `aria-pressed` giving the state. It has no shortcut.
+- After Redo, a divider and an icon-only toggle button: accessible name and tooltip "Lock graph", with `aria-pressed` giving the state. It has no shortcut.
 - The icon is `LockOpen` when unlocked and `Lock` when locked. Locked, the button uses the active-tool look (solid teal).
 - A click calls `setLocked(!locked)`.
 - During a lesson the button is disabled, with `LESSON_LOCK` ("Not available during a lesson.") in its tooltip, using the `LessonLock` pattern of `TopBar.tsx`. A lesson's practice graph is never locked.
 
 **While locked:**
-- **Rail and shortcuts (phase 60):** the Add node button is disabled. Its tooltip gives `NODE_LOCK.reason` (the same disabled-button pattern), and the N shortcut does nothing. If the Add tool was active when the lock was switched on, the tool returns to Select.
-- **Canvas (phase 58):** double-clicking the pane and clicking it with the Add tool add nothing. Delete and Backspace remove only the selected edges. Double-clicking a circle still selects it and focuses its (read-only) name field. Moving circles, auto-layout, connecting by dragging or in Connect mode, and selecting are unchanged.
-- **Node editor (phase 59):**
-  - A muted line with a `Lock` icon (16 px) and `NODE_LOCK.note` sits under the "NODE" header.
-  - Name, Role, Type, Levels (all their buttons), Unit and Description are disabled. The Name and text fields are `readOnly`, so their text can still be selected and copied.
-  - The Delete node button is disabled, with `NODE_LOCK.reason` in its tooltip.
-  - The Simulation section (shares and form) stays editable. `ListEditor` and `RolePicker` gain a `disabled` prop for this.
-- **Edge editor:** unchanged; arrows stay fully editable.
-- **Analysis tab (phase 59):** the controls that set the adjusted set are disabled, with `NODE_LOCK.reason` in their tooltip. The analyses themselves still run and show.
-- **Lesson start:** while a lesson runs, the practice graph is unlocked, and the user's locked graph comes back locked when the lesson ends (4.17 "Store").
+- **Rail and shortcuts (phase 60):** Add node, Connect and Auto-layout are disabled, with `GRAPH_LOCK.reason` in their tooltips, and the N, C and L shortcuts do nothing. Select, Fit view, the zoom buttons and V, F, + and − are unchanged. Undo and Redo stay enabled, because the first undo after locking unlocks the graph (4.17). Switching the lock on while the Add or Connect tool is active sets the tool to Select and clears any picked connect source.
+- **Canvas (phase 58):** `<ReactFlow>` gets `nodesDraggable={false}`, `nodesConnectable={false}` and `deleteKeyCode={null}`, so circles cannot be dragged, no connection can be started from a rim, and Delete and Backspace remove nothing. Double-clicking the pane adds nothing, and a click with the Add tool adds nothing. Double-clicking a circle still selects it and focuses its read-only name field. Selection, the hover rim, the analysis marking and the lesson pointer are unchanged.
+- **Node and edge editors (phase 59):**
+  - A muted line with a `Lock` icon (16 px) and `GRAPH_LOCK.note` sits under the "NODE" or "EDGE" header.
+  - Every field is disabled: in `NodeEditor` the Name, Role, Type, Levels, Unit and Description, and in `EdgeEditor` the Evidence and Note. Text fields are `readOnly` rather than `disabled`, so their text can still be selected and copied.
+  - The Simulation section still opens and shows its values, and its controls (shares, form, sign, strength) are disabled too.
+  - The Delete node and Delete edge buttons are disabled, with `GRAPH_LOCK.reason` in their tooltips.
+  - `RolePicker`, `ListEditor`, `SharesEditor`, `SignEditor` and `SimulationSection`'s fields gain a `disabled` prop for this.
+- **Top bar (phase 60):** the graph name input is `readOnly`, with `GRAPH_LOCK.reason` as its `title`. New, Open…, Save, Export… and Share are unchanged, so a locked graph can still be saved and shared.
+- **Analysis tab (phase 59):** the controls that set the adjusted set are disabled, with `GRAPH_LOCK.reason` in their tooltip. The analyses themselves still run and show.
+- **Lessons:** while a lesson runs, the practice graph is unlocked and fully editable, and the user's locked graph comes back locked when the lesson ends (4.17 "Store").
 
 ## 6. Project setup and conventions
 
@@ -2105,9 +2108,10 @@ A graph whose variables came from study metadata should keep them as they are wh
 | YAML 1.1 safety | `toYaml` quotes text that YAML 1.1 (PyYAML) would read as a boolean, null, number or date | Leave it to readers | Python readers get the names as text, such as a level called `yes`. |
 | Circle size (GitHub #5) | One size for every circle; long names get a smaller font | Circles sized by their names (phases 10–56); a switch between the two | User's choice (2026-11-13): equal circles look more even, and they are the only style. |
 | Name while typing (GitHub #3) | The circle previews the draft; the rename is still committed on Enter or blur | Rename on every keystroke; no change | Recommended option. One undo step per rename, and no invalid intermediate names in the graph. |
-| Node lock: where (GitHub #4) | In the graph file (`locked: true`) | A preference in this browser | Recommended option. A graph built from metadata stays locked for whoever opens it. |
-| Node lock: what | Adding, deleting, renaming and editing role, type, levels, unit and description | Only adding and deleting; also the simulation details | User's choice. Arrows, positions and simulation details stay editable. |
-| Node lock: switch | A toggle at the bottom of the tool rail | A top bar switch; an Edit menu | Recommended option. It sits with the other canvas controls. |
+| Graph lock: where (GitHub #4) | In the graph file (`locked: true`) | A preference in this browser | Recommended option. A graph built from metadata stays locked for whoever opens it. |
+| Graph lock: what | The whole graph is read-only: variables, arrows, simulation details, positions and the graph name | Only adding and deleting nodes; nodes and their positions, with arrows still editable | User's choice (2026-11-13), after a first round that kept arrows and positions editable. A lock that leaves gaps is not a lock. |
+| Graph lock: undo | The first undo after locking unlocks the graph | Clearing the history on locking; a confirmation dialog | Recommended option. It takes back a lock applied by mistake without a dialog. |
+| Graph lock: switch | A toggle at the bottom of the tool rail | A top bar switch; an Edit menu | Recommended option. It sits with the other canvas controls. |
 
 ## 8. Implementation phases
 
@@ -2183,10 +2187,10 @@ General rules for every phase:
 | 56 | Simulation integration and end-to-end tests | 50, 51, 52, 53, 54, 55 | 24 | `e2e/simulation.spec.ts`, `e2e/export.spec.ts`, `e2e/files.spec.ts`, fixes in any file of phases 49–55, this spec's Status line and Open issues, `docs/IDEAS.md` |
 | 57 | Equal circles, preview and lock contracts | 56 | 25 | `src/model/{nodeSize,graph,schema,yaml,layout,exchange,gml,dot,networkx}.ts` and their tests, `src/model/__fixtures__/locked.dag.yaml`, `src/store/{graphStore,uiStore}.ts` and their tests, `src/lib/copy.ts` (+ test), `docs/FORMAT.md`; mechanical `nodeDiameter`/`wrapLabel` replacements in `Canvas.tsx`, `canvas/CircleNode.tsx`, `useToolShortcuts.ts`, `src/lib/{imageScene,imageExport}.ts` and the image snapshots, only as far as the build and tests need |
 | 58 | Canvas: equal circles, preview and lock | 57 | 26 | `src/components/Canvas.tsx`, `canvas/CircleNode.tsx`, `canvas/types.ts`, `canvas/canvas.css` |
-| 59 | Editors: preview and lock | 57 | 26 | `src/components/NodeEditor.tsx`, `RolePicker.tsx`, `ListEditor.tsx`, `AnalysisPanel.tsx` |
-| 60 | Rail lock toggle | 57 | 26 | `src/components/ToolRail.tsx`, `useToolShortcuts.ts` |
+| 59 | Editors: preview and lock | 57 | 26 | `src/components/NodeEditor.tsx`, `EdgeEditor.tsx`, `RolePicker.tsx`, `ListEditor.tsx`, `SharesEditor.tsx`, `SignEditor.tsx`, `SimulationSection.tsx`, `AnalysisPanel.tsx` |
+| 60 | Rail lock toggle and locked top bar | 57 | 26 | `src/components/ToolRail.tsx`, `useToolShortcuts.ts`, `TopBar.tsx` |
 | 61 | Images with equal circles | 57 | 26 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/lib/__snapshots__/imageExport/*`, `src/model/nodeSize.ts` and its test (tuned constants only), section 5.7.6 of this spec |
-| 62 | Equal circles, preview and lock: integration and end-to-end tests | 58, 59, 60, 61 | 27 | `e2e/node-lock.spec.ts` (new), additions to `e2e/canvas.spec.ts` and `e2e/files.spec.ts`, fixes in any file of phases 57–61 and in e2e specs that depend on circle sizes, this spec's Status line and Open issues |
+| 62 | Equal circles, preview and lock: integration and end-to-end tests | 58, 59, 60, 61 | 27 | `e2e/graph-lock.spec.ts` (new), additions to `e2e/canvas.spec.ts` and `e2e/files.spec.ts`, fixes in any file of phases 57–61 and in e2e specs that depend on circle sizes, this spec's Status line and Open issues |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -3271,7 +3275,7 @@ Phases: 57. Parallel: single phase. Check after the wave: all checks. In the app
   - **`graphStore.ts`:** remove the rename shift; add `setLocked` and the guards (4.17 "Store").
   - **`graph.ts`, `schema.ts`, `yaml.ts`:** `Graph.locked` and the file key (4.17 "File"). Add the fixture `locked.dag.yaml`.
   - **`uiStore.ts`:** `namePreview`.
-  - **`copy.ts`:** `NODE_LOCK`.
+  - **`copy.ts`:** `GRAPH_LOCK`.
   - **`docs/FORMAT.md`:** a `locked` row in the top-level table: "An editor setting: GraphCreator does not let people add, delete or edit the variables. It has no causal or simulation meaning; readers can ignore it."
 - **Tests:** the `nodeSize.test.ts` rewrite, and the additions to `layout.test.ts`, `yaml.test.ts`, `graphStore.test.ts`, `uiStore.test.ts` and `copy.test.ts` (section 9). Adjust the exchange-format tests whose expected centres change.
 - **Done when:** all checks pass. Existing e2e tests that click measured points may need new coordinates; fix them here only as far as the build needs, and leave new e2e tests to phase 62.
@@ -3290,32 +3294,33 @@ Phases: 58, 59, 60, 61. Parallel: all four, one sub agent each in its own worktr
   - `syncFlow` takes `namePreview` in its overlay. A node's data carries the shown name (the preview's trimmed draft when it is non-empty, otherwise the stored name). The reuse check compares the shown name.
   - Nodes are `NODE_DIAMETER` wide and high. `measured` is kept across renames, since the size no longer changes.
   - `CircleNode` renders `nodeLabel` of the shown name (phase 57 set up the inline font size), with `title` when truncated. The accessible name uses the shown name.
-  - **Lock:** `onDoubleClick` and the Add-tool `onPaneClick` return early when `graph.locked`. `onDelete` passes only edge ids. The store guards stay the backstop.
+  - **Lock:** with `graph.locked`, `<ReactFlow>` gets `nodesDraggable={false}`, `nodesConnectable={false}` and `deleteKeyCode={null}`, and `onDoubleClick`, the Add-tool `onPaneClick` and `onDelete` return early (5.10). The store guards stay the backstop.
 - **Tests:** the Canvas unit tests (if any) and existing e2e tests keep passing; the new end-to-end coverage is phase 62's.
-- **Done when:** all checks pass. In the browser, typing in the Name field changes the circle at once, Escape restores it, and a locked graph adds no node on double-click.
+- **Done when:** all checks pass. In the browser, typing in the Name field changes the circle at once, Escape restores it, and a locked graph adds no node on double-click, cannot be dragged and starts no connection.
 
 #### Phase 59: Editors: preview and lock [ ]
 
-- **Goal:** the Name field drives the preview (5.3), and a locked graph shows a read-only node editor and disables the adjusted-set controls (5.10).
+- **Goal:** the Name field drives the preview (5.3), and a locked graph shows read-only editors and disables the adjusted-set controls (5.10).
 - **Depends on:** phase 57.
 - **Owns files:** see the task graph row.
 - **Work:**
   - `NodeEditor`: the Name `onChange` sets or clears `namePreview`. `commitName` and `revertName` clear it as 5.3 says, and an unmount effect clears it.
-  - `NodeEditor` under a lock: the note, the disabled and read-only fields, the disabled Delete node button with its tooltip. The Simulation section is unchanged.
-  - `RolePicker` and `ListEditor` gain `disabled?: boolean`. `ListEditor` disables its inputs (read-only) and all of its buttons.
-  - `AnalysisPanel`: the adjusted-set controls are disabled, with `NODE_LOCK.reason`.
+  - Both editors under a lock: the note under the header, every field disabled (text fields `readOnly`), the Simulation section's controls disabled, and the Delete node and Delete edge buttons disabled with their tooltips (5.10).
+  - `RolePicker`, `ListEditor`, `SharesEditor` and `SignEditor` gain `disabled?: boolean`. `ListEditor` makes its inputs read-only and disables all of its buttons.
+  - `AnalysisPanel`: the adjusted-set controls are disabled, with `GRAPH_LOCK.reason`.
 - **Tests:** component behaviour is covered end to end in phase 62; keep the existing tests passing.
-- **Done when:** all checks pass.
+- **Done when:** all checks pass. In the browser, a locked graph's node and edge editors show the note and change nothing, and their text can still be selected.
 
-#### Phase 60: Rail lock toggle [ ]
+#### Phase 60: Rail lock toggle and locked top bar [ ]
 
-- **Goal:** the lock toggle and the disabled Add node button of 5.10.
+- **Goal:** the lock toggle, the disabled rail buttons and the read-only graph name of 5.10.
 - **Depends on:** phase 57.
 - **Owns files:** see the task graph row.
 - **Work:**
-  - `ToolRail`: the divider and the toggle after Redo; Add node disabled with its tooltip; the toggle disabled during a lesson. Switching the lock on with the Add tool active sets the tool to Select.
-  - `useToolShortcuts`: N does nothing while locked, and `addNodeAtCentre` returns early.
-- **Done when:** all checks pass. In the browser, the toggle shows its state, survives a reload, and Add node and N do nothing while locked.
+  - `ToolRail`: the divider and the toggle after Redo; Add node, Connect and Auto-layout disabled with their tooltips; the toggle disabled during a lesson. Switching the lock on with the Add or Connect tool active sets the tool to Select and clears the picked connect source.
+  - `useToolShortcuts`: N, C and L do nothing while locked, and `addNodeAtCentre` and the auto-layout action return early.
+  - `TopBar`: the graph name input is `readOnly` with `GRAPH_LOCK.reason` as its `title`.
+- **Done when:** all checks pass. In the browser, the toggle shows its state, survives a reload, and Add node, Connect, Auto-layout, their shortcuts and the graph name do nothing while locked.
 
 #### Phase 61: Images with equal circles [ ]
 
@@ -3339,13 +3344,13 @@ Phases: 62. Parallel: single phase. Check after the wave: all checks; the browse
 - **Depends on:** phases 58–61.
 - **Owns files:** see the task graph row.
 - **Work:**
-  - write `e2e/node-lock.spec.ts` and the `canvas.spec.ts` and `files.spec.ts` additions (section 9);
+  - write `e2e/graph-lock.spec.ts` and the `canvas.spec.ts` and `files.spec.ts` additions (section 9);
   - fix integration problems in any file of phases 57–61;
   - update the Status line and the Open issues ("Text measurement", "Circle positions in older files").
 - **Done when:** all checks pass. In the browser (both app themes):
   - all circles are equal, and long names fit or are truncated with a tooltip;
   - typing a name updates the circle at once, and Escape and undo behave as 5.3 says;
-  - the lock blocks every node change of 5.10 while arrows stay editable, and it survives Save → Open, a reload and a share link;
+  - a locked graph refuses every change of 5.10 (nodes, arrows, simulation details, dragging, auto-layout and the graph name), and the lock survives Save → Open, a reload and a share link;
   - a lesson started from a locked graph works, and the graph comes back locked;
   - exported SVG, PDF and TikZ match the canvas.
 - **Out of scope:** showing edge annotations on the canvas (GitHub #6) and an alternative visual style (#7).
@@ -3591,18 +3596,20 @@ Import and export (phases 31–40):
 - `src/model/yaml.test.ts` (phase 57 additions): `locked.dag.yaml` round-trips canonically with `locked: true` after `name`; `locked: false` is read as unlocked and not written back; a non-boolean `locked` gives a Zod error; every existing fixture is written unchanged.
 - `src/store/graphStore.test.ts` (phase 57 additions):
   - `setLocked` sets and clears `graph.locked`, is one undo step, and records nothing when unchanged;
-  - while locked: `addNodeAt` adds nothing; `renameNode` returns `NODE_LOCKED_MESSAGE` and changes nothing; `updateNode` ignores role, type, levels, unit and description but applies shares and form; `setLevels` and `setAdjustedSet` do nothing; `removeSelection` removes the given edges and no nodes; moving, connecting and `updateEdge` still work;
+  - while locked, each of `addNodeAt`, `updateNode`, `setLevels`, `setAdjustedSet`, `removeSelection`, `moveNode`, `moveNodes`, `layout`, `connect`, `updateEdge` and `setGraphName` leaves the graph and the history untouched, and `renameNode` returns `GRAPH_LOCKED_MESSAGE`;
+  - a locked graph is unlocked by `setLocked(false)` and by one undo, and `replaceGraph` still replaces it;
   - `renameNode` no longer moves the node.
 - `src/store/uiStore.test.ts` (phase 57 additions): `namePreview` starts as `null` and `setNamePreview` sets and clears it.
-- `src/lib/copy.test.ts` (phase 57 additions): `NODE_LOCK.tip` follows the tooltip rules.
+- `src/lib/copy.test.ts` (phase 57 additions): `GRAPH_LOCK.tip` follows the tooltip rules.
 - `src/lib/imageScene.test.ts`, `imageExport.test.ts` and `pdfExport.test.ts` (phase 61 additions): every circle has diameter `NODE_DIAMETER`; a long name's text has its `nodeLabel` font size and line pitch; TikZ writes the per-node `\fontsize`.
-- `e2e/node-lock.spec.ts` (phase 62):
+- `e2e/graph-lock.spec.ts` (phase 62):
   - the rail toggle is off for a new graph and toggles `aria-pressed`;
-  - while locked: Add node is disabled and N, double-click and the Add tool add nothing; Delete removes a selected edge but not a selected node; the editor shows the note and its fields are read-only; the Simulation section still edits shares; an arrow can still be drawn and its sign set;
+  - while locked: Add node, Connect and Auto-layout are disabled, and N, C, L, double-click and the Add tool change nothing; Delete removes neither a selected node nor a selected edge; dragging a circle leaves its position; no connection starts from a rim; the graph name is read-only;
+  - while locked, both editors show the note, their fields and the Simulation controls are read-only, and the Delete buttons are disabled; the Analysis tab still runs but cannot set the adjusted set;
   - the lock survives a reload, Save → Open and a share link; undo after locking unlocks;
-  - during a lesson the toggle is disabled, and the locked graph comes back locked afterwards.
+  - during a lesson the toggle is disabled, the practice graph is editable, and the user's graph comes back locked afterwards.
 - `e2e/canvas.spec.ts` (phase 62 additions): two circles with short and long names have the same size; typing in the Name field changes the circle's text before Enter; Escape restores it; after Enter, one undo restores the old name.
-- `e2e/files.spec.ts` (phase 62 addition): opening `locked.dag.yaml` locks the nodes, and saving writes `locked: true`.
+- `e2e/files.spec.ts` (phase 62 addition): opening `locked.dag.yaml` locks the graph, and saving writes `locked: true`.
 
 ## 10. Open issues
 
