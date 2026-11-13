@@ -7,7 +7,7 @@
 /** Diameter of every circle, in px. */
 export const NODE_DIAMETER = 96
 /** Largest label font size, in px. */
-export const LABEL_FONT_MAX = 13
+export const LABEL_FONT_MAX = 14
 /** Smallest label font size, in px. */
 export const LABEL_FONT_MIN = 9
 /** Most lines a label is wrapped into. */

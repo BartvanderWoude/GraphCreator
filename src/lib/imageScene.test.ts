@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ROLE_LABELS } from '@/lib/copy'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
-import { NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES } from '@/model/palette'
 import type { Role } from '@/model/schema'
 import { parseYaml } from '@/model/yaml'
@@ -64,11 +64,15 @@ describe('imageScene', () => {
     expect(scene.circles).toHaveLength(4)
     expect(scene.nodeIds).toEqual(g.nodes.map((n) => n.id))
     expect(scene.edges).toHaveLength(4)
-    const lines = g.nodes.flatMap((n) => nodeLabel(n.name).lines)
-    expect(scene.texts.map((t) => t.text)).toEqual(lines)
-    expect(scene.texts.every((t) => t.size === 13 && t.weight === 500)).toBe(
-      true,
+    const labels = g.nodes.map((n) => nodeLabel(n.name))
+    expect(scene.texts.map((t) => t.text)).toEqual(
+      labels.flatMap((label) => label.lines),
     )
+    // Each name is drawn at its own size (5.7.6).
+    expect(scene.texts.map((t) => t.size)).toEqual(
+      labels.flatMap((label) => label.lines.map(() => label.fontSize)),
+    )
+    expect(scene.texts.every((t) => t.weight === 500)).toBe(true)
     // Image coordinates: Maternal smoking at (0, 0), SES at (150, -120) set the origin.
     const d = NODE_DIAMETER
     expect(scene.circles[0]).toMatchObject({
@@ -84,6 +88,28 @@ describe('imageScene', () => {
       expect(e.width).toBe(1.5)
     }
     expect(scene.legend).toBeNull()
+  })
+
+  it('stacks the lines at the label pitch, baselines 0.375 em below their middles', () => {
+    const name = 'Maternal smoking during pregnancy'
+    const g = graph([{ ...node('n1', 0, 0), name }])
+    const scene = imageScene(g)
+    const label = nodeLabel(name)
+    expect(label.lines.length).toBe(4)
+    expect(label.fontSize).toBeLessThan(13)
+    const cy = EXPORT_MARGIN + NODE_DIAMETER / 2
+    const pitch = lineHeight(label.fontSize)
+    scene.texts.forEach((text, i) => {
+      const middle = cy + (i - (label.lines.length - 1) / 2) * pitch
+      expect(text.size).toBe(label.fontSize)
+      expect(text.y).toBeCloseTo(middle + 0.375 * label.fontSize)
+      expect(text.x).toBe(EXPORT_MARGIN + NODE_DIAMETER / 2)
+    })
+    // The lines stay inside the circle's outline.
+    const top = scene.texts[0].y - label.fontSize
+    const bottom = scene.texts.at(-1)!.y
+    expect(cy - top).toBeLessThan(NODE_DIAMETER / 2 - 2)
+    expect(bottom - cy).toBeLessThan(NODE_DIAMETER / 2 - 2)
   })
 
   it('has the size of svgSize, with and without the legend', () => {

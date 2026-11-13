@@ -11,16 +11,24 @@
 <path d="M372,172 L367.5,163 L376.5,163 Z" fill="#64748b"/>
 <line x1="332.06" y1="98.63" x2="270.26" y2="139.83" stroke="#64748b" stroke-width="1.5"/>
 <path d="M263.6,144.26 L268.59,135.53 L273.59,143.02 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
 <circle cx="372" cy="222" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="372" y="226.88" fill="#23407a">D</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="227.25" fill="#23407a">D</text>
+</g>
 <circle cx="72" cy="222" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="72" y="226.88" fill="#24563a">E</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="227.25" fill="#24563a">E</text>
+</g>
 <circle cx="72" cy="72" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="72" y="76.88" fill="#374151">U1</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="77.25" fill="#374151">U1</text>
+</g>
 <circle cx="372" cy="72" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="372" y="76.88" fill="#374151">U2</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="77.25" fill="#374151">U2</text>
+</g>
 <circle cx="222" cy="172" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="222" y="176.88" fill="#0f172a">Z</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="177.25" fill="#0f172a">Z</text>
 </g>
 </svg>

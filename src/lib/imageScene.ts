@@ -7,7 +7,7 @@ import { ROLE_LABELS } from '@/lib/copy'
 import { edgeEndpoints, type Circle } from '@/lib/geometry'
 import type { ImageOptions } from '@/lib/imageExport'
 import type { GNode, Graph } from '@/model/graph'
-import { NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES, type ExportPalette } from '@/model/palette'
 import { ROLES, type Role } from '@/model/schema'
 import { signBadge } from '@/model/simulation'
@@ -103,12 +103,9 @@ const ARROW_LENGTH = 9
 const ARROW_WIDTH = 9
 /** How far the line runs into the arrowhead, so no seam shows between them. */
 const ARROW_OVERLAP = 1
-/** Node text (5.7.3): 13 px, weight 500, 16 px line pitch. */
-const FONT_SIZE = 13
-const LINE_PITCH = 16
 /**
  * Baseline below the middle of a line box, in em: half of IBM Plex Sans's ascent (1.025 em) minus
- * its descent (0.275 em), where CSS puts it. 4.875 px for the 13 px node text.
+ * its descent (0.275 em), where CSS puts it. 4.875 px for 13 px text in a 16 px line.
  */
 const BASELINE = 0.375
 /** The legend swatch's outline width. */
@@ -351,14 +348,16 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
       strokeWidth: OUTLINE_WIDTH,
     })
     scene.nodeIds.push(node.id)
-    const lines = nodeLabel(node.name).lines
+    // Each name is drawn at its own size (5.7.6), with the matching line pitch and baseline.
+    const { lines, fontSize } = nodeLabel(node.name)
+    const pitch = lineHeight(fontSize)
     lines.forEach((line, i) => {
-      const middle = cy + (i - (lines.length - 1) / 2) * LINE_PITCH
+      const middle = cy + (i - (lines.length - 1) / 2) * pitch
       scene.texts.push({
         x: cx,
-        y: middle + FONT_SIZE * BASELINE,
+        y: middle + fontSize * BASELINE,
         text: line,
-        size: FONT_SIZE,
+        size: fontSize,
         weight: 500,
         color: colors.text,
         anchor: 'middle',

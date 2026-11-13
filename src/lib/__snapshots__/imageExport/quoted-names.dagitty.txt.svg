@@ -9,17 +9,23 @@
 <path d="M332.96,160.77 L323.12,158.66 L328.74,151.63 Z" fill="#64748b"/>
 <line x1="259.48" y1="282.01" x2="326.71" y2="228.23" stroke="#64748b" stroke-width="1.5"/>
 <path d="M332.96,223.23 L328.74,232.37 L323.12,225.34 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
 <circle cx="72" cy="192" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="72" y="188.88" fill="#24563a">Maternal</text>
-<text x="72" y="204.88" fill="#24563a">smoking</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="188.5" fill="#24563a">Maternal</text>
+<text x="72" y="206" fill="#24563a">smoking</text>
+</g>
 <circle cx="372" cy="192" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="372" y="188.88" fill="#23407a">Birth</text>
-<text x="372" y="204.88" fill="#23407a">weight</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="188.5" fill="#23407a">Birth</text>
+<text x="372" y="206" fill="#23407a">weight</text>
+</g>
 <circle cx="222" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="222" y="68.88" fill="#0f172a">Socio-economic</text>
-<text x="222" y="84.88" fill="#0f172a">status</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="9.5" font-weight="500" text-anchor="middle">
+<text x="222" y="69.63" fill="#0f172a">Socio-economic</text>
+<text x="222" y="81.5" fill="#0f172a">status</text>
+</g>
 <circle cx="222" cy="312" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="222" y="316.88" fill="#374151">say &quot;hi&quot;</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="317.25" fill="#374151">say &quot;hi&quot;</text>
 </g>
 </svg>

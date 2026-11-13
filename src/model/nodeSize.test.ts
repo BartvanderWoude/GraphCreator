@@ -44,8 +44,8 @@ const NAMES = [
 
 describe('nodeLabel', () => {
   it.each([
-    ['Age', ['Age'], 13],
-    ['Birth weight', ['Birth', 'weight'], 13],
+    ['Age', ['Age'], 14],
+    ['Birth weight', ['Birth', 'weight'], 14],
     ['Socioeconomic status', ['Socioeconomic', 'status'], 10.5],
     [
       'Maternal smoking during pregnancy',
@@ -86,7 +86,7 @@ describe('nodeLabel', () => {
 
   it('prefers fewer lines at the same font size', () => {
     expect(nodeLabel('Ab cd').lines).toEqual(['Ab cd'])
-    // Two lines at 13 px beat three lines at 13 px.
+    // Two lines at LABEL_FONT_MAX beat three lines at the same size.
     expect(nodeLabel('Body mass index').lines).toEqual(['Body mass', 'index'])
   })
 

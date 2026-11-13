@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseGraphText } from '@/model/fileFormat'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
-import { NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { parseYaml } from '@/model/yaml'
 import {
   EXPORT_MARGIN,
@@ -125,8 +125,12 @@ describe('toSvg', () => {
     // Line from the source rim (x 120) to 8 px before the tip; tip at 272 - 48 - 2 = 222.
     expect(svg).toContain('<line x1="120" y1="72" x2="214" y2="72"')
     expect(svg).toContain('<path d="M222,72 L213,76.5 L213,67.5 Z"')
-    // One line of text, its baseline below the centre.
-    expect(svg).toContain('<text x="72" y="76.88" fill="#0f172a">A</text>')
+    // One line of text at the name's own size, its baseline 0.375 em below the centre.
+    const size = nodeLabel('A').fontSize
+    expect(svg).toContain(`font-size="${size}" font-weight="500"`)
+    expect(svg).toContain(
+      `<text x="72" y="${72 + 0.375 * size}" fill="#0f172a">A</text>`,
+    )
   })
 
   it('embeds the font only with fontDataUrl', () => {
@@ -189,9 +193,13 @@ describe('toTikz', () => {
   it('places nodes on their centres and joins wrapped lines with \\\\', () => {
     const tikz = toTikz(smoking())
     const d = NODE_DIAMETER
-    expect(nodeLabel('Maternal smoking').lines).toEqual(['Maternal', 'smoking'])
+    const label = nodeLabel('Maternal smoking')
+    expect(label.lines).toEqual(['Maternal', 'smoking'])
+    // The name's own size in points, with the 1.25 × line pitch (5.7.6).
+    const size = 0.75 * label.fontSize
+    const pitch = Math.round(0.75 * lineHeight(label.fontSize) * 100) / 100
     expect(tikz).toContain(
-      `\\node[circle, draw=gcExposureLine, fill=gcExposureFill, text=gcExposureText, line width=1.5pt, minimum size=${0.75 * d}pt, inner sep=0pt, align=center, font=\\sffamily\\small] (v1) at (${d / 2},${d / 2}) {Maternal\\\\smoking};`,
+      `\\node[circle, draw=gcExposureLine, fill=gcExposureFill, text=gcExposureText, line width=1.5pt, minimum size=${0.75 * d}pt, inner sep=0pt, align=center, font=\\sffamily\\fontsize{${size}}{${pitch}}\\selectfont] (v1) at (${d / 2},${d / 2}) {Maternal\\\\smoking};`,
     )
     expect(tikz).toContain('(v4) at (')
     // SES → Maternal smoking is the first edge.
@@ -367,8 +375,9 @@ describe('sign badges', () => {
     )
     const first = svg.indexOf('r="7.5"')
     expect(first).toBeGreaterThan(svg.lastIndexOf('<path '))
+    // Before the node circles, whose radius is half the diameter minus the outline.
     expect(svg.lastIndexOf('r="7.5"')).toBeLessThan(
-      svg.indexOf('font-size="13"'),
+      svg.indexOf(`r="${NODE_DIAMETER / 2 - 1}"`),
     )
     expect(balanced(svg)).toBe(true)
     const dark = toSvg(signed(), { signs: true, theme: 'dark' })

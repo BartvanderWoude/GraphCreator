@@ -1601,14 +1601,14 @@ Light text-on-fill ratios are 7.3 or more; outlines are 3.3–3.5 against `--can
 
 ```ts
 export const NODE_DIAMETER = 96          // px, every circle
-export const LABEL_FONT_MAX = 13         // px, IBM Plex Sans 500
+export const LABEL_FONT_MAX = 14         // px, IBM Plex Sans 500
 export const LABEL_FONT_MIN = 9          // px
 export const LABEL_MAX_LINES = 5
 export interface NodeLabel { lines: string[]; fontSize: number; truncated: boolean }
 export function nodeLabel(name: string): NodeLabel
 ```
 
-Pure and deterministic (no DOM), so `autoLayout`, the store and the image export can use it. The numbers are starting values: phase 61 tunes `NODE_DIAMETER`, the font limits and the inset against the rendered font in the browser, and records the final values and the example table here.
+Pure and deterministic (no DOM), so `autoLayout`, the store and the image export can use it. These are the values tuned in phase 61: exported SVGs of the fixtures and of long names were measured in Chromium against the real IBM Plex Sans 500. `NODE_DIAMETER` and the 6 px inset keep every real name clear of the outline (the closest, `Mammography` on one line at 12.5 px, stays about 6.7 px inside it); `LABEL_FONT_MAX` went from 13 to 14 px so a short name does not look lost in the 96 px circle. A name of only wide letters (`WWWWWWWW`, `Mmmmmmmmmm`) still overflows, because the character width is one estimate for every character; that limit is the open issue "Text measurement".
 
 - **Text metrics at font size `s`:** character width `7.5 / 13 · s`, line height `1.25 · s` (rounded to 0.25 px in the CSS). These scale the estimate the old formula used for 13 px Plex Sans 500.
 - **Fit test:** the lines are stacked and centred vertically. A line fits when its estimated width is at most the circle's chord at the line's edge farthest from the centre, inside an inset of 6 px: with `R = NODE_DIAMETER / 2 − 6` and `y` that distance, the line's width must be at most `2 · √(R² − y²)` (and `y < R`). A label fits when every line fits. Testing per line, rather than the label's bounding box, lets a tapered three- or four-line label keep a larger font.
@@ -1617,12 +1617,12 @@ Pure and deterministic (no DOM), so `autoLayout`, the store and the image export
   2. For `s` from `LABEL_FONT_MAX` down to `LABEL_FONT_MIN` in steps of 0.5: for k = 1 … `LABEL_MAX_LINES`, greedily fill lines with the smallest character limit (starting at the longest word) that gives at most k lines that fit. The first `s` with a fitting wrapping wins; among its wrappings, the one with the fewest lines wins.
   3. If nothing fits at `LABEL_FONT_MIN` with the words kept whole: fill a block of 1 … `LABEL_MAX_LINES` lines at that size, each line up to its own chord, breaking a word that is too wide for the line it starts. The fewest lines that hold the whole name win, and `truncated` stays false: a broken long word still shows in full.
   4. If even `LABEL_MAX_LINES` lines do not hold it, cut the last line and add "…", and set `truncated: true`. The full name then goes in the circle's `title`.
-- **Examples** at the starting values (unit-tested; phase 61 updates them with the tuned values):
+- **Examples** (unit-tested):
 
 | Name | Font | Lines |
 |---|---|---|
-| `Age` | 13 px | `Age` |
-| `Birth weight` | 13 px | `Birth` / `weight` |
+| `Age` | 14 px | `Age` |
+| `Birth weight` | 14 px | `Birth` / `weight` |
 | `Socioeconomic status` | 10.5 px | `Socioeconomic` / `status` |
 | `Maternal smoking during pregnancy` | 11.5 px | `Maternal` / `smoking` / `during` / `pregnancy` |
 | `Pre-existing cardiovascular disease` | 10 px | `Pre-existing` / `cardiovascular` / `disease` |

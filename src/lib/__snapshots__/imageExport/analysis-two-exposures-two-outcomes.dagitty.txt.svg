@@ -15,18 +15,28 @@
 <path d="M252,232 L253.8,222.1 L261,227.5 Z" fill="#64748b"/>
 <line x1="372" y1="120" x2="372" y2="264" stroke="#64748b" stroke-width="1.5"/>
 <path d="M372,272 L367.5,263 L376.5,263 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
 <circle cx="72" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="72" y="76.88" fill="#0f172a">C</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="77.25" fill="#0f172a">C</text>
+</g>
 <circle cx="372" cy="72" r="47" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
-<text x="372" y="76.88" fill="#6b4510">B</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="77.25" fill="#6b4510">B</text>
+</g>
 <circle cx="72" cy="172" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="72" y="176.88" fill="#24563a">E1</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="177.25" fill="#24563a">E1</text>
+</g>
 <circle cx="222" cy="272" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="222" y="276.88" fill="#24563a">E2</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="277.25" fill="#24563a">E2</text>
+</g>
 <circle cx="372" cy="172" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="372" y="176.88" fill="#23407a">D1</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="177.25" fill="#23407a">D1</text>
+</g>
 <circle cx="372" cy="322" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="372" y="326.88" fill="#23407a">D2</text>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="327.25" fill="#23407a">D2</text>
 </g>
 </svg>
