@@ -2,15 +2,15 @@ import { Handle, Position, useConnection, type NodeProps } from '@xyflow/react'
 import { TriangleAlert } from 'lucide-react'
 import { ROLE_LABELS } from '@/lib/copy'
 import { cn } from '@/lib/utils'
-import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
+import { NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import type { CircleFlowNode } from './types'
 
 /** Diameter of the untyped warning dot, in px (spec 5.7.7). */
 const DOT_SIZE = 20
 
 /**
- * A variable as a circle (spec 5.2 "Node look", 5.7.7). The circle's diameter comes from the
- * name, which is wrapped inside it; colours come from the role.
+ * A variable as a circle (spec 5.2 "Node look", 5.7.7). Every circle is `NODE_DIAMETER` across;
+ * the name is wrapped inside it at the font size that fits (5.7.6). Colours come from the role.
  *
  * Connecting follows React Flow's "easy connect" pattern: a ring-shaped source handle lies
  * behind the circle and shows 7 px around it (the rim, the drag-to-connect area), and a target
@@ -30,9 +30,8 @@ export function CircleNode({
   const connecting = useConnection((c) =>
     c.inProgress ? (c.fromNode.id === id ? 'from' : 'other') : null,
   )
-  const d = nodeDiameter(data.name)
-  const label = wrapLabel(data.name)
-  const r = d / 2
+  const label = nodeLabel(data.name)
+  const r = NODE_DIAMETER / 2
   // The dot's centre sits on the rim at the top right (45°).
   const dotOffset = r - r * Math.SQRT1_2 - DOT_SIZE / 2
 
@@ -47,7 +46,7 @@ export function CircleNode({
           'gc-rim-on',
         selected && 'gc-selected',
       )}
-      style={{ width: d, height: d }}
+      style={{ width: NODE_DIAMETER, height: NODE_DIAMETER }}
     >
       <Handle
         type="source"
@@ -60,6 +59,8 @@ export function CircleNode({
         aria-label={`${data.name}, ${ROLE_LABELS[data.role]}`}
         data-role={data.role}
         className="gc-circle"
+        // The CSS line height is a multiple, so the pitch follows the size (5.7.6).
+        style={{ fontSize: `${label.fontSize}px` }}
         title={label.truncated ? data.name : undefined}
       >
         {label.lines.map((line, i) => (

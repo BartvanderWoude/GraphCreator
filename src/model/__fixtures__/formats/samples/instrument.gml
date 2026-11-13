@@ -5,8 +5,8 @@ graph [
     label "Z"
     name "Z"
     graphics [
-      x 32
-      y 32
+      x 48
+      y 48
     ]
   ]
   node [
@@ -15,8 +15,8 @@ graph [
     name "X"
     role "exposure"
     graphics [
-      x 182
-      y 32
+      x 198
+      y 48
     ]
   ]
   node [
@@ -25,8 +25,8 @@ graph [
     name "Y"
     role "outcome"
     graphics [
-      x 332
-      y 32
+      x 348
+      y 48
     ]
   ]
   node [
@@ -35,8 +35,8 @@ graph [
     name "U"
     role "latent"
     graphics [
-      x 257
-      y -68
+      x 273
+      y -52
     ]
   ]
   edge [

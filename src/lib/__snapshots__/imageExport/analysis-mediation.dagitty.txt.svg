@@ -1,24 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="412" height="262" viewBox="0 0 412 262">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="294" viewBox="0 0 444 294">
 <title>Graph</title>
-<rect width="412" height="262" fill="#ffffff"/>
-<line x1="82.63" y1="188.25" x2="171.05" y2="129.3" stroke="#64748b" stroke-width="1.5"/>
-<path d="M177.71,124.86 L172.72,133.6 L167.73,126.11 Z" fill="#64748b"/>
-<line x1="232.63" y1="123.75" x2="321.05" y2="182.7" stroke="#64748b" stroke-width="1.5"/>
-<path d="M327.71,187.14 L317.73,185.89 L322.72,178.4 Z" fill="#64748b"/>
-<line x1="88" y1="206" x2="314" y2="206" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322,206 L313,210.5 L313,201.5 Z" fill="#64748b"/>
-<line x1="325.64" y1="66.12" x2="245.84" y2="92.72" stroke="#64748b" stroke-width="1.5"/>
-<path d="M238.26,95.25 L245.37,88.13 L248.22,96.67 Z" fill="#64748b"/>
-<line x1="356" y1="88" x2="356" y2="164" stroke="#64748b" stroke-width="1.5"/>
-<path d="M356,172 L351.5,163 L360.5,163 Z" fill="#64748b"/>
+<rect width="444" height="294" fill="#ffffff"/>
+<line x1="111.94" y1="195.37" x2="173.74" y2="154.17" stroke="#64748b" stroke-width="1.5"/>
+<path d="M180.4,149.74 L175.41,158.47 L170.41,150.98 Z" fill="#64748b"/>
+<line x1="261.94" y1="148.63" x2="323.74" y2="189.83" stroke="#64748b" stroke-width="1.5"/>
+<path d="M330.4,194.26 L320.41,193.02 L325.41,185.53 Z" fill="#64748b"/>
+<line x1="120" y1="222" x2="314" y2="222" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,222 L313,226.5 L313,217.5 Z" fill="#64748b"/>
+<line x1="326.46" y1="87.18" x2="277.02" y2="103.66" stroke="#64748b" stroke-width="1.5"/>
+<path d="M269.43,106.19 L276.55,99.07 L279.4,107.61 Z" fill="#64748b"/>
+<line x1="372" y1="120" x2="372" y2="164" stroke="#64748b" stroke-width="1.5"/>
+<path d="M372,172 L367.5,163 L376.5,163 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="56" cy="206" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="210.88" fill="#24563a">E</text>
-<circle cx="206" cy="106" r="31" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
-<text x="206" y="110.88" fill="#6b4510">M</text>
-<circle cx="356" cy="206" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="356" y="210.88" fill="#23407a">D</text>
-<circle cx="356" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="356" y="60.88" fill="#0f172a">C</text>
+<circle cx="72" cy="222" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="226.88" fill="#24563a">E</text>
+<circle cx="222" cy="122" r="47" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
+<text x="222" y="126.88" fill="#6b4510">M</text>
+<circle cx="372" cy="222" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="226.88" fill="#23407a">D</text>
+<circle cx="372" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="372" y="76.88" fill="#0f172a">C</text>
 </g>
 </svg>

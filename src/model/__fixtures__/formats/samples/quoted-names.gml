@@ -6,8 +6,8 @@ graph [
     name "Maternal smoking"
     role "exposure"
     graphics [
-      x 42
-      y 42
+      x 48
+      y 48
     ]
   ]
   node [
@@ -16,8 +16,8 @@ graph [
     name "Birth weight"
     role "outcome"
     graphics [
-      x 336
-      y 36
+      x 348
+      y 48
     ]
   ]
   node [
@@ -25,8 +25,8 @@ graph [
     label "Socio_economic_status"
     name "Socio-economic status"
     graphics [
-      x 213
-      y -57
+      x 198
+      y -72
     ]
   ]
   node [
@@ -35,8 +35,8 @@ graph [
     name "say &#34;hi&#34;"
     role "latent"
     graphics [
-      x 182
-      y 152
+      x 198
+      y 168
     ]
   ]
   edge [

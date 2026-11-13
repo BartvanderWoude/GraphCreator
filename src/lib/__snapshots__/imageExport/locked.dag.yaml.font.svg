@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="144" viewBox="0 0 444 144">
+<title>Imported study variables</title>
+<style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
+<rect width="444" height="144" fill="#ffffff"/>
+<line x1="120" y1="72" x2="314" y2="72" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,72 L313,76.5 L313,67.5 Z" fill="#64748b"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
+<circle cx="72" cy="72" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="68.88" fill="#24563a">Maternal</text>
+<text x="72" y="84.88" fill="#24563a">smoking</text>
+<circle cx="372" cy="72" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="68.88" fill="#23407a">Birth</text>
+<text x="372" y="84.88" fill="#23407a">weight</text>
+</g>
+</svg>

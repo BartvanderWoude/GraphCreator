@@ -7,7 +7,7 @@ import {
   type ExchangeEdge,
   type ExchangeNode,
 } from './exchange'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 
 const LAYOUT =
   'Some nodes had no position, so the graph was laid out automatically.'
@@ -190,7 +190,7 @@ describe('buildGraph', () => {
       { nodes: [node('SES', { centre: { x: 182, y: -88 } })], edges: [] },
       [],
     )
-    const d = nodeDiameter('SES')
+    const d = NODE_DIAMETER
     expect(result.ok && result.value.nodes[0].pos).toEqual({
       x: 182 - d / 2,
       y: -88 - d / 2,

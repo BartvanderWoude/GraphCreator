@@ -180,6 +180,12 @@ export interface UiState {
   lessonsOpen: boolean
   openLessons(): void
   closeLessons(): void
+  /**
+   * The name being typed in the node editor, shown on the circle while it differs from the
+   * stored name (spec 4.17, 5.3). Null when no name is being edited.
+   */
+  namePreview: { id: string; name: string } | null
+  setNamePreview(preview: { id: string; name: string } | null): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -194,6 +200,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   dagittyDetails: readDagittyDetails(safeLocalStorage()),
   simulationOpen: readSimulationOpen(safeLocalStorage()),
   lessonsOpen: false,
+  namePreview: null,
 
   setTool(tool) {
     set({ tool, connectFrom: null })
@@ -251,5 +258,9 @@ export const useUiStore = create<UiState>()((set, get) => ({
 
   closeLessons() {
     set({ lessonsOpen: false })
+  },
+
+  setNamePreview(preview) {
+    set({ namePreview: preview })
   },
 }))

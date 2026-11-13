@@ -29,13 +29,8 @@ import { useAnalysis } from '@/components/useAnalysis'
 import { findLesson } from '@/lessons'
 import { nodeNamed } from '@/lessons/helpers'
 import { cn } from '@/lib/utils'
-import {
-  canAddEdge,
-  defaultNodeName,
-  type EdgeCheck,
-  type Graph,
-} from '@/model/graph'
-import { nodeDiameter } from '@/model/nodeSize'
+import { canAddEdge, type EdgeCheck, type Graph } from '@/model/graph'
+import { NODE_DIAMETER } from '@/model/nodeSize'
 import { signBadge } from '@/model/simulation'
 import { useGraphStore, type GraphState } from '@/store/graphStore'
 import { lessonEvent } from '@/store/lessonEvents'
@@ -132,13 +127,12 @@ function syncFlow(
     ) {
       return old
     }
-    const d = nodeDiameter(g.name)
     return {
       id: g.id,
       type: 'circle',
       position,
-      width: d,
-      height: d,
+      width: NODE_DIAMETER,
+      height: NODE_DIAMETER,
       data: {
         name: g.name,
         role: g.role,
@@ -147,8 +141,8 @@ function syncFlow(
         highlighted,
         ...(pointer !== undefined && { pointer }),
       },
-      // A renamed circle changes size; React Flow measures it again.
-      measured: old && old.width === d ? old.measured : undefined,
+      // Every circle is the same size, so a measured node stays measured.
+      measured: old?.measured,
       dragging: old?.dragging,
       selected: old?.selected ?? false,
     }
@@ -359,8 +353,8 @@ export function Canvas() {
   const addNodeAtPointer = useCallback(
     (event: ReactMouseEvent) => {
       const p = screenToFlowPosition({ x: event.clientX, y: event.clientY })
-      const { graph, addNodeAt } = useGraphStore.getState()
-      const half = nodeDiameter(defaultNodeName(graph)) / 2
+      const { addNodeAt } = useGraphStore.getState()
+      const half = NODE_DIAMETER / 2
       addNodeAt({ x: Math.round(p.x - half), y: Math.round(p.y - half) })
     },
     [screenToFlowPosition],

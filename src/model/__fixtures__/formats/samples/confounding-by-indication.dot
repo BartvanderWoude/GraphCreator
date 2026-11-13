@@ -1,10 +1,10 @@
 digraph {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  Severity [gc_role="latent", pos="142.5,60!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
-  Indication [pos="35.25,-5.25!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  Drug [gc_role="exposure", pos="24,-99!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  Recovery [gc_role="outcome", pos="255,-105!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  Severity [gc_role="latent", pos="148.5,54!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  Indication [pos="36,-6!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  Drug [gc_role="exposure", pos="36,-111!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Recovery [gc_role="outcome", pos="261,-111!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
   Severity -> Indication
   Indication -> Drug
   Severity -> Recovery

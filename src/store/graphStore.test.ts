@@ -1,7 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { emptyGraph, type Graph } from '@/model/graph'
 import { autoLayout } from '@/model/layout'
-import { HISTORY_LIMIT, useGraphStore } from './graphStore'
+import {
+  GRAPH_LOCKED_MESSAGE,
+  HISTORY_LIMIT,
+  useGraphStore,
+} from './graphStore'
 import { startRecording, stopRecording, useLessonEvents } from './lessonEvents'
 
 const store = () => useGraphStore.getState()
@@ -83,21 +87,16 @@ describe('graphStore', () => {
     expect(store().graph).toBe(before)
   })
 
-  it('renameNode keeps the circle centre when the diameter changes', () => {
+  it('renameNode leaves the position alone, since every circle is the same size', () => {
     store().replaceGraph({
       nodes: [{ id: 'n1', name: 'Age', role: 'other', pos: { x: 100, y: 50 } }],
       edges: [],
     })
-    // 64 px → 132 px: pos shifts by (64 - 132) / 2 = -34 on both axes.
     const result = store().renameNode('n1', 'Maternal smoking during pregnancy')
     expect(result.ok).toBe(true)
-    expect(store().graph.nodes[0].pos).toEqual({ x: 66, y: 16 })
-    expect(result.ok && result.value).toBe(store().graph)
-    // And back again.
-    store().renameNode('n1', 'Age')
     expect(store().graph.nodes[0].pos).toEqual({ x: 100, y: 50 })
-    // Same diameter: no shift.
-    store().renameNode('n1', 'Sex')
+    expect(result.ok && result.value).toBe(store().graph)
+    store().renameNode('n1', 'Age')
     expect(store().graph.nodes[0].pos).toEqual({ x: 100, y: 50 })
   })
 
@@ -729,5 +728,95 @@ describe('graphStore simulation patches (phase 49)', () => {
     expect(store().graph).not.toBe(before)
     expect(store().graph.edges[0].sign).toBeUndefined()
     expect(store().past).toHaveLength(3)
+  })
+})
+
+describe('the graph lock (spec 4.17)', () => {
+  /** The sample graph, locked, with an empty history. */
+  function locked(): Graph {
+    useGraphStore.getState().replaceGraph(sample())
+    useGraphStore.getState().setLocked(true)
+    return useGraphStore.getState().graph
+  }
+
+  it('setLocked sets and clears the flag as one undo step', () => {
+    store().replaceGraph(sample())
+    expect(store().graph.locked).toBeUndefined()
+    store().setLocked(true)
+    expect(store().graph.locked).toBe(true)
+    expect(store().past).toHaveLength(1)
+    store().undo()
+    expect(store().graph.locked).toBeUndefined()
+    store().redo()
+    expect(store().graph.locked).toBe(true)
+    store().setLocked(false)
+    expect(store().graph.locked).toBeUndefined()
+    expect('locked' in store().graph).toBe(false)
+  })
+
+  it('setLocked records nothing when the state does not change', () => {
+    store().replaceGraph(sample())
+    store().setLocked(false)
+    expect(store().past).toHaveLength(0)
+    store().setLocked(true)
+    const graph = store().graph
+    store().setLocked(true)
+    expect(store().graph).toBe(graph)
+    expect(store().past).toHaveLength(1)
+  })
+
+  it('refuses every action that would change the graph', () => {
+    const before = locked()
+    const past = store().past.length
+
+    expect(store().addNodeAt({ x: 10, y: 10 })).toBe('')
+    store().updateNode('n1', { role: 'latent', description: 'x' })
+    store().setLevels('n1', ['a', 'b'], [null, null])
+    store().setAdjustedSet(['n3'])
+    store().removeSelection(['n1'], ['e1'])
+    store().moveNode('n1', { x: 99, y: 99 })
+    store().moveNodes([{ id: 'n2', pos: { x: 99, y: 99 } }])
+    store().layout()
+    store().updateEdge('e1', { note: 'x' })
+    store().setGraphName('Other')
+
+    expect(store().graph).toBe(before)
+    expect(store().past).toHaveLength(past)
+  })
+
+  it('refuses renameNode and connect with the lock message', () => {
+    const before = locked()
+    const renamed = store().renameNode('n1', 'Z')
+    expect(renamed.ok).toBe(false)
+    expect(renamed.ok === false && renamed.errors).toEqual([
+      { message: GRAPH_LOCKED_MESSAGE, nodeId: 'n1' },
+    ])
+    const connected = store().connect('n1', 'n3')
+    expect(connected).toEqual({
+      ok: false,
+      reason: 'locked',
+      message: GRAPH_LOCKED_MESSAGE,
+    })
+    expect(store().graph).toBe(before)
+  })
+
+  it('still selects, replaces the graph and undoes', () => {
+    locked()
+    store().select({ kind: 'node', id: 'n1' })
+    expect(store().selection).toEqual({ kind: 'node', id: 'n1' })
+    store().focusName('n2')
+    expect(store().focusNameOf).toBe('n2')
+    store().undo()
+    expect(store().graph.locked).toBeUndefined()
+    store().redo()
+    store().replaceGraph(emptyGraph())
+    expect(store().graph).toEqual(emptyGraph())
+  })
+
+  it('lets a graph be unlocked and edited again', () => {
+    locked()
+    store().setLocked(false)
+    const after = expectReplaced(() => store().moveNode('n1', { x: 5, y: 5 }))
+    expect(after.nodes[0].pos).toEqual({ x: 5, y: 5 })
   })
 })

@@ -919,8 +919,8 @@ graph [
     levels "current"
     description "Self-reported during pregnancy"
     graphics [
-      x 42
-      y 42
+      x 48
+      y 48
     ]
   ]
   node [
@@ -932,8 +932,8 @@ graph [
     levels "mid"
     levels "high"
     graphics [
-      x 182
-      y -88
+      x 198
+      y -72
     ]
   ]
   edge [
@@ -986,10 +986,10 @@ export function parseDot(text: string): Result<Graph>
 digraph "Smoking and birth weight" {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="31.5,-31.5!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="252,-27!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="136.5,66!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  Genetic_factors [label="Genetic factors", gc_role="latent", pos="141.75,-119.25!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="261,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="148.5,54!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  Genetic_factors [label="Genetic factors", gc_role="latent", pos="148.5,-126!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
   SES -> Maternal_smoking [gc_evidence="PMID:123;doi:10.1000/xyz", gc_note="Well established"]
   Maternal_smoking -> Birth_weight
   SES -> Birth_weight
@@ -1049,7 +1049,7 @@ export function parseNetworkx(text: string): Result<Graph>
       "var_type": "categorical",
       "levels": ["never", "former", "current"],
       "description": "Self-reported during pregnancy",
-      "pos": [42, 42]
+      "pos": [48, 48]
     }
   ],
   "edges": [
@@ -1615,7 +1615,8 @@ Pure and deterministic (no DOM), so `autoLayout`, the store and the image export
 - **`nodeLabel(name)`:**
   1. Trim the name and split it into words on whitespace.
   2. For `s` from `LABEL_FONT_MAX` down to `LABEL_FONT_MIN` in steps of 0.5: for k = 1 … `LABEL_MAX_LINES`, greedily fill lines with the smallest character limit (starting at the longest word) that gives at most k lines that fit. The first `s` with a fitting wrapping wins; among its wrappings, the one with the fewest lines wins.
-  3. If nothing fits at `LABEL_FONT_MIN`: hard-split words that are too wide for the widest chord into pieces that fit, fill greedily at that font size, keep the first lines that fit, cut the last one and add "…", and set `truncated: true`. The full name then goes in the circle's `title`.
+  3. If nothing fits at `LABEL_FONT_MIN` with the words kept whole: fill a block of 1 … `LABEL_MAX_LINES` lines at that size, each line up to its own chord, breaking a word that is too wide for the line it starts. The fewest lines that hold the whole name win, and `truncated` stays false: a broken long word still shows in full.
+  4. If even `LABEL_MAX_LINES` lines do not hold it, cut the last line and add "…", and set `truncated: true`. The full name then goes in the circle's `title`.
 - **Examples** at the starting values (unit-tested; phase 61 updates them with the tuned values):
 
 | Name | Font | Lines |
@@ -3259,11 +3260,11 @@ Phases: 56. Parallel: single phase. Check after the wave: all checks; the browse
   - `e2e/simulation.spec.ts` has 9 tests covering section 9's list; it also checks that sign-map keys follow level edits and that the edge editor shares the section's open state. `export.spec.ts` checks the Signs checkbox (absent without signs; on by default; two `+` and one `±` badge in the SVG for `simulation.dag.yaml`; TikZ follows it; kept when the dialog reopens). `files.spec.ts` checks the changed Save as… notes.
   - No other integration fixes were needed in phases 49–55.
 
-### Wave 25: Equal circles, preview and lock contracts [ ]
+### Wave 25: Equal circles, preview and lock contracts [x]
 
 Phases: 57. Parallel: single phase. Check after the wave: all checks. In the app, every circle has the same size and a long name has a smaller font on the canvas (images follow in phase 61). Nothing else is visible yet.
 
-#### Phase 57: Equal circles, preview and lock contracts [ ]
+#### Phase 57: Equal circles, preview and lock contracts [x]
 
 - **Goal:** the size contract of 5.7.6, the `locked` file key, the store guards, `namePreview` and the texts of 4.17 exist, so wave 26 can build the canvas, the editors, the rail and the images in parallel.
 - **Depends on:** phase 56.
@@ -3279,7 +3280,17 @@ Phases: 57. Parallel: single phase. Check after the wave: all checks. In the app
   - **`docs/FORMAT.md`:** a `locked` row in the top-level table: "An editor setting: GraphCreator does not let people add, delete or edit the variables. It has no causal or simulation meaning; readers can ignore it."
 - **Tests:** the `nodeSize.test.ts` rewrite, and the additions to `layout.test.ts`, `yaml.test.ts`, `graphStore.test.ts`, `uiStore.test.ts` and `copy.test.ts` (section 9). Adjust the exchange-format tests whose expected centres change.
 - **Done when:** all checks pass. Existing e2e tests that click measured points may need new coordinates; fix them here only as far as the build needs, and leave new e2e tests to phase 62.
-- **Out of scope:** the font size on the canvas and in images, the preview, the toggle and the locked editor.
+- **Out of scope:** the font size in images, the preview, the toggle and the locked editor.
+- **Details fixed in phase 57:**
+  - `nodeLabel` keeps words whole while it looks for a font size, and breaks one only in the fallback (5.7.6 step 3). A broken word is not truncation: `truncated` is true only when text is dropped for an ellipsis, which takes a name of about 70 characters.
+  - `lineHeight(fontSize)` is exported for the canvas and the images. `CircleNode` sets only `font-size` inline, because `canvas.css` gives `.gc-circle` a unitless `line-height: 1.25`.
+  - The store guards `addNodeAt`, `renameNode`, `connect` and `removeSelection`, which do not go through `commit` or need their own answer; the other actions are stopped by the `commit` backstop.
+  - `setLocked` bypasses `commit` (which would refuse it) and records through `record` directly.
+  - `EdgeCheck.reason` gained `'locked'` (4.17), so `connect` can report it.
+  - The exchange-format round-trip tests skip `locked.dag.yaml`, as they already skip `simulation.dag.yaml`.
+  - The `pos` of every node is now the top-left of a 96 px square, so the centres in the GML, DOT and networkx examples of 4.15 changed; the examples in this spec and in the tests were updated with them. `src/model/__fixtures__/formats/reference.json` was regenerated with `scripts/check-formats.py` on the same tool versions it already recorded, and only coordinates changed.
+  - The image snapshots were regenerated. Image text still uses a fixed 13 px, so a long name overflows its circle in an exported image until phase 61.
+  - Existing e2e tests that assert circle sizes, export sizes or the old rename shift were updated; `canvas.spec.ts`'s rename test now checks that the circle keeps its size and gets an 11.5 px font.
 
 ### Wave 26: Equal circles, preview and lock parts [ ]
 

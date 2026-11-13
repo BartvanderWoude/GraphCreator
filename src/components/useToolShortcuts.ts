@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useReactFlow, useStoreApi } from '@xyflow/react'
-import { defaultNodeName } from '@/model/graph'
-import { nodeDiameter } from '@/model/nodeSize'
+import { NODE_DIAMETER } from '@/model/nodeSize'
 import { useGraphStore } from '@/store/graphStore'
 import { useUiStore } from '@/store/uiStore'
 
@@ -65,8 +64,8 @@ export function useCanvasActions(): CanvasActions {
           ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
           : { x: window.innerWidth / 2, y: window.innerHeight / 2 }
         const pos = flow.screenToFlowPosition(centre)
-        const { graph, addNodeAt } = useGraphStore.getState()
-        const half = nodeDiameter(defaultNodeName(graph)) / 2
+        const { addNodeAt } = useGraphStore.getState()
+        const half = NODE_DIAMETER / 2
         addNodeAt({ x: Math.round(pos.x - half), y: Math.round(pos.y - half) })
       },
     }

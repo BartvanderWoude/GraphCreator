@@ -6,7 +6,7 @@ import {
   type ExchangeNode,
 } from './exchange'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import type { Issue, Result } from './result'
 
 /**
@@ -63,7 +63,7 @@ export function toNetworkx(graph: Graph): string {
     if (n.levels && n.levels.length > 0) node.levels = n.levels
     if (n.description) node.description = n.description
     if (n.unit) node.unit = n.unit
-    const r = nodeDiameter(n.name) / 2
+    const r = NODE_DIAMETER / 2
     node.pos = [num(n.pos.x + r), num(n.pos.y + r)]
     return node
   })

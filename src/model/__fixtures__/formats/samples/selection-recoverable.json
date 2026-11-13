@@ -6,30 +6,30 @@
     {
       "id": "A",
       "name": "A",
-      "pos": [32, -68]
+      "pos": [48, -52]
     },
     {
       "id": "C",
       "name": "C",
-      "pos": [182, -88]
+      "pos": [198, -72]
     },
     {
       "id": "E",
       "name": "E",
       "role": "exposure",
-      "pos": [32, 82]
+      "pos": [48, 98]
     },
     {
       "id": "D",
       "name": "D",
       "role": "outcome",
-      "pos": [332, 82]
+      "pos": [348, 98]
     },
     {
       "id": "S",
       "name": "S",
       "role": "selected",
-      "pos": [-118, -68]
+      "pos": [-102, -52]
     }
   ],
   "edges": [

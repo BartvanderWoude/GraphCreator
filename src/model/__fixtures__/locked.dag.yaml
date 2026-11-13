@@ -1,0 +1,17 @@
+schema: graphcreator/0.1
+name: Imported study variables
+locked: true
+nodes:
+  - name: Maternal smoking
+    role: exposure
+    var_type: categorical
+    levels: [never, former, current]
+    pos: [0, 0]
+  - name: Birth weight
+    role: outcome
+    var_type: continuous
+    unit: g
+    pos: [300, 0]
+edges:
+  - from: Maternal smoking
+    to: Birth weight

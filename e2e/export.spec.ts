@@ -85,7 +85,7 @@ test('SVG shows a preview, copies and downloads', async ({ page }) => {
   const preview = dialog.getByRole('img', { name: 'Preview of the image' })
   await expect(preview).toBeVisible()
   // The image has loaded, at the size from svgSize.
-  await expect(preview).toHaveJSProperty('naturalWidth', 420)
+  await expect(preview).toHaveJSProperty('naturalWidth', 444)
 
   await dialog.getByRole('button', { name: 'Copy' }).click()
   await expect(
@@ -117,10 +117,10 @@ test('PNG shows its pixel size and downloads a PNG file', async ({ page }) => {
   const scale = dialog.getByRole('combobox', { name: 'Scale' })
   await expect(scale).toHaveText('2×')
 
-  // The SVG of smoking.dag.yaml is 420 × 366 px (spec 4.11: bounds plus 2 × 24 px margin).
-  await expect(dialog).toContainText('840 × 732 pixels')
+  // The SVG of smoking.dag.yaml is 444 × 384 px (spec 4.11: bounds plus 2 × 24 px margin).
+  await expect(dialog).toContainText('888 × 768 pixels')
   await choose(page, 'Scale', '3×')
-  await expect(dialog).toContainText('1260 × 1098 pixels')
+  await expect(dialog).toContainText('1332 × 1152 pixels')
   await choose(page, 'Scale', '2×')
 
   const file = await download(page, () =>
@@ -129,8 +129,8 @@ test('PNG shows its pixel size and downloads a PNG file', async ({ page }) => {
   expect(file.name).toBe(`${SLUG}.png`)
   expect([...file.bytes.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47])
   // Width and height from the IHDR chunk.
-  expect(file.bytes.readUInt32BE(16)).toBe(840)
-  expect(file.bytes.readUInt32BE(20)).toBe(732)
+  expect(file.bytes.readUInt32BE(16)).toBe(888)
+  expect(file.bytes.readUInt32BE(20)).toBe(768)
 })
 
 test('TikZ shows the code, copies and downloads it', async ({ page }) => {
@@ -169,8 +169,8 @@ test('PDF shows the preview and the size in points, and downloads a PDF file', a
   await expect(
     dialog.getByRole('img', { name: 'Preview of the image' }),
   ).toBeVisible()
-  // 420 × 366 px × 0.75 (spec 4.11).
-  await expect(dialog).toContainText('315 × 275 points')
+  // 444 × 384 px × 0.75 (spec 4.11).
+  await expect(dialog).toContainText('333 × 288 points')
   await expect(dialog.getByRole('button', { name: 'Copy' })).toHaveCount(0)
   const file = await download(page, () =>
     dialog.getByRole('button', { name: 'Download' }).click(),

@@ -12,7 +12,7 @@
       "var_type": "categorical",
       "levels": ["never", "former", "current"],
       "description": "Self-reported during pregnancy",
-      "pos": [42, 42]
+      "pos": [48, 48]
     },
     {
       "id": "Birth_weight",
@@ -20,20 +20,20 @@
       "role": "outcome",
       "var_type": "continuous",
       "unit": "g",
-      "pos": [336, 36]
+      "pos": [348, 48]
     },
     {
       "id": "SES",
       "name": "SES",
       "var_type": "ordinal",
       "levels": ["low", "mid", "high"],
-      "pos": [182, -88]
+      "pos": [198, -72]
     },
     {
       "id": "Genetic_factors",
       "name": "Genetic factors",
       "role": "latent",
-      "pos": [189, 159]
+      "pos": [198, 168]
     }
   ],
   "edges": [

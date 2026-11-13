@@ -82,6 +82,8 @@ const FileEdgeSchema = z.strictObject({
 export const GraphFileSchema = z.strictObject({
   schema: z.enum(KNOWN_SCHEMAS),
   name: z.string().optional(),
+  /** Read-only graph (spec 4.17); written only when true. */
+  locked: z.boolean().optional(),
   nodes: z.array(FileNodeSchema).default([]),
   edges: z.array(FileEdgeSchema).default([]),
 })

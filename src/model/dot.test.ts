@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { parseDagitty } from './dagitty'
 import { parseDot, toDot } from './dot'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import type { Issue, Result } from './result'
 import { parseYaml, toYaml } from './yaml'
 
@@ -44,10 +44,10 @@ const edgePairs = (g: Graph) => {
 const EXAMPLE = `digraph "Smoking and birth weight" {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="31.5,-31.5!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="252,-27!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="136.5,66!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  Genetic_factors [label="Genetic factors", gc_role="latent", pos="141.75,-119.25!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="261,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="148.5,54!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  Genetic_factors [label="Genetic factors", gc_role="latent", pos="148.5,-126!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
   SES -> Maternal_smoking [gc_evidence="PMID:123;doi:10.1000/xyz", gc_note="Well established"]
   Maternal_smoking -> Birth_weight
   SES -> Birth_weight
@@ -85,7 +85,7 @@ describe('toDot', () => {
   })
 
   it('escapes quotes and backslashes, quotes ids that are not plain words, never writes -0', () => {
-    const d = nodeDiameter('node')
+    const d = NODE_DIAMETER
     const g: Graph = {
       name: 'Say "hi" \\ bye',
       nodes: [
@@ -126,7 +126,7 @@ describe('toDot', () => {
   })
 
   it('writes pos as the centre in points with y up and at most two decimals', () => {
-    const d = nodeDiameter('A')
+    const d = NODE_DIAMETER
     const g: Graph = {
       nodes: [
         { id: 'n1', name: 'A', role: 'other', pos: { x: 10.123, y: 20 } },
@@ -272,7 +272,7 @@ name"
     const result = ok(
       parseDot('digraph { A [pos="75,-150!"]; B [pos=" 1.5e1 , 30 "] }'),
     )
-    const d = nodeDiameter('A')
+    const d = NODE_DIAMETER
     expect(result.value.nodes[0].pos).toEqual({
       x: 100 - d / 2,
       y: 200 - d / 2,
@@ -408,6 +408,8 @@ describe('round trip', () => {
     .filter((name) => {
       // DOT leaves the simulation details out (spec 4.16).
       if (name === 'simulation.dag.yaml') return false
+      // The lock is a GraphCreator setting; no exchange format carries it (spec 4.17).
+      if (name === 'locked.dag.yaml') return false
       const text = fixture(name)
       const result = name.endsWith('.dag.yaml')
         ? parseYaml(text)

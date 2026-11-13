@@ -1,26 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="352" viewBox="0 0 420 352">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="384" viewBox="0 0 444 384">
 <title>Graph</title>
-<rect width="420" height="352" fill="#ffffff"/>
-<line x1="107.99" y1="185.14" x2="314.01" y2="180.94" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322.01,180.78 L313.1,185.46 L312.92,176.46 Z" fill="#64748b"/>
-<line x1="182.48" y1="118.57" x2="111" y2="159.95" stroke="#64748b" stroke-width="1.5"/>
-<path d="M104.08,163.95 L109.61,155.55 L114.12,163.34 Z" fill="#64748b"/>
-<line x1="287.25" y1="125" x2="323.31" y2="152.26" stroke="#64748b" stroke-width="1.5"/>
-<path d="M329.69,157.08 L319.8,155.24 L325.22,148.06 Z" fill="#64748b"/>
-<line x1="231.56" y1="276.75" x2="323.26" y2="207.68" stroke="#64748b" stroke-width="1.5"/>
-<path d="M329.65,202.86 L325.17,211.87 L319.75,204.68 Z" fill="#64748b"/>
+<rect width="444" height="384" fill="#ffffff"/>
+<line x1="120" y1="192" x2="314" y2="192" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,192 L313,196.5 L313,187.5 Z" fill="#64748b"/>
+<line x1="184.52" y1="101.99" x2="117.29" y2="155.77" stroke="#64748b" stroke-width="1.5"/>
+<path d="M111.04,160.77 L115.26,151.63 L120.88,158.66 Z" fill="#64748b"/>
+<line x1="259.48" y1="101.99" x2="326.71" y2="155.77" stroke="#64748b" stroke-width="1.5"/>
+<path d="M332.96,160.77 L323.12,158.66 L328.74,151.63 Z" fill="#64748b"/>
+<line x1="259.48" y1="282.01" x2="326.71" y2="228.23" stroke="#64748b" stroke-width="1.5"/>
+<path d="M332.96,223.23 L328.74,232.37 L323.12,225.34 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="66" cy="186" r="41" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="66" y="182.88" fill="#24563a">Maternal</text>
-<text x="66" y="198.88" fill="#24563a">smoking</text>
-<circle cx="360" cy="180" r="35" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="360" y="176.88" fill="#23407a">Birth</text>
-<text x="360" y="192.88" fill="#23407a">weight</text>
-<circle cx="237" cy="87" r="62" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="237" y="83.88" fill="#0f172a">Socio-economic</text>
-<text x="237" y="99.88" fill="#0f172a">status</text>
-<circle cx="206" cy="296" r="31" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="206" y="292.88" fill="#374151">say</text>
-<text x="206" y="308.88" fill="#374151">&quot;hi&quot;</text>
+<circle cx="72" cy="192" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="188.88" fill="#24563a">Maternal</text>
+<text x="72" y="204.88" fill="#24563a">smoking</text>
+<circle cx="372" cy="192" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="188.88" fill="#23407a">Birth</text>
+<text x="372" y="204.88" fill="#23407a">weight</text>
+<circle cx="222" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="222" y="68.88" fill="#0f172a">Socio-economic</text>
+<text x="222" y="84.88" fill="#0f172a">status</text>
+<circle cx="222" cy="312" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
+<text x="222" y="316.88" fill="#374151">say &quot;hi&quot;</text>
 </g>
 </svg>

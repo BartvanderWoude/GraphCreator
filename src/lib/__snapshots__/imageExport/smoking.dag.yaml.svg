@@ -1,25 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="420" height="366" viewBox="0 0 420 366">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="384" viewBox="0 0 444 384">
 <title>Smoking and birth weight</title>
-<rect width="420" height="366" fill="#ffffff"/>
-<line x1="182.55" y1="77.77" x2="104.11" y2="150.62" stroke="#64748b" stroke-width="1.5"/>
-<path d="M98.24,156.06 L101.78,146.64 L107.9,153.23 Z" fill="#64748b"/>
-<line x1="107.99" y1="185.14" x2="314.01" y2="180.94" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322.01,180.78 L313.1,185.46 L312.92,176.46 Z" fill="#64748b"/>
-<line x1="230.92" y1="76.07" x2="324.17" y2="151.15" stroke="#64748b" stroke-width="1.5"/>
-<path d="M330.4,156.17 L320.57,154.03 L326.21,147.02 Z" fill="#64748b"/>
-<line x1="242.91" y1="277.97" x2="324.72" y2="209.52" stroke="#64748b" stroke-width="1.5"/>
-<path d="M330.86,204.39 L326.84,213.61 L321.07,206.71 Z" fill="#64748b"/>
+<rect width="444" height="384" fill="#ffffff"/>
+<line x1="184.52" y1="101.99" x2="117.29" y2="155.77" stroke="#64748b" stroke-width="1.5"/>
+<path d="M111.04,160.77 L115.26,151.63 L120.88,158.66 Z" fill="#64748b"/>
+<line x1="120" y1="192" x2="314" y2="192" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,192 L313,196.5 L313,187.5 Z" fill="#64748b"/>
+<line x1="259.48" y1="101.99" x2="326.71" y2="155.77" stroke="#64748b" stroke-width="1.5"/>
+<path d="M332.96,160.77 L323.12,158.66 L328.74,151.63 Z" fill="#64748b"/>
+<line x1="259.48" y1="282.01" x2="326.71" y2="228.23" stroke="#64748b" stroke-width="1.5"/>
+<path d="M332.96,223.23 L328.74,232.37 L323.12,225.34 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="66" cy="186" r="41" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="66" y="182.88" fill="#24563a">Maternal</text>
-<text x="66" y="198.88" fill="#24563a">smoking</text>
-<circle cx="360" cy="180" r="35" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="360" y="176.88" fill="#23407a">Birth</text>
-<text x="360" y="192.88" fill="#23407a">weight</text>
-<circle cx="206" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="206" y="60.88" fill="#0f172a">SES</text>
-<circle cx="213" cy="303" r="38" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="213" y="299.88" fill="#374151">Genetic</text>
-<text x="213" y="315.88" fill="#374151">factors</text>
+<circle cx="72" cy="192" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="188.88" fill="#24563a">Maternal</text>
+<text x="72" y="204.88" fill="#24563a">smoking</text>
+<circle cx="372" cy="192" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="188.88" fill="#23407a">Birth</text>
+<text x="372" y="204.88" fill="#23407a">weight</text>
+<circle cx="222" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="222" y="76.88" fill="#0f172a">SES</text>
+<circle cx="222" cy="312" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
+<text x="222" y="308.88" fill="#374151">Genetic</text>
+<text x="222" y="324.88" fill="#374151">factors</text>
 </g>
 </svg>

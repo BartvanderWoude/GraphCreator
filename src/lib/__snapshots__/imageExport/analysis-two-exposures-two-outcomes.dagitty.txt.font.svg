@@ -1,33 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="412" height="362" viewBox="0 0 412 362">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="394" viewBox="0 0 444 394">
 <title>Graph</title>
 <style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
-<rect width="412" height="362" fill="#ffffff"/>
-<line x1="56" y1="88" x2="56" y2="114" stroke="#64748b" stroke-width="1.5"/>
-<path d="M56,122 L51.5,113 L60.5,113 Z" fill="#64748b"/>
-<line x1="86.36" y1="66.12" x2="316.16" y2="142.72" stroke="#64748b" stroke-width="1.5"/>
-<path d="M323.74,145.25 L313.78,146.67 L316.63,138.13 Z" fill="#64748b"/>
-<line x1="88" y1="156" x2="314" y2="156" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322,156 L313,160.5 L313,151.5 Z" fill="#64748b"/>
-<line x1="82.63" y1="173.75" x2="171.05" y2="232.7" stroke="#64748b" stroke-width="1.5"/>
-<path d="M177.71,237.14 L167.73,235.89 L172.72,228.4 Z" fill="#64748b"/>
-<line x1="236.36" y1="266.12" x2="316.16" y2="292.72" stroke="#64748b" stroke-width="1.5"/>
-<path d="M323.74,295.25 L313.78,296.67 L316.63,288.13 Z" fill="#64748b"/>
-<line x1="336.8" y1="81.6" x2="231.2" y2="222.4" stroke="#64748b" stroke-width="1.5"/>
-<path d="M226.4,228.8 L228.2,218.9 L235.4,224.3 Z" fill="#64748b"/>
-<line x1="356" y1="88" x2="356" y2="264" stroke="#64748b" stroke-width="1.5"/>
-<path d="M356,272 L351.5,263 L360.5,263 Z" fill="#64748b"/>
+<rect width="444" height="394" fill="#ffffff"/>
+<line x1="72" y1="120" x2="72" y2="120" stroke="#64748b" stroke-width="1.5"/>
+<path d="M72,122 L67.5,113 L76.5,113 Z" fill="#64748b"/>
+<line x1="117.54" y1="87.18" x2="316.98" y2="153.66" stroke="#64748b" stroke-width="1.5"/>
+<path d="M324.57,156.19 L314.6,157.61 L317.45,149.07 Z" fill="#64748b"/>
+<line x1="120" y1="172" x2="314" y2="172" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,172 L313,176.5 L313,167.5 Z" fill="#64748b"/>
+<line x1="111.94" y1="198.63" x2="173.74" y2="239.83" stroke="#64748b" stroke-width="1.5"/>
+<path d="M180.4,244.26 L170.41,243.02 L175.41,235.53 Z" fill="#64748b"/>
+<line x1="267.54" y1="287.18" x2="316.98" y2="303.66" stroke="#64748b" stroke-width="1.5"/>
+<path d="M324.57,306.19 L314.6,307.61 L317.45,299.07 Z" fill="#64748b"/>
+<line x1="343.2" y1="110.4" x2="256.8" y2="225.6" stroke="#64748b" stroke-width="1.5"/>
+<path d="M252,232 L253.8,222.1 L261,227.5 Z" fill="#64748b"/>
+<line x1="372" y1="120" x2="372" y2="264" stroke="#64748b" stroke-width="1.5"/>
+<path d="M372,272 L367.5,263 L376.5,263 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="56" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="56" y="60.88" fill="#0f172a">C</text>
-<circle cx="356" cy="56" r="31" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
-<text x="356" y="60.88" fill="#6b4510">B</text>
-<circle cx="56" cy="156" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="160.88" fill="#24563a">E1</text>
-<circle cx="206" cy="256" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="206" y="260.88" fill="#24563a">E2</text>
-<circle cx="356" cy="156" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="356" y="160.88" fill="#23407a">D1</text>
-<circle cx="356" cy="306" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="356" y="310.88" fill="#23407a">D2</text>
+<circle cx="72" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="72" y="76.88" fill="#0f172a">C</text>
+<circle cx="372" cy="72" r="47" fill="#f8eedd" stroke="#ad7a2c" stroke-width="2"/>
+<text x="372" y="76.88" fill="#6b4510">B</text>
+<circle cx="72" cy="172" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="176.88" fill="#24563a">E1</text>
+<circle cx="222" cy="272" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="222" y="276.88" fill="#24563a">E2</text>
+<circle cx="372" cy="172" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="176.88" fill="#23407a">D1</text>
+<circle cx="372" cy="322" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="326.88" fill="#23407a">D2</text>
 </g>
 </svg>

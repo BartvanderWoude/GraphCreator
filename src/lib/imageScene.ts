@@ -7,7 +7,7 @@ import { ROLE_LABELS } from '@/lib/copy'
 import { edgeEndpoints, type Circle } from '@/lib/geometry'
 import type { ImageOptions } from '@/lib/imageExport'
 import type { GNode, Graph } from '@/model/graph'
-import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
+import { NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES, type ExportPalette } from '@/model/palette'
 import { ROLES, type Role } from '@/model/schema'
 import { signBadge } from '@/model/simulation'
@@ -134,7 +134,7 @@ interface Box {
 
 /** The circle a node occupies on the canvas: centred on `pos + d/2`, radius `d/2`. */
 function circleOf(node: GNode): Circle {
-  const d = nodeDiameter(node.name)
+  const d = NODE_DIAMETER
   return { cx: node.pos.x + d / 2, cy: node.pos.y + d / 2, r: d / 2 }
 }
 
@@ -284,7 +284,7 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
   let maxX = -Infinity
   let maxY = -Infinity
   for (const node of graph.nodes) {
-    const d = nodeDiameter(node.name)
+    const d = NODE_DIAMETER
     minX = Math.min(minX, node.pos.x)
     minY = Math.min(minY, node.pos.y)
     maxX = Math.max(maxX, node.pos.x + d)
@@ -351,7 +351,7 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
       strokeWidth: OUTLINE_WIDTH,
     })
     scene.nodeIds.push(node.id)
-    const lines = wrapLabel(node.name).lines
+    const lines = nodeLabel(node.name).lines
     lines.forEach((line, i) => {
       const middle = cy + (i - (lines.length - 1) / 2) * LINE_PITCH
       scene.texts.push({

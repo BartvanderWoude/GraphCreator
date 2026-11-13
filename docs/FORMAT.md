@@ -67,6 +67,7 @@ The file is UTF-8 text in YAML. Its top level is a map with these keys, in this 
 |---|---|---|---|
 | `schema` | text | yes | The format and its version: `graphcreator/0.1`. |
 | `name` | text | no | The graph's title. |
+| `locked` | true | no | An editor setting: GraphCreator does not let people change the graph. It has no causal or simulation meaning; readers can ignore it. Written only when the graph is locked. |
 | `nodes` | list of nodes | no | The variables. Missing means none. GraphCreator always writes it, as `[]` when empty. |
 | `edges` | list of edges | no | The arrows. Missing means none. GraphCreator always writes it, as `[]` when empty. |
 

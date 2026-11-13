@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseDagitty } from './dagitty'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import { parseNetworkx, toNetworkx } from './networkx'
 import type { Issue, Result } from './result'
 import { parseYaml, toYaml } from './yaml'
@@ -55,7 +55,7 @@ const SMOKING_JSON = `{
       "var_type": "categorical",
       "levels": ["never", "former", "current"],
       "description": "Self-reported during pregnancy",
-      "pos": [42, 42]
+      "pos": [48, 48]
     },
     {
       "id": "Birth_weight",
@@ -63,20 +63,20 @@ const SMOKING_JSON = `{
       "role": "outcome",
       "var_type": "continuous",
       "unit": "g",
-      "pos": [336, 36]
+      "pos": [348, 48]
     },
     {
       "id": "SES",
       "name": "SES",
       "var_type": "ordinal",
       "levels": ["low", "mid", "high"],
-      "pos": [182, -88]
+      "pos": [198, -72]
     },
     {
       "id": "Genetic_factors",
       "name": "Genetic factors",
       "role": "latent",
-      "pos": [189, 159]
+      "pos": [198, 168]
     }
   ],
   "edges": [
@@ -111,7 +111,7 @@ describe('toNetworkx', () => {
     const g = smoking()
     const data = JSON.parse(toNetworkx(g))
     data.nodes.forEach((n: { pos: number[] }, i: number) => {
-      const r = nodeDiameter(g.nodes[i].name) / 2
+      const r = NODE_DIAMETER / 2
       expect(n.pos).toEqual([g.nodes[i].pos.x + r, g.nodes[i].pos.y + r])
     })
   })
@@ -128,7 +128,7 @@ describe('toNetworkx', () => {
   })
 
   it('rounds to two decimals, never writes -0, and skips dangling edges', () => {
-    const d = nodeDiameter('A')
+    const d = NODE_DIAMETER
     const g: Graph = {
       nodes: [
         {
@@ -211,6 +211,8 @@ describe('round trip', () => {
     for (const [path, text] of Object.entries(yamlFixtures)) {
       // networkx JSON leaves the simulation details out (spec 4.16).
       if (path.endsWith('/simulation.dag.yaml')) continue
+      // The lock is a GraphCreator setting; no exchange format carries it (spec 4.17).
+      if (path.endsWith('/locked.dag.yaml')) continue
       const result = parseYaml(text)
       if (!result.ok) continue
       expectRoundTrip(result.value)
@@ -421,7 +423,7 @@ describe('parseNetworkx', () => {
     const { graph } = ok(
       parseNetworkx(graphJson([{ id: 'SES', pos: [182, -88.5] }])),
     )
-    const r = nodeDiameter('SES') / 2
+    const r = NODE_DIAMETER / 2
     expect(graph.nodes[0].pos).toEqual({ x: 182 - r, y: -88.5 - r })
   })
 

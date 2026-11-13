@@ -1,12 +1,12 @@
 digraph {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  C [pos="24,51!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  B [gc_role="adjusted", pos="249,51!", fillcolor="#f8eedd", color="#ad7a2c", fontcolor="#6b4510"]
-  E1 [gc_role="exposure", pos="24,-24!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  E2 [gc_role="exposure", pos="136.5,-99!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  D1 [gc_role="outcome", pos="249,-24!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  D2 [gc_role="outcome", pos="249,-136.5!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  C [pos="36,39!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  B [gc_role="adjusted", pos="261,39!", fillcolor="#f8eedd", color="#ad7a2c", fontcolor="#6b4510"]
+  E1 [gc_role="exposure", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  E2 [gc_role="exposure", pos="148.5,-111!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  D1 [gc_role="outcome", pos="261,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  D2 [gc_role="outcome", pos="261,-148.5!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
   C -> E1
   C -> D1
   E1 -> D1

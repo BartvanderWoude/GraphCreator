@@ -7,24 +7,24 @@
       "id": "Maternal_smoking",
       "name": "Maternal smoking",
       "role": "exposure",
-      "pos": [42, 42]
+      "pos": [48, 48]
     },
     {
       "id": "Birth_weight",
       "name": "Birth weight",
       "role": "outcome",
-      "pos": [336, 36]
+      "pos": [348, 48]
     },
     {
       "id": "Socio_economic_status",
       "name": "Socio-economic status",
-      "pos": [213, -57]
+      "pos": [198, -72]
     },
     {
       "id": "say__hi_",
       "name": "say \"hi\"",
       "role": "latent",
-      "pos": [182, 152]
+      "pos": [198, 168]
     }
   ],
   "edges": [

@@ -1,10 +1,10 @@
 digraph "Größe & \"quotes\"" {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  Gr__e__ [label="Größe β", gc_role="exposure", gc_var_type="ordinal", gc_levels="a\\;b;back\\\\slash;c", gc_description="Says \"hi\" & <bye>", pos="24.75,-24.75!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  "1st_visit" [label="1st visit", gc_role="outcome", gc_var_type="continuous", gc_unit="kg/m²", pos="174.75,-24.75!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  node_2 [label="node", gc_role="adjusted", pos="99,-136.5!", fillcolor="#f8eedd", color="#ad7a2c", fontcolor="#6b4510"]
-  "a.b" [gc_role="selected", pos="249,-136.5!", fillcolor="#efe7f7", color="#9375c4", fontcolor="#4c2f75"]
+  Gr__e__ [label="Größe β", gc_role="exposure", gc_var_type="ordinal", gc_levels="a\\;b;back\\\\slash;c", gc_description="Says \"hi\" & <bye>", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  "1st_visit" [label="1st visit", gc_role="outcome", gc_var_type="continuous", gc_unit="kg/m²", pos="186,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  node_2 [label="node", gc_role="adjusted", pos="111,-148.5!", fillcolor="#f8eedd", color="#ad7a2c", fontcolor="#6b4510"]
+  "a.b" [gc_role="selected", pos="261,-148.5!", fillcolor="#efe7f7", color="#9375c4", fontcolor="#4c2f75"]
   Gr__e__ -> "1st_visit" [gc_evidence="PMID:1\\;2;doi:10.1/x", gc_note="It's \"known\""]
   node_2 -> Gr__e__
   node_2 -> "1st_visit"

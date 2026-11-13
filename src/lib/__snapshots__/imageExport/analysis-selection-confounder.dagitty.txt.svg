@@ -1,26 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="412" height="262" viewBox="0 0 412 262">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="294" viewBox="0 0 444 294">
 <title>Graph</title>
-<rect width="412" height="262" fill="#ffffff"/>
-<line x1="88" y1="206" x2="314" y2="206" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322,206 L313,210.5 L313,201.5 Z" fill="#64748b"/>
-<line x1="56" y1="88" x2="56" y2="164" stroke="#64748b" stroke-width="1.5"/>
-<path d="M56,172 L51.5,163 L60.5,163 Z" fill="#64748b"/>
-<line x1="88" y1="56" x2="164" y2="56" stroke="#64748b" stroke-width="1.5"/>
-<path d="M172,56 L163,60.5 L163,51.5 Z" fill="#64748b"/>
-<line x1="324" y1="56" x2="248" y2="56" stroke="#64748b" stroke-width="1.5"/>
-<path d="M240,56 L249,51.5 L249,60.5 Z" fill="#64748b"/>
-<line x1="356" y1="88" x2="356" y2="164" stroke="#64748b" stroke-width="1.5"/>
-<path d="M356,172 L351.5,163 L360.5,163 Z" fill="#64748b"/>
+<rect width="444" height="294" fill="#ffffff"/>
+<line x1="120" y1="222" x2="314" y2="222" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,222 L313,226.5 L313,217.5 Z" fill="#64748b"/>
+<line x1="72" y1="120" x2="72" y2="164" stroke="#64748b" stroke-width="1.5"/>
+<path d="M72,172 L67.5,163 L76.5,163 Z" fill="#64748b"/>
+<line x1="120" y1="72" x2="164" y2="72" stroke="#64748b" stroke-width="1.5"/>
+<path d="M172,72 L163,76.5 L163,67.5 Z" fill="#64748b"/>
+<line x1="324" y1="72" x2="280" y2="72" stroke="#64748b" stroke-width="1.5"/>
+<path d="M272,72 L281,67.5 L281,76.5 Z" fill="#64748b"/>
+<line x1="372" y1="120" x2="372" y2="164" stroke="#64748b" stroke-width="1.5"/>
+<path d="M372,172 L367.5,163 L376.5,163 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="56" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="56" y="60.88" fill="#0f172a">A</text>
-<circle cx="56" cy="206" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="210.88" fill="#24563a">E</text>
-<circle cx="356" cy="206" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="356" y="210.88" fill="#23407a">D</text>
-<circle cx="206" cy="56" r="31" fill="#efe7f7" stroke="#9375c4" stroke-width="2"/>
-<text x="206" y="60.88" fill="#4c2f75">S</text>
-<circle cx="356" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="356" y="60.88" fill="#0f172a">C</text>
+<circle cx="72" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="72" y="76.88" fill="#0f172a">A</text>
+<circle cx="72" cy="222" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="72" y="226.88" fill="#24563a">E</text>
+<circle cx="372" cy="222" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="372" y="226.88" fill="#23407a">D</text>
+<circle cx="222" cy="72" r="47" fill="#efe7f7" stroke="#9375c4" stroke-width="2"/>
+<text x="222" y="76.88" fill="#4c2f75">S</text>
+<circle cx="372" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="372" y="76.88" fill="#0f172a">C</text>
 </g>
 </svg>

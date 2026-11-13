@@ -1,19 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="440" height="146" viewBox="0 0 440 146">
+<svg xmlns="http://www.w3.org/2000/svg" width="536" height="186" viewBox="0 0 536 186">
 <title>Graph</title>
 <style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
-<rect width="440" height="146" fill="#ffffff"/>
-<line x1="87.33" y1="62.5" x2="178.87" y2="81.47" stroke="#64748b" stroke-width="1.5"/>
-<path d="M186.71,83.1 L176.98,85.68 L178.81,76.86 Z" fill="#64748b"/>
-<line x1="88" y1="56" x2="342" y2="56" stroke="#64748b" stroke-width="1.5"/>
-<path d="M350,56 L341,60.5 L341,51.5 Z" fill="#64748b"/>
-<line x1="251.33" y1="83.5" x2="342.87" y2="64.53" stroke="#64748b" stroke-width="1.5"/>
-<path d="M350.71,62.9 L342.81,69.14 L340.98,60.32 Z" fill="#64748b"/>
+<rect width="536" height="186" fill="#ffffff"/>
+<line x1="118.93" y1="82.06" x2="211.29" y2="101.85" stroke="#64748b" stroke-width="1.5"/>
+<path d="M219.11,103.52 L209.37,106.04 L211.25,97.24 Z" fill="#64748b"/>
+<line x1="120" y1="72" x2="406" y2="72" stroke="#64748b" stroke-width="1.5"/>
+<path d="M414,72 L405,76.5 L405,67.5 Z" fill="#64748b"/>
+<line x1="314.93" y1="103.94" x2="407.29" y2="84.15" stroke="#64748b" stroke-width="1.5"/>
+<path d="M415.11,82.48 L407.25,88.76 L405.37,79.96 Z" fill="#64748b"/>
 <g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="220" cy="90" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="220" y="94.88" fill="#24563a">X</text>
-<circle cx="384" cy="56" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="384" y="60.88" fill="#23407a">Y</text>
-<circle cx="56" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="56" y="60.88" fill="#0f172a">Z</text>
+<circle cx="268" cy="114" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<text x="268" y="118.88" fill="#24563a">X</text>
+<circle cx="464" cy="72" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<text x="464" y="76.88" fill="#23407a">Y</text>
+<circle cx="72" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<text x="72" y="76.88" fill="#0f172a">Z</text>
 </g>
 </svg>

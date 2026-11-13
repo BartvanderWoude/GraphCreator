@@ -44,7 +44,7 @@ test('double-click adds a "Node 1" circle centred on the pointer, selects it and
   const c = await centre(node(page, 'Node 1'))
   expect(c.x - paneBox!.x).toBeCloseTo(200, -1)
   expect(c.y - paneBox!.y).toBeCloseTo(200, -1)
-  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(64, 0)
+  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(96, 0)
 
   await expect(nameField(page)).toHaveValue('Node 1')
   await expect(nameField(page)).toBeFocused()
@@ -238,26 +238,29 @@ test('an edge with evidence shows a chip with the count, which selects the edge'
   ).toBeVisible()
 })
 
-test('renaming to a long name makes the circle bigger around its centre', async ({
+test('renaming to a long name keeps the circle the same size and place', async ({
   page,
 }) => {
   await addNodeAt(page, 300, 250)
   const before = await centre(node(page, 'Node 1'))
-  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(64, 0)
+  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(96, 0)
   await nameField(page).fill('Maternal smoking during pregnancy')
   await nameField(page).press('Enter')
-  const big = node(page, 'Maternal smoking during pregnancy')
-  await expect(big).toBeVisible()
-  await expect.poll(() => diameter(big)).toBeCloseTo(132, 0)
-  const after = await centre(big)
+  const renamed = node(page, 'Maternal smoking during pregnancy')
+  await expect(renamed).toBeVisible()
+  // Every circle is the same size (spec 5.7.6), so nothing moves.
+  await expect.poll(() => diameter(renamed)).toBeCloseTo(96, 0)
+  const after = await centre(renamed)
   expect(Math.abs(after.x - before.x)).toBeLessThan(2)
   expect(Math.abs(after.y - before.y)).toBeLessThan(2)
-  // The name is wrapped inside the circle, one span per line (spec 5.7.6).
-  await expect(big.locator('.gc-line')).toHaveText([
+  // The name is wrapped inside the circle, one span per line, in a smaller font (5.7.6).
+  await expect(renamed.locator('.gc-line')).toHaveText([
     'Maternal',
-    'smoking during',
+    'smoking',
+    'during',
     'pregnancy',
   ])
+  await expect(renamed.locator('.gc-circle')).toHaveCSS('font-size', '11.5px')
 })
 
 test('Delete removes a node and its edges', async ({ page }) => {
