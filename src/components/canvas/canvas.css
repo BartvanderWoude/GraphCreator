@@ -28,7 +28,7 @@
   font-weight: 500;
   line-height: 1.25;
   text-align: center;
-  /* wrapLabel has already broken the name into lines. */
+  /* nodeLabel has already broken the name into lines. */
   white-space: pre;
   /* Keyboard focus ring, hover rim, elevation 1 (5.7.4), drawn in that order from the top. */
   box-shadow:

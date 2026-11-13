@@ -5,6 +5,10 @@ import { CircleConnectionLine, FloatingEdge } from './FloatingEdge'
 
 /** Data of a React Flow node of type `circle` (derived from a `GNode`, spec 8 redesign contracts). */
 export type CircleNodeData = {
+  /**
+   * The name the circle shows: the trimmed draft while the node editor's Name field holds one
+   * (`uiStore.namePreview`, spec 5.3), the stored name otherwise.
+   */
   name: string
   role: Role
   /** The node has no variable type: shows the warning dot. */

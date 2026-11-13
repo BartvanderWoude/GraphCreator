@@ -59,13 +59,28 @@ interface Overlay {
   hoverNodeIds: string[]
   /** Labels of the current lesson step's pointer, for the nodes that exist; empty otherwise. */
   pointers: Pointers
+  /** The name being typed in the node editor (`uiStore.namePreview`, spec 5.3). */
+  namePreview: { id: string; name: string } | null
+}
+
+/**
+ * The name the circle shows (spec 5.3 "Name preview"): the trimmed draft while the editor is
+ * editing this node and the draft is not empty, otherwise the stored name.
+ */
+function shownName(
+  node: { id: string; name: string },
+  namePreview: Overlay['namePreview'],
+): string {
+  if (namePreview === null || namePreview.id !== node.id) return node.name
+  const draft = namePreview.name.trim()
+  return draft === '' ? node.name : draft
 }
 
 /**
  * React Flow's view of the graph. It is rebuilt from the store's `graph` and `selection` (and the
- * overlay: connect-mode source, path marking, highlighted circles), but kept in local state so
- * React Flow can apply its own transient changes (in-drag positions, measured sizes,
- * multi-selection flags) between store commits.
+ * overlay: connect-mode source, path marking, highlighted circles, name preview), but kept in
+ * local state so React Flow can apply its own transient changes (in-drag positions, measured
+ * sizes, multi-selection flags) between store commits.
  */
 interface Flow {
   nodes: CircleFlowNode[]
@@ -102,7 +117,7 @@ function syncFlow(
   selection: Selection,
   overlay: Overlay,
 ): Flow {
-  const { connectFrom, pathMarks, pointers } = overlay
+  const { connectFrom, pathMarks, pointers, namePreview } = overlay
   const hovered = new Set(overlay.hoverNodeIds)
   const oldNodes = new Map(prev.nodes.map((n) => [n.id, n]))
   const oldEdges = new Map(prev.edges.map((e) => [e.id, e]))
@@ -114,11 +129,13 @@ function syncFlow(
     const connectSource = connectFrom === g.id
     const highlighted = hovered.has(g.id)
     const pointer = pointers.get(g.id)
+    // The circle follows the name being typed, so the comparison is on the shown name (5.3).
+    const name = shownName(g, namePreview)
     if (
       old &&
       old.position.x === position.x &&
       old.position.y === position.y &&
-      old.data.name === g.name &&
+      old.data.name === name &&
       old.data.role === g.role &&
       old.data.untyped === untyped &&
       old.data.connectSource === connectSource &&
@@ -134,7 +151,7 @@ function syncFlow(
       width: NODE_DIAMETER,
       height: NODE_DIAMETER,
       data: {
-        name: g.name,
+        name,
         role: g.role,
         untyped,
         connectSource,
@@ -238,6 +255,7 @@ export function Canvas() {
   const connectFrom = useUiStore((s) => s.connectFrom)
   const pathsOn = useUiStore((s) => s.analysisOn.paths)
   const hoverNodeIds = useUiStore((s) => s.hoverNodeIds)
+  const namePreview = useUiStore((s) => s.namePreview)
   const lesson = useLessonStore((s) => s.active)
   const paths = useAnalysis().paths
   // Open paths are marked only while the Paths switch is on and they are not truncated (4.14).
@@ -250,9 +268,12 @@ export function Canvas() {
   }, [pathsOn, paths])
   const pointers = useMemo(() => lessonPointers(lesson, graph), [lesson, graph])
   const overlay = useMemo<Overlay>(
-    () => ({ connectFrom, pathMarks, hoverNodeIds, pointers }),
-    [connectFrom, pathMarks, hoverNodeIds, pointers],
+    () => ({ connectFrom, pathMarks, hoverNodeIds, pointers, namePreview }),
+    [connectFrom, pathMarks, hoverNodeIds, pointers, namePreview],
   )
+  // A locked graph is read-only: the canvas stops the interactions, the store guards are the
+  // backstop (spec 5.10).
+  const locked = graph.locked === true
   // React Flow's colour mode follows the theme (spec 7, "Dark theme mechanism").
   const colorMode: ColorMode = useThemeStore((s) => s.theme)
   const { screenToFlowPosition } = useReactFlow()
@@ -314,6 +335,7 @@ export function Canvas() {
 
   const onDelete: OnDelete<CircleFlowNode, FloatingFlowEdge> = useCallback(
     ({ nodes, edges }) => {
+      if (useGraphStore.getState().graph.locked) return
       useGraphStore.getState().removeSelection(
         nodes.map((n) => n.id),
         edges.map((e) => e.id),
@@ -364,6 +386,8 @@ export function Canvas() {
     (event: ReactMouseEvent<HTMLDivElement>) => {
       const target = event.target as HTMLElement
       if (!target.classList.contains('react-flow__pane')) return
+      // A locked graph gains no node (5.10).
+      if (useGraphStore.getState().graph.locked) return
       addNodeAtPointer(event)
     },
     [addNodeAtPointer],
@@ -373,6 +397,7 @@ export function Canvas() {
     (event: ReactMouseEvent) => {
       const ui = useUiStore.getState()
       if (ui.tool === 'add') {
+        if (useGraphStore.getState().graph.locked) return
         addNodeAtPointer(event)
         ui.setTool('select')
       } else if (ui.tool === 'connect') {
@@ -436,7 +461,9 @@ export function Canvas() {
         onNodeDoubleClick={onNodeDoubleClick}
         connectOnClick={false}
         zoomOnDoubleClick={false}
-        deleteKeyCode={['Delete', 'Backspace']}
+        nodesDraggable={!locked}
+        nodesConnectable={!locked}
+        deleteKeyCode={locked ? null : ['Delete', 'Backspace']}
         multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
         proOptions={{ hideAttribution: true }}
       />

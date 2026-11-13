@@ -11,6 +11,7 @@ const DOT_SIZE = 20
 /**
  * A variable as a circle (spec 5.2 "Node look", 5.7.7). Every circle is `NODE_DIAMETER` across;
  * the name is wrapped inside it at the font size that fits (5.7.6). Colours come from the role.
+ * `data.name` is the shown name, so the circle follows the name being typed in the editor (5.3).
  *
  * Connecting follows React Flow's "easy connect" pattern: a ring-shaped source handle lies
  * behind the circle and shows 7 px around it (the rim, the drag-to-connect area), and a target
