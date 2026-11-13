@@ -403,3 +403,57 @@ test('corrupt autosave text starts empty with a toast', async ({ page }) => {
   ).toBeVisible()
   await expect(nodes(page)).toHaveCount(0)
 })
+
+test('the circle follows the name being typed, and Escape puts it back', async ({
+  page,
+}) => {
+  await addNodeAt(page, 300, 250)
+  const shown = node(page, 'Node 1')
+  await expect(shown.locator('.gc-circle')).toHaveCSS('font-size', '14px')
+
+  // Wait for the first autosave, so the next check reads a written file.
+  await expect.poll(() => stored(page)).toContain('Node 1')
+
+  // Typing changes the circle, but nothing is committed yet (spec 5.3).
+  await nameField(page).fill('Birth weight')
+  await expect(circle(page, 'Birth weight')).toBeVisible()
+  expect(await stored(page)).toContain('Node 1')
+  expect(await stored(page)).not.toContain('Birth weight')
+
+  // A long draft wraps and shrinks the label as it is typed.
+  await nameField(page).fill('Maternal smoking during pregnancy')
+  const long = node(page, 'Maternal smoking during pregnancy')
+  await expect(long.locator('.gc-circle')).toHaveCSS('font-size', '11.5px')
+  await expect.poll(() => diameter(long)).toBeCloseTo(96, 0)
+
+  // Escape puts the stored name back on the circle and in the field.
+  await nameField(page).press('Escape')
+  await expect(nameField(page)).toHaveValue('Node 1')
+  await expect(circle(page, 'Node 1')).toBeVisible()
+})
+
+test('a committed rename is one undo step, and a refused one leaves the circle alone', async ({
+  page,
+}) => {
+  await addNodeAt(page, 200, 200)
+  await addNodeAt(page, 500, 200)
+  await nameField(page).fill('Birth weight')
+  await nameField(page).press('Enter')
+  await expect(circle(page, 'Birth weight')).toBeVisible()
+
+  // One undo takes the whole rename back, however many keystrokes it took.
+  await clickEmptyCanvas(page)
+  await page.keyboard.press('Control+z')
+  await expect(circle(page, 'Node 2')).toBeVisible()
+  await expect(node(page, 'Birth weight')).toHaveCount(0)
+
+  // A refused rename leaves the circle showing its stored name, with the error in the field.
+  await circle(page, 'Node 2').click()
+  await nameField(page).fill('Node 1')
+  await nameField(page).press('Enter')
+  await expect(panel(page).getByRole('alert')).toHaveText(
+    'There is already a node called "Node 1".',
+  )
+  await expect(nodes(page)).toHaveCount(2)
+  await expect(circle(page, 'Node 2')).toBeVisible()
+})

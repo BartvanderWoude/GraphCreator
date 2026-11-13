@@ -91,7 +91,9 @@ export function NodeEditor({ node }: { node: GNode }) {
       setNamePreview(null)
       setNameError(null)
     } else {
-      // The draft and its preview stay, with the error under the field, until the name is fixed.
+      // The rename did not happen, so the circle goes back to the stored name; the draft and
+      // the error stay in the field until the name is fixed (spec 5.3).
+      setNamePreview(null)
       setNameError(result.errors[0]?.message ?? 'Invalid name.')
     }
   }
