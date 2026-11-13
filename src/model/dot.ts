@@ -9,7 +9,7 @@ import {
 } from './exchange'
 import type { Graph } from './graph'
 import type { Issue, Result } from './result'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import { EXPORT_PALETTES } from './palette'
 
 /**
@@ -95,7 +95,7 @@ export function toDot(graph: Graph): string {
     }
     add('gc_description', node.description)
     add('gc_unit', node.unit)
-    const r = nodeDiameter(node.name) / 2
+    const r = NODE_DIAMETER / 2
     const x = (node.pos.x + r) * PT_PER_PX
     const y = -(node.pos.y + r) * PT_PER_PX
     add('pos', `${num(x)},${num(y)}!`)

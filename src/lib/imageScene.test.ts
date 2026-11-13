@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ROLE_LABELS } from '@/lib/copy'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
-import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES } from '@/model/palette'
 import type { Role } from '@/model/schema'
 import { parseYaml } from '@/model/yaml'
@@ -64,13 +64,17 @@ describe('imageScene', () => {
     expect(scene.circles).toHaveLength(4)
     expect(scene.nodeIds).toEqual(g.nodes.map((n) => n.id))
     expect(scene.edges).toHaveLength(4)
-    const lines = g.nodes.flatMap((n) => wrapLabel(n.name).lines)
-    expect(scene.texts.map((t) => t.text)).toEqual(lines)
-    expect(scene.texts.every((t) => t.size === 13 && t.weight === 500)).toBe(
-      true,
+    const labels = g.nodes.map((n) => nodeLabel(n.name))
+    expect(scene.texts.map((t) => t.text)).toEqual(
+      labels.flatMap((label) => label.lines),
     )
+    // Each name is drawn at its own size (5.7.6).
+    expect(scene.texts.map((t) => t.size)).toEqual(
+      labels.flatMap((label) => label.lines.map(() => label.fontSize)),
+    )
+    expect(scene.texts.every((t) => t.weight === 500)).toBe(true)
     // Image coordinates: Maternal smoking at (0, 0), SES at (150, -120) set the origin.
-    const d = nodeDiameter('Maternal smoking')
+    const d = NODE_DIAMETER
     expect(scene.circles[0]).toMatchObject({
       cx: EXPORT_MARGIN + d / 2,
       cy: EXPORT_MARGIN + 120 + d / 2,
@@ -84,6 +88,28 @@ describe('imageScene', () => {
       expect(e.width).toBe(1.5)
     }
     expect(scene.legend).toBeNull()
+  })
+
+  it('stacks the lines at the label pitch, baselines 0.375 em below their middles', () => {
+    const name = 'Maternal smoking during pregnancy'
+    const g = graph([{ ...node('n1', 0, 0), name }])
+    const scene = imageScene(g)
+    const label = nodeLabel(name)
+    expect(label.lines.length).toBe(4)
+    expect(label.fontSize).toBeLessThan(13)
+    const cy = EXPORT_MARGIN + NODE_DIAMETER / 2
+    const pitch = lineHeight(label.fontSize)
+    scene.texts.forEach((text, i) => {
+      const middle = cy + (i - (label.lines.length - 1) / 2) * pitch
+      expect(text.size).toBe(label.fontSize)
+      expect(text.y).toBeCloseTo(middle + 0.375 * label.fontSize)
+      expect(text.x).toBe(EXPORT_MARGIN + NODE_DIAMETER / 2)
+    })
+    // The lines stay inside the circle's outline.
+    const top = scene.texts[0].y - label.fontSize
+    const bottom = scene.texts.at(-1)!.y
+    expect(cy - top).toBeLessThan(NODE_DIAMETER / 2 - 2)
+    expect(bottom - cy).toBeLessThan(NODE_DIAMETER / 2 - 2)
   })
 
   it('has the size of svgSize, with and without the legend', () => {
@@ -153,9 +179,9 @@ describe('imageScene', () => {
       const l = imageScene(g, { legend: true }).legend!
       return [l.corner, l.x, l.y]
     }
-    // Bounding box 464 × 364 at the margin; the legend is 96 × 36.
-    const right = EXPORT_MARGIN + 464 - LEGEND.width
-    const bottom = EXPORT_MARGIN + 364 - 36
+    // Bounding box 496 × 396 at the margin; the legend is 96 × 36.
+    const right = EXPORT_MARGIN + 496 - LEGEND.width
+    const bottom = EXPORT_MARGIN + 396 - 36
     expect(at(corners('TR'))).toEqual(['top-right', right, EXPORT_MARGIN])
     expect(at(corners('TL'))).toEqual([
       'top-left',
@@ -166,8 +192,8 @@ describe('imageScene', () => {
     expect(at(corners('BL'))).toEqual(['bottom-left', EXPORT_MARGIN, bottom])
     // The image keeps its size when the legend sits in a corner.
     expect(imageScene(corners('BL'), { legend: true })).toMatchObject({
-      width: 512,
-      height: 412,
+      width: 544,
+      height: 444,
     })
   })
 
@@ -191,14 +217,15 @@ describe('imageScene', () => {
   })
 
   it('treats a corner crossed by an edge as taken', () => {
-    // Five roles make the box 116 px tall. S and T stay clear of the top-right box, but the
-    // edge between them runs through it.
+    // Six roles make the box 136 px tall, so it reaches y = 160. S sits 8 px left of it and T
+    // 14 px below it, both clear of it, but the edge between them runs through it.
     const nodes = [
-      node('S', 380, 0, 'exposure'),
-      node('T', 500, 160, 'outcome'),
+      node('S', 396, 0, 'exposure'),
+      node('T', 500, 150, 'outcome'),
       node('L', 0, 400, 'latent'),
       node('A', 100, 400, 'adjusted'),
       node('B', 200, 400, 'selected'),
+      node('R', 300, 400),
     ]
     expect(imageScene(graph(nodes), { legend: true }).legend!.corner).toBe(
       'top-right',
@@ -217,7 +244,7 @@ describe('imageScene', () => {
     expect(scene.height).toBe(plain.height)
     expect(scene.legend).toMatchObject({
       corner: 'beside',
-      x: EXPORT_MARGIN + 464 + LEGEND.beside,
+      x: EXPORT_MARGIN + 496 + LEGEND.beside,
       y: EXPORT_MARGIN,
     })
     // Nothing else moves.
@@ -230,7 +257,7 @@ describe('imageScene', () => {
   it('puts a one-node graph’s legend beside it, since the box covers the node', () => {
     const scene = imageScene(graph([node('A', 10, 20)]), { legend: true })
     expect(scene.legend!.corner).toBe('beside')
-    expect(scene.width).toBe(64 + 2 * EXPORT_MARGIN + 112)
+    expect(scene.width).toBe(NODE_DIAMETER + 2 * EXPORT_MARGIN + 112)
   })
 
   it('grows the height when a legend beside the graph is taller than it', () => {
@@ -344,8 +371,8 @@ describe('imageScene', () => {
           anchor: 'middle',
         })
       })
-      // A → B starts at A's rim (x 88) and ends 2 px before B's rim (x 356 - 32 - 2), at y 56.
-      expect(scene.badges[0].circle).toMatchObject({ cx: 205, cy: 56 })
+      // A → B starts at A's rim and ends 2 px before B's rim, halfway along at the circles' height.
+      expect(scene.badges[0].circle).toMatchObject({ cx: 221, cy: 72 })
     })
 
     it('uses the dark palette in the dark theme', () => {

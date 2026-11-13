@@ -1,6 +1,6 @@
 import type { GEdge, GNode, Graph } from './graph'
 import { autoLayout } from './layout'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import type { Issue, Result } from './result'
 import { ROLES, VAR_TYPES, type Role, type VarType } from './schema'
 import { validateGraph } from './validate'
@@ -169,7 +169,7 @@ export function buildGraph(
       node.description = description.value
     if (unit.ok && unit.value) node.unit = unit.value
     if (p.centre) {
-      const d = nodeDiameter(name)
+      const d = NODE_DIAMETER
       node.pos = { x: p.centre.x - d / 2, y: p.centre.y - d / 2 }
     } else {
       missingPos = true

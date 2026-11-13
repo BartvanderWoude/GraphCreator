@@ -44,7 +44,7 @@ test('double-click adds a "Node 1" circle centred on the pointer, selects it and
   const c = await centre(node(page, 'Node 1'))
   expect(c.x - paneBox!.x).toBeCloseTo(200, -1)
   expect(c.y - paneBox!.y).toBeCloseTo(200, -1)
-  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(64, 0)
+  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(96, 0)
 
   await expect(nameField(page)).toHaveValue('Node 1')
   await expect(nameField(page)).toBeFocused()
@@ -238,26 +238,29 @@ test('an edge with evidence shows a chip with the count, which selects the edge'
   ).toBeVisible()
 })
 
-test('renaming to a long name makes the circle bigger around its centre', async ({
+test('renaming to a long name keeps the circle the same size and place', async ({
   page,
 }) => {
   await addNodeAt(page, 300, 250)
   const before = await centre(node(page, 'Node 1'))
-  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(64, 0)
+  expect(await diameter(node(page, 'Node 1'))).toBeCloseTo(96, 0)
   await nameField(page).fill('Maternal smoking during pregnancy')
   await nameField(page).press('Enter')
-  const big = node(page, 'Maternal smoking during pregnancy')
-  await expect(big).toBeVisible()
-  await expect.poll(() => diameter(big)).toBeCloseTo(132, 0)
-  const after = await centre(big)
+  const renamed = node(page, 'Maternal smoking during pregnancy')
+  await expect(renamed).toBeVisible()
+  // Every circle is the same size (spec 5.7.6), so nothing moves.
+  await expect.poll(() => diameter(renamed)).toBeCloseTo(96, 0)
+  const after = await centre(renamed)
   expect(Math.abs(after.x - before.x)).toBeLessThan(2)
   expect(Math.abs(after.y - before.y)).toBeLessThan(2)
-  // The name is wrapped inside the circle, one span per line (spec 5.7.6).
-  await expect(big.locator('.gc-line')).toHaveText([
+  // The name is wrapped inside the circle, one span per line, in a smaller font (5.7.6).
+  await expect(renamed.locator('.gc-line')).toHaveText([
     'Maternal',
-    'smoking during',
+    'smoking',
+    'during',
     'pregnancy',
   ])
+  await expect(renamed.locator('.gc-circle')).toHaveCSS('font-size', '11.5px')
 })
 
 test('Delete removes a node and its edges', async ({ page }) => {
@@ -399,4 +402,58 @@ test('corrupt autosave text starts empty with a toast', async ({ page }) => {
     page.getByText('Could not restore the previous graph.'),
   ).toBeVisible()
   await expect(nodes(page)).toHaveCount(0)
+})
+
+test('the circle follows the name being typed, and Escape puts it back', async ({
+  page,
+}) => {
+  await addNodeAt(page, 300, 250)
+  const shown = node(page, 'Node 1')
+  await expect(shown.locator('.gc-circle')).toHaveCSS('font-size', '14px')
+
+  // Wait for the first autosave, so the next check reads a written file.
+  await expect.poll(() => stored(page)).toContain('Node 1')
+
+  // Typing changes the circle, but nothing is committed yet (spec 5.3).
+  await nameField(page).fill('Birth weight')
+  await expect(circle(page, 'Birth weight')).toBeVisible()
+  expect(await stored(page)).toContain('Node 1')
+  expect(await stored(page)).not.toContain('Birth weight')
+
+  // A long draft wraps and shrinks the label as it is typed.
+  await nameField(page).fill('Maternal smoking during pregnancy')
+  const long = node(page, 'Maternal smoking during pregnancy')
+  await expect(long.locator('.gc-circle')).toHaveCSS('font-size', '11.5px')
+  await expect.poll(() => diameter(long)).toBeCloseTo(96, 0)
+
+  // Escape puts the stored name back on the circle and in the field.
+  await nameField(page).press('Escape')
+  await expect(nameField(page)).toHaveValue('Node 1')
+  await expect(circle(page, 'Node 1')).toBeVisible()
+})
+
+test('a committed rename is one undo step, and a refused one leaves the circle alone', async ({
+  page,
+}) => {
+  await addNodeAt(page, 200, 200)
+  await addNodeAt(page, 500, 200)
+  await nameField(page).fill('Birth weight')
+  await nameField(page).press('Enter')
+  await expect(circle(page, 'Birth weight')).toBeVisible()
+
+  // One undo takes the whole rename back, however many keystrokes it took.
+  await clickEmptyCanvas(page)
+  await page.keyboard.press('Control+z')
+  await expect(circle(page, 'Node 2')).toBeVisible()
+  await expect(node(page, 'Birth weight')).toHaveCount(0)
+
+  // A refused rename leaves the circle showing its stored name, with the error in the field.
+  await circle(page, 'Node 2').click()
+  await nameField(page).fill('Node 1')
+  await nameField(page).press('Enter')
+  await expect(panel(page).getByRole('alert')).toHaveText(
+    'There is already a node called "Node 1".',
+  )
+  await expect(nodes(page)).toHaveCount(2)
+  await expect(circle(page, 'Node 2')).toBeVisible()
 })

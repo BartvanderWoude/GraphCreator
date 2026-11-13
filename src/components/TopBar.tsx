@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
+import { GRAPH_LOCK } from '@/lib/copy'
 import { copyShareLink } from '@/lib/shareLink'
 import {
   Tooltip,
@@ -203,6 +204,7 @@ export function TopBar() {
   const graph = useGraphStore((s) => s.graph)
   const replaceGraph = useGraphStore((s) => s.replaceGraph)
   const setGraphName = useGraphStore((s) => s.setGraphName)
+  const locked = useGraphStore((s) => s.graph.locked === true)
   const inLesson = useLessonStore((s) => s.active !== null)
   const view = useCanvasActions()
 
@@ -282,6 +284,9 @@ export function TopBar() {
           aria-label="Graph name"
           placeholder="Untitled graph"
           className="ml-2 w-56 rounded-md"
+          // A locked graph keeps its name; the text can still be selected and copied (5.10).
+          readOnly={locked}
+          title={locked ? GRAPH_LOCK.reason : undefined}
           value={nameDraft ?? graph.name ?? ''}
           onFocus={() => setNameDraft(graph.name ?? '')}
           onChange={(e) => setNameDraft(e.target.value)}

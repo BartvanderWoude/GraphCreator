@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -26,7 +26,7 @@ src/
     yaml.ts              parseYaml / toYaml
     dagitty.ts           parseDagitty / toDagitty / toDagittyIds
     layout.ts            autoLayout (dagre)
-    nodeSize.ts          wrapLabel / nodeDiameter: circle size from the name (5.7.6, phase 10)
+    nodeSize.ts          NODE_DIAMETER and nodeLabel: one circle size, the label's wrapping and font size (5.7.6; phase 10, reworked in phase 57)
     result.ts            Result / Issue types
     analysis/            causal analysis: d-separation, adjustment sets, paths, independencies, instruments (4.13, phases 24–28)
     __fixtures__/        .dag.yaml and .dagitty.txt fixture files for tests; analysis/ holds the analysis gallery and reference.json (phase 24)
@@ -122,6 +122,7 @@ Rules:
 - **Types** are optional. `levels` may exist only for categorical/ordinal; `unit` only for continuous/discrete.
 - Optional string fields are stored as `undefined`, never as `''` (editors convert an emptied field to `undefined`).
 - **Simulation details** (phase 49): `GNode.shares` and `form`, and `GEdge.sign` and `strength`, with their rules in 4.16.
+- **Graph lock** (phase 57): `Graph.locked?: boolean`, stored as `true` or absent, never `false`. A locked graph is read-only; the rules are in 4.17.
 
 ### 3.3 Results and issues (`src/model/result.ts`)
 
@@ -195,6 +196,8 @@ edges:
 Unknown keys at any level are errors (Zod `.strict()`), so typos are caught: `Unknown field "nodse" at top level.`
 
 Phase 50 adds `nodes[].shares`, `nodes[].form`, `edges[].sign` and `edges[].strength`, as well as YAML 1.1-safe quoting of text (4.16 "File").
+
+Phase 57 adds the top-level `locked` key: a boolean, written as `locked: true` after `name` only when the graph is locked (4.17 "File").
 
 `src/model/schema.ts` exports `GraphFileSchema` (Zod) and `type GraphFile = z.infer<typeof GraphFileSchema>`. No hand-written type duplicates the file shape.
 
@@ -379,6 +382,8 @@ v1 (until phase 16): uses `@dagrejs/dagre` with `rankdir: 'LR'`, `nodesep: 50`, 
 
 **Redesign (phase 10):** nodes become circles whose size depends on the name (5.7.6). `autoLayout` gives each node a `d × d` box with `d = nodeDiameter(node.name)` and converts dagre's centre to the top-left of that box (`x - d / 2`, `y - d / 2`), rounded. `GNode.pos` keeps meaning "top-left of the node's box", so files and dagitty positions are unchanged. `NODE_WIDTH` and `NODE_HEIGHT` were removed in phase 16 together with their last users.
 
+**Equal circles (phase 57):** every box is `NODE_DIAMETER × NODE_DIAMETER` (5.7.6), and the top-left is `x - NODE_DIAMETER / 2`, `y - NODE_DIAMETER / 2`, rounded.
+
 ### 4.6 Store API (`src/store/graphStore.ts`, phase 3)
 
 ```ts
@@ -407,9 +412,11 @@ Initial state: `emptyGraph()`, no selection. Every action delegates to the pure 
 
 Details fixed in phase 3: `setGraphName` with a blank name removes the `name` key; any other name is stored as given (not trimmed). `removeSelection` clears `selection` when the selected node or edge no longer exists afterwards (including an edge removed with its node) and leaves `focusNameOf` alone. `connect` leaves `graph` unchanged when the check fails. `autoLayout` ignores edges whose endpoints don't exist.
 
-**Redesign (phase 10):** `renameNode` keeps the circle's centre in place. On success it shifts `pos` by `(nodeDiameter(oldName) - nodeDiameter(newName)) / 2` on both axes, rounded, so a circle that grows does so around its centre. All other actions are unchanged.
+**Redesign (phase 10):** `renameNode` keeps the circle's centre in place. On success it shifts `pos` by `(nodeDiameter(oldName) - nodeDiameter(newName)) / 2` on both axes, rounded, so a circle that grows does so around its centre. All other actions are unchanged. Phase 57 removes this shift, because every circle has the same size (5.7.6).
 
 **Simulation details (phase 49):** `setLevels(nodeId, levels, origin)`, and `sign`/`strength` in `updateEdge`'s patch (4.16 "Store").
+
+**Graph lock (phase 57):** `setLocked(on)`, and the rule that a locked graph changes through no action but `setLocked` and `replaceGraph` (4.17 "Store").
 
 ### 4.7 UI store (`src/store/uiStore.ts`, phase 10)
 
@@ -434,7 +441,7 @@ export interface UiState {
 export const useUiStore: UseBoundStore<StoreApi<UiState>>
 ```
 
-Phase 49 adds `simulationOpen` (4.16 "UI store").
+Phase 49 adds `simulationOpen` (4.16 "UI store"). Phase 57 adds `namePreview` (4.17 "UI store").
 
 ### 4.8 Lesson store (`src/store/lessonStore.ts`, phase 10)
 
@@ -557,7 +564,7 @@ export function imageFileName(graphName: string | undefined, format: ImageFormat
 The picture is built from the graph data with the canvas geometry, not by capturing the DOM, so no dependency is needed and the result does not depend on zoom, selection or theme.
 
 - **Palette:** always the light theme. `EXPORT_PALETTE` holds the `:root` values of `--role-<role>-fill|line|text` and `--edge` from `src/index.css` as hex literals; `background` is `#ffffff`. A unit test checks the literals against `index.css` with the same parsing as `theme.test.ts`.
-- **Geometry:** a node with diameter `d = nodeDiameter(name)` is a circle centred on `pos + d/2`. Its 2 px outline is drawn inside the circle (radius `d/2 − 1`) so the outer size matches the canvas. The name is `wrapLabel(name).lines`, centred, 13 px, weight 500, 16 px line pitch, in the role's text colour. An edge runs from `edgeEndpoints(source, target, 2)` with a 1.5 px stroke in the edge colour and a closed 9 × 9 arrowhead whose tip is the end point (as `FloatingEdge`). Edges are drawn before nodes. Nothing else: no selection, untyped dot, evidence chip or shadow. The drawing's top-left is the nodes' bounding box minus `EXPORT_MARGIN`.
+- **Geometry:** a node is a circle of diameter `d = NODE_DIAMETER` centred on `pos + d/2`. Its 2 px outline is drawn inside the circle (radius `d/2 − 1`) so the outer size matches the canvas. The name is `nodeLabel(name).lines`, centred, at `nodeLabel(name).fontSize` px, weight 500, with a line pitch of 1.25 × the font size, in the role's text colour. (Until phase 61: diameter `nodeDiameter(name)`, `wrapLabel(name).lines`, 13 px, 16 px pitch.) An edge runs from `edgeEndpoints(source, target, 2)` with a 1.5 px stroke in the edge colour and a closed 9 × 9 arrowhead whose tip is the end point (as `FloatingEdge`). Edges are drawn before nodes. Nothing else: no selection, untyped dot, evidence chip or shadow. The drawing's top-left is the nodes' bounding box minus `EXPORT_MARGIN`.
 - **SVG:** a standalone document with `xmlns`, `width`, `height` and `viewBox` from `svgSize`, a `<title>` with the graph name (or `Graph`), a white background `<rect>`, then the edges and nodes. Text uses `font-family: 'IBM Plex Sans', system-ui, sans-serif`. With `fontDataUrl`, a `<style>` adds an `@font-face` for IBM Plex Sans 500 from that data URL. `ExportDialog` passes the `?inline` import of `@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-500-normal.woff2`, so downloaded SVGs and PNGs look like the canvas on machines without the font. Names are XML-escaped.
 - **PNG:** `svgToPng` loads the SVG (with the embedded font) into an `Image` from a Blob URL, draws it on a canvas of `width × scale` by `height × scale`, and resolves `canvas.toBlob(…, 'image/png')`. It rejects with `Could not create the PNG image.` when loading or encoding fails.
 - **TikZ:** a `tikzpicture` fragment for a LaTeX document. It starts with the comment lines `% GraphCreator export: <name>` and `% Needs \usepackage{tikz} and \usetikzlibrary{arrows.meta}`. The picture uses `x=0.75pt, y=-0.75pt`, so canvas pixels (96 per inch) are used directly and y grows downward as on the canvas. Each role in use gets `\definecolor{gc<Role>Fill|Line|Text}{HTML}{…}` from the palette, and the edge colour `gcEdge`. Each node is `\node[circle, draw=…, fill=…, text=…, line width=1.5pt, minimum size=<0.75·d>pt, inner sep=0pt, align=center, font=\sffamily\small] (v<i>) at (<cx>,<cy>) {<lines joined by \\>};` with `v1, v2, …` in graph order. Each edge is `\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcEdge, shorten >=1.5pt] (v<i>) -- (v<j>);`, so TikZ finds the rims itself. Names are LaTeX-escaped (`\ { } $ & # ^ _ ~ %`).
@@ -843,7 +850,7 @@ export function ignoredAttribute(format: string, key: string, line?: number): Is
 
 1. **Field types.** A node's `role` must be one of `ROLES` (`Node "SES": role must be one of exposure, outcome, latent, adjusted, selected, other.`). `var_type` must be one of `VAR_TYPES` (`Node "SES": var_type must be one of categorical, ordinal, continuous, discrete.`). `levels` and `evidence` must be lists of text, or one text, which counts as a one-item list (`Node "SES": levels must be a list of text.`). `description`, `unit` and `note` must be text. Numbers are accepted where text is expected and turned into text. Empty or whitespace-only text counts as absent (3.2).
 2. **Edges.** An edge must name existing node keys: `The edge from "A" to "B" refers to "B", but there is no node with that id.`, with `line` when known. A duplicate edge is merged silently, keeping the first edge's evidence and note (dagitty does the same).
-3. **Graph.** Nodes and edges get fresh internal ids, in file order. A node's `pos` is `centre − nodeDiameter(name) / 2` (the top-left of its square, 3.2). If any node lacks `centre`, `autoLayout` runs on the whole graph and adds the YAML warning `Some nodes had no position, so the graph was laid out automatically.`
+3. **Graph.** Nodes and edges get fresh internal ids, in file order. A node's `pos` is `centre − NODE_DIAMETER / 2` (the top-left of its square, 3.2; `nodeDiameter(name)` until phase 57). If any node lacks `centre`, `autoLayout` runs on the whole graph and adds the YAML warning `Some nodes had no position, so the graph was laid out automatically.`
 4. **Checks.** `validateGraph` (4.4) supplies the errors: empty and duplicate names, `levels` or `unit` on the wrong type, self-edges and cycles. If there are any, the result is `{ ok: false, errors }` with every problem from steps 1–4, and nothing is loaded. Otherwise the warnings are the parser's own, then `validateGraph`'s.
 
 Details fixed in phase 31:
@@ -912,8 +919,8 @@ graph [
     levels "current"
     description "Self-reported during pregnancy"
     graphics [
-      x 42
-      y 42
+      x 48
+      y 48
     ]
   ]
   node [
@@ -925,8 +932,8 @@ graph [
     levels "mid"
     levels "high"
     graphics [
-      x 182
-      y -88
+      x 198
+      y -72
     ]
   ]
   edge [
@@ -979,10 +986,10 @@ export function parseDot(text: string): Result<Graph>
 digraph "Smoking and birth weight" {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="31.5,-31.5!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="252,-27!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="136.5,66!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  Genetic_factors [label="Genetic factors", gc_role="latent", pos="141.75,-119.25!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  Maternal_smoking [label="Maternal smoking", gc_role="exposure", gc_var_type="categorical", gc_levels="never;former;current", gc_description="Self-reported during pregnancy", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Birth_weight [label="Birth weight", gc_role="outcome", gc_var_type="continuous", gc_unit="g", pos="261,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  SES [gc_var_type="ordinal", gc_levels="low;mid;high", pos="148.5,54!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  Genetic_factors [label="Genetic factors", gc_role="latent", pos="148.5,-126!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
   SES -> Maternal_smoking [gc_evidence="PMID:123;doi:10.1000/xyz", gc_note="Well established"]
   Maternal_smoking -> Birth_weight
   SES -> Birth_weight
@@ -1042,7 +1049,7 @@ export function parseNetworkx(text: string): Result<Graph>
       "var_type": "categorical",
       "levels": ["never", "former", "current"],
       "description": "Self-reported during pregnancy",
-      "pos": [42, 42]
+      "pos": [48, 48]
     }
   ],
   "edges": [
@@ -1335,6 +1342,64 @@ export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, op
 - `toTikz(graph, { legend, signs })` adds one `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (<x>,<y>) {$+$};` per badge (`$-$`, `$\pm$`), after the edges.
 - The legend does not explain the badges.
 
+### 4.17 Equal circles, name preview and graph lock (phases 57–62)
+
+These are three changes from GitHub issues, agreed on 2026-11-13:
+
+- **#5:** every circle has the same size, and long names get a smaller font (5.7.6). This replaces circles sized by their names. It is the only style; there is no switch.
+- **#3:** the circle shows the name as it is being typed in the editor (5.3).
+- **#4:** a graph can be locked, for example after the variables were imported from study metadata. A locked graph is read-only: nothing about it can be changed, positions included (5.10).
+
+#### Size (`src/model/nodeSize.ts`, phase 57)
+
+The contract is in 5.7.6.
+- `nodeDiameter`, `wrapLabel`, `NODE_MIN_DIAMETER`, `NODE_MAX_DIAMETER` and `LABEL_MAX_CHARS` are removed. Every caller uses `NODE_DIAMETER` for sizes and centres, and `nodeLabel` for the text: the canvas, `layout.ts`, `graphStore.ts`, the image scene and TikZ, and the exchange formats that convert between centres and top-left positions (`exchange.ts`, `gml.ts`, `dot.ts`, `networkx.ts`).
+- `pos` keeps meaning "top-left of the node's box" (3.2). Files are unchanged. A circle in a file saved before phase 57 is drawn up to 20 px off its old centre (the old diameters were 64–136 px). There is no migration.
+- `renameNode` no longer shifts `pos` (4.6), since a rename keeps the size.
+
+#### File (4.1 addition, phase 57)
+
+- `GraphFileSchema` gains the optional top-level key `locked: boolean`.
+- `parseYaml` reads `locked: true` as `Graph.locked = true`, and `locked: false` as absent.
+- `toYaml` writes `locked: true` after `name` when the graph is locked, and nothing otherwise. A graph that is not locked therefore saves byte-identically to before, and every existing fixture still round-trips.
+- The schema stays `graphcreator/0.1`, as for the simulation fields.
+- The lock lives only in the GraphCreator file. Autosave and share links carry it, because they use `toYaml` and `parseYaml`. The exchange formats (dagitty, GML, DOT, networkx JSON, bnlearn, Tetrad, Mermaid) neither write nor read it, so a graph opened from one of them starts unlocked.
+- FORMAT.md documents the key as an editor setting that readers can ignore.
+
+#### Store (4.6 and 4.10 additions, phase 57)
+
+```ts
+setLocked(on: boolean): void            // sets or removes graph.locked; recorded in the history
+export const GRAPH_LOCKED_MESSAGE = 'This graph is locked.'
+```
+
+**The rule:** while `graph.locked` is true, every action that would change `graph` does nothing, with two exceptions, `setLocked` (so the graph can be unlocked) and `replaceGraph` (so New, Open, a share link and a lesson still work).
+
+- **Do nothing:** `addNodeAt` (returns `''`), `updateNode`, `setLevels`, `setAdjustedSet`, `removeSelection`, `moveNode`, `moveNodes`, `layout`, `connect` (returns `{ ok: false, reason: 'locked', message: GRAPH_LOCKED_MESSAGE }`; `EdgeCheck.reason` (4.3) gains `'locked'`, which only the store produces, never the pure `canAddEdge`), `updateEdge` and `setGraphName`. None of them records history.
+- **`renameNode`:** returns `{ ok: false, errors: [{ message: GRAPH_LOCKED_MESSAGE, nodeId }] }` and changes nothing.
+- **Still work:** `select`, `focusName` and `clearFocusName` (they do not change the graph), `undo`, `redo`, `setLocked` and `replaceGraph`.
+- **Backstop:** the internal `commit` ignores a new graph when the current graph is locked and the new one is locked too. Unlocking passes, because its new graph is not locked, and `replaceGraph` does not go through `commit`. So an action that forgets its own guard still cannot change a locked graph.
+- `setLocked` with the current state records nothing (4.10). The first undo after locking therefore unlocks the graph, and further undos work on it as usual. This is how a lock applied by mistake is taken back.
+- Lessons are not affected. A lesson's `replaceGraph` swaps in its own practice graph, which is never locked, and puts the user's graph back afterwards with its lock.
+
+#### UI store (4.7 addition, phase 57)
+
+```ts
+namePreview: { id: string; name: string } | null   // default null; never persisted
+setNamePreview(preview: { id: string; name: string } | null): void
+```
+
+`NodeEditor` sets the preview and `Canvas` reads it (5.3). `replaceGraph`, `undo` and `redo` do not touch it. The editor clears it when it unmounts, because it is keyed by `id:revision`.
+
+#### Copy (5.7.8 addition, phase 57)
+
+| Key | Text |
+|---|---|
+| `GRAPH_LOCK.label` | "Lock graph" |
+| `GRAPH_LOCK.tip` | "Lock graph: nothing in the graph can be changed. Variables, arrows and their positions stay as they are." |
+| `GRAPH_LOCK.note` | "This graph is locked. Unlock it in the tool rail to make changes." |
+| `GRAPH_LOCK.reason` | "Not available while the graph is locked." |
+
 ## 5. Behaviour
 
 ### 5.1 Screen layout
@@ -1361,15 +1426,15 @@ export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, op
 
 ### 5.2 Canvas interactions
 
-- **Add node:** double-click empty canvas (React Flow zoom-on-double-click is disabled), or the Add node tool (N): with it active, the next click on empty canvas adds a node there and the tool returns to Select. The rail's Add node button with the tool already active adds a node at the viewport centre. The new node is centred on the click point (its box is `nodeDiameter(name)` wide), gets `defaultNodeName`, becomes selected, and the side panel's name field is focused with its text selected.
-- **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true.
-- **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source.
+- **Add node:** double-click empty canvas (React Flow zoom-on-double-click is disabled), or the Add node tool (N): with it active, the next click on empty canvas adds a node there and the tool returns to Select. The rail's Add node button with the tool already active adds a node at the viewport centre. The new node is centred on the click point (its box is `NODE_DIAMETER` wide), gets `defaultNodeName`, becomes selected, and the side panel's name field is focused with its text selected. While the graph is locked, nothing adds a node (5.10).
+- **Connect by dragging:** hovering a circle shows a teal rim (5.7.7). Dragging from the rim starts a connection; dragging the middle of the circle moves it. While a connection is in progress, a dashed teal line follows the pointer, and any circle under the pointer is a drop target: a valid one gets a solid teal ring, an invalid one a red ring. Validity comes from `canAddEdge` through React Flow's `isValidConnection`. Releasing over an invalid target shows a toast with the `EdgeCheck` message and adds nothing. Implementation: React Flow's "easy connect" pattern. Each node has a ring-shaped source handle on its rim and a target handle covering the whole circle that takes pointer events only while `useConnection().inProgress` is true. While the graph is locked, no connection can be started (5.10).
+- **Connect mode (C):** with the Connect tool active, clicking a circle picks it as the source (`pickConnectSource`, shown with the hover rim kept on), and clicking a second circle calls `connect`; an invalid pair shows the same toast. The tool stays active for the next edge. Escape, or clicking empty canvas, clears the picked source. While the graph is locked, the Connect tool is disabled (5.10).
 - **Shortcuts:** V, N, C set the tool; L runs auto-layout and fits the view; F fits the view; + and − zoom; Escape returns to Select and clears the picked source. Ctrl+Z or ⌘+Z undoes; Ctrl+Shift+Z, ⌘+Shift+Z and Ctrl+Y redo (4.10, phase 21); they call `preventDefault`. Shortcuts are ignored while focus is in a text field, select or textarea, and while a dialog is open, so Ctrl+Z inside a field is the browser's own text undo.
 - **Rename by double-click:** double-clicking a circle while the Select tool is active calls `focusName`: the node is selected and the side panel's name field is focused with its text selected, as after adding a node. It never adds a node (the pane double-click handler only reacts to the pane itself).
 - **Select:** click a node or edge. Multi-select with Shift-click or box-select is React Flow default and is only used for deletion and moving.
-- **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`.
-- **Move:** dragging updates positions; the store commits on drag stop, with one `moveNodes` call for all dragged nodes (one undo step; `moveNode` per node until phase 21).
-- **Node look (`canvas/CircleNode.tsx`):** a circle of diameter `nodeDiameter(name)` with the wrapped name centred inside (`wrapLabel`, 5.7.6; full name in `title` when truncated). The fill, outline and text colours come from the role (5.7.2); colour is the only role cue on the canvas, by the user's choice. The node's accessible name is `<name>, <Role label>` (for example `SES, Adjusted`) and the element keeps `data-role`. An untyped node shows a small yellow warning dot on its rim, top right, with `title="No variable type"` and the same `aria-label`. States are in 5.7.7.
+- **Delete:** Delete or Backspace (when focus is not in a text field) removes the selected nodes and edges via `removeNodes` / `removeEdges`. While the graph is locked, it removes nothing (5.10).
+- **Move:** dragging updates positions; the store commits on drag stop, with one `moveNodes` call for all dragged nodes (one undo step; `moveNode` per node until phase 21). While the graph is locked, circles cannot be dragged (5.10).
+- **Node look (`canvas/CircleNode.tsx`):** a circle of diameter `NODE_DIAMETER` with the wrapped name centred inside, at the label's own font size (`nodeLabel`, 5.7.6; full name in `title` when truncated). While the node's name is being edited, the circle shows the draft (5.3). The fill, outline and text colours come from the role (5.7.2); colour is the only role cue on the canvas, by the user's choice. The node's accessible name is `<name>, <Role label>` (for example `SES, Adjusted`) and the element keeps `data-role`. An untyped node shows a small yellow warning dot on its rim, top right, with `title="No variable type"` and the same `aria-label`. States are in 5.7.7.
 - **Edges (`canvas/FloatingEdge.tsx`):** straight lines. An edge starts on the source circle's rim, where the line between the two centres crosses it, and its closed arrowhead ends 2 px before the target's rim (`edgeEndpoints`, phase 11). Moving a circle re-aims its edges. An edge with evidence shows a chip at its midpoint: a bookmark icon and the number of evidence items (`aria-label="2 evidence items"`). Clicking the chip selects the edge.
 - **Saved indicator (`SavedIndicator.tsx`):** a chip in the canvas's bottom-right corner, driven by `useUiStore().autosave`: `on` → teal check and "Saved in this browser"; `blocked` → warning style, "Not saved: browser storage is blocked"; `paused` → muted, "Practice graph: not saved".
 
@@ -1381,6 +1446,8 @@ export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, op
 - **EdgeEditor:** heading `From → To` (names), Evidence (ListEditor of strings), Note (textarea), Delete edge button.
 - **ListEditor:** one text input per item, with add, remove, move up and move down buttons; Enter in the last input adds a new item. Empty items are dropped on commit.
 - Text fields commit on blur (and Enter for single-line fields), not per keystroke.
+- **Name preview (phase 59, GitHub #3):** while the Name field holds a draft that differs from the stored name, the editor sets `uiStore.namePreview` to `{ id, name: draft }`, and the circle on the canvas shows the draft, wrapped and sized by `nodeLabel` (5.7.6). A draft that is empty after trimming shows the stored name. The store, the history and autosave change only on commit, as before, so a rename is one undo step. The preview is cleared when the draft equals the stored name again, on a successful commit, on Escape, when the editor unmounts, and on a failed commit (an empty or duplicate name): the rename did not happen, so the circle goes back to the stored name while the draft and the error message stay in the field. Leaving the preview up would show two circles with the same name while the error says that name is taken. Only the circle follows the draft; edge headings, the Analysis tab and the warnings use the stored name.
+- **Locked graph (phase 59):** every field of both editors is read-only; see 5.10.
 - **Simulation section** (phases 52–53): at the bottom of both editors, closed by default (5.9).
 
 ### 5.4 Files and dialogs
@@ -1511,7 +1578,7 @@ Light text-on-fill ratios are 7.3 or more; outlines are 3.3–3.5 against `--can
 | title | 18 / 600 / 1.3 | dialog titles, lesson titles |
 | heading | 15 / 600 / 1.4 | edge heading `From → To`, panel sections |
 | body | 14 / 400 / 1.5 | default text, fields, buttons (500) |
-| node | 13 / 500 / 1.25 | names inside circles |
+| node | 13 / 500 / 1.25 | names inside circles; from phase 57 the size shrinks to 9 for long names (5.7.6) |
 | hint | 13 / 400 / 1.4 | hints, captions (`--muted-foreground`) |
 | label | 12 / 600, uppercase, letter-spacing 0.06em | panel header "NODE" / "EDGE" in `--accent-foreground` |
 
@@ -1530,32 +1597,35 @@ Light text-on-fill ratios are 7.3 or more; outlines are 3.3–3.5 against `--can
 
 #### 5.7.6 Node size (`src/model/nodeSize.ts`)
 
+**Since phase 57 (GitHub #5):** every circle has the same diameter, and a long name gets a smaller font so it fits. This gives the graph a calmer, more even look than circles sized by their names. Phases 10–56 used name-sized circles (64–136 px, 13 px text); that design is replaced and not kept as an option.
+
 ```ts
-export const NODE_MIN_DIAMETER = 64
-export const NODE_MAX_DIAMETER = 136
-export const LABEL_MAX_CHARS = 14       // per line
-export const LABEL_MAX_LINES = 3
-export interface NodeLabel { lines: string[]; truncated: boolean }
-export function wrapLabel(name: string): NodeLabel
-export function nodeDiameter(name: string): number
+export const NODE_DIAMETER = 96          // px, every circle
+export const LABEL_FONT_MAX = 14         // px, IBM Plex Sans 500
+export const LABEL_FONT_MIN = 9          // px
+export const LABEL_MAX_LINES = 5
+export interface NodeLabel { lines: string[]; fontSize: number; truncated: boolean }
+export function nodeLabel(name: string): NodeLabel
 ```
 
-Pure and deterministic (no DOM), so `autoLayout` and the store can use it.
+Pure and deterministic (no DOM), so `autoLayout`, the store and the image export can use it. These are the values tuned in phase 61: exported SVGs of the fixtures and of long names were measured in Chromium against the real IBM Plex Sans 500. `NODE_DIAMETER` and the 6 px inset keep every real name clear of the outline (the closest, `Mammography` on one line at 12.5 px, stays about 6.7 px inside it); `LABEL_FONT_MAX` went from 13 to 14 px so a short name does not look lost in the 96 px circle. A name of only wide letters (`WWWWWWWW`, `Mmmmmmmmmm`) still overflows, because the character width is one estimate for every character; that limit is the open issue "Text measurement".
 
-- **Size of a set of lines:** `w = (longest line length) × 7.5`, `h = (number of lines) × 16`, `d = ceil(√(w² + h²) + 16)`. These approximate 13 px Plex Sans 500 at line height 1.25. The result is clamped to `[NODE_MIN_DIAMETER, NODE_MAX_DIAMETER]` and rounded up to an even integer.
-- **`wrapLabel(name)`:**
-  1. Trim the name and split it into words on whitespace. Hard-split any word longer than `LABEL_MAX_CHARS` into 14-character pieces.
-  2. For k = 1, 2, 3: greedily fill lines with limit `L`. Start with `L = max(longest word, ceil(length / k))` and raise `L` by 1 until the words fit in at most k lines or `L` exceeds `LABEL_MAX_CHARS`. Keep the wrappings that fit.
-  3. Pick the fitting wrapping with the smallest diameter, preferring fewer lines on a tie.
-  4. If none fits, wrap greedily at 14 characters, keep the first 3 lines, cut the third to 13 characters and add "…", and set `truncated: true`.
-- **`nodeDiameter(name)`:** the diameter of `wrapLabel(name).lines`.
+- **Text metrics at font size `s`:** character width `7.5 / 13 · s`, line height `1.25 · s` (rounded to 0.25 px in the CSS). These scale the estimate the old formula used for 13 px Plex Sans 500.
+- **Fit test:** the lines are stacked and centred vertically. A line fits when its estimated width is at most the circle's chord at the line's edge farthest from the centre, inside an inset of 6 px: with `R = NODE_DIAMETER / 2 − 6` and `y` that distance, the line's width must be at most `2 · √(R² − y²)` (and `y < R`). A label fits when every line fits. Testing per line, rather than the label's bounding box, lets a tapered three- or four-line label keep a larger font.
+- **`nodeLabel(name)`:**
+  1. Trim the name and split it into words on whitespace.
+  2. For `s` from `LABEL_FONT_MAX` down to `LABEL_FONT_MIN` in steps of 0.5: for k = 1 … `LABEL_MAX_LINES`, greedily fill lines with the smallest character limit (starting at the longest word) that gives at most k lines that fit. The first `s` with a fitting wrapping wins; among its wrappings, the one with the fewest lines wins.
+  3. If nothing fits at `LABEL_FONT_MIN` with the words kept whole: fill a block of 1 … `LABEL_MAX_LINES` lines at that size, each line up to its own chord, breaking a word that is too wide for the line it starts. The fewest lines that hold the whole name win, and `truncated` stays false: a broken long word still shows in full.
+  4. If even `LABEL_MAX_LINES` lines do not hold it, cut the last line and add "…", and set `truncated: true`. The full name then goes in the circle's `title`.
 - **Examples** (unit-tested):
 
-| Name | Lines | Diameter |
+| Name | Font | Lines |
 |---|---|---|
-| `Age` | `Age` | 64 |
-| `Birth weight` | `Birth` / `weight` | 72 |
-| `Maternal smoking during pregnancy` | `Maternal` / `smoking during` / `pregnancy` | 132 |
+| `Age` | 14 px | `Age` |
+| `Birth weight` | 14 px | `Birth` / `weight` |
+| `Socioeconomic status` | 10.5 px | `Socioeconomic` / `status` |
+| `Maternal smoking during pregnancy` | 11.5 px | `Maternal` / `smoking` / `during` / `pregnancy` |
+| `Pre-existing cardiovascular disease` | 10 px | `Pre-existing` / `cardiovascular` / `disease` |
 
 #### 5.7.7 Node and edge states
 
@@ -1832,6 +1902,31 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 
 Shares, Form, Sign and Strength carry info tips (`About shares`, `About functional form`, `About sign`, `About strength`) as in 5.3.
 
+### 5.10 Graph lock (phases 58–62, GitHub #4)
+
+A graph whose variables came from study metadata should be safe from accidental edits. A locked graph is **read-only**: no variable, arrow, simulation detail, position or graph name can change, and auto-layout does not run. The lock is part of the graph (4.17), so it travels with the file, autosave and share links.
+
+Everything that only looks at the graph still works: selecting, hovering, panning, zooming, Fit view, the Analysis tab, Save, Export, Share, New, Open, lessons and the theme.
+
+**Rail toggle (phase 60).**
+- After Redo, a divider and an icon-only toggle button: accessible name and tooltip "Lock graph", with `aria-pressed` giving the state. It has no shortcut.
+- The icon is `LockOpen` when unlocked and `Lock` when locked. Locked, the button uses the active-tool look (solid teal).
+- A click calls `setLocked(!locked)`.
+- During a lesson the button is disabled, with `LESSON_LOCK` ("Not available during a lesson.") in its tooltip, using the `LessonLock` pattern of `TopBar.tsx`. A lesson's practice graph is never locked.
+
+**While locked:**
+- **Rail and shortcuts (phase 60):** Add node, Connect and Auto-layout are disabled, with `GRAPH_LOCK.reason` in their tooltips, and the N, C and L shortcuts do nothing. Select, Fit view, the zoom buttons and V, F, + and − are unchanged. Undo and Redo stay enabled, because the first undo after locking unlocks the graph (4.17). Switching the lock on while the Add or Connect tool is active sets the tool to Select and clears any picked connect source.
+- **Canvas (phase 58):** `<ReactFlow>` gets `nodesDraggable={false}`, `nodesConnectable={false}` and `deleteKeyCode={null}`, so circles cannot be dragged, no connection can be started from a rim, and Delete and Backspace remove nothing. Double-clicking the pane adds nothing, and a click with the Add tool adds nothing. Double-clicking a circle still selects it and focuses its read-only name field. Selection, the hover rim, the analysis marking and the lesson pointer are unchanged.
+- **Node and edge editors (phase 59):**
+  - A muted line with a `Lock` icon (16 px) and `GRAPH_LOCK.note` sits under the "NODE" or "EDGE" header.
+  - Every field is disabled: in `NodeEditor` the Name, Role, Type, Levels, Unit and Description, and in `EdgeEditor` the Evidence and Note. Text fields are `readOnly` rather than `disabled`, so their text can still be selected and copied.
+  - The Simulation section still opens and shows its values, and its controls (shares, form, sign, strength) are disabled too.
+  - The Delete node and Delete edge buttons are disabled, with `GRAPH_LOCK.reason` in their tooltips.
+  - `RolePicker`, `ListEditor`, `SharesEditor`, `SignEditor` and `SimulationSection`'s fields gain a `disabled` prop for this.
+- **Top bar (phase 60):** the graph name input is `readOnly`, with `GRAPH_LOCK.reason` as its `title`. New, Open…, Save, Export… and Share are unchanged, so a locked graph can still be saved and shared.
+- **Analysis tab (phase 59):** the controls that set the adjusted set are disabled, with `GRAPH_LOCK.reason` in their tooltip. The analyses themselves still run and show.
+- **Lessons:** while a lesson runs, the practice graph is unlocked and fully editable, and the user's locked graph comes back locked when the lesson ends (4.17 "Store").
+
 ## 6. Project setup and conventions
 
 
@@ -2012,6 +2107,12 @@ Shares, Form, Sign and Strength carry info tips (`About shares`, `About function
 | Shares input | Percent fields with a stacked-bar preview and a total | Percent fields only; a draggable stacked bar | User's choice, picked from three drawn options. |
 | Signs in images | A Signs checkbox in the Export dialog | Always when set; not now | User's choice. |
 | YAML 1.1 safety | `toYaml` quotes text that YAML 1.1 (PyYAML) would read as a boolean, null, number or date | Leave it to readers | Python readers get the names as text, such as a level called `yes`. |
+| Circle size (GitHub #5) | One size for every circle; long names get a smaller font | Circles sized by their names (phases 10–56); a switch between the two | User's choice (2026-11-13): equal circles look more even, and they are the only style. |
+| Name while typing (GitHub #3) | The circle previews the draft; the rename is still committed on Enter or blur | Rename on every keystroke; no change | Recommended option. One undo step per rename, and no invalid intermediate names in the graph. |
+| Graph lock: where (GitHub #4) | In the graph file (`locked: true`) | A preference in this browser | Recommended option. A graph built from metadata stays locked for whoever opens it. |
+| Graph lock: what | The whole graph is read-only: variables, arrows, simulation details, positions and the graph name | Only adding and deleting nodes; nodes and their positions, with arrows still editable | User's choice (2026-11-13), after a first round that kept arrows and positions editable. A lock that leaves gaps is not a lock. |
+| Graph lock: undo | The first undo after locking unlocks the graph | Clearing the history on locking; a confirmation dialog | Recommended option. It takes back a lock applied by mistake without a dialog. |
+| Graph lock: switch | A toggle at the bottom of the tool rail | A top bar switch; an Edit menu | Recommended option. It sits with the other canvas controls. |
 
 ## 8. Implementation phases
 
@@ -2085,6 +2186,12 @@ General rules for every phase:
 | 54 | Canvas sign badge | 49 | 23 | `src/components/Canvas.tsx`, `canvas/FloatingEdge.tsx`, `canvas/canvas.css` |
 | 55 | Image signs and reader doc | 49 | 23 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/components/ExportDialog.tsx`, `docs/FORMAT.md` |
 | 56 | Simulation integration and end-to-end tests | 50, 51, 52, 53, 54, 55 | 24 | `e2e/simulation.spec.ts`, `e2e/export.spec.ts`, `e2e/files.spec.ts`, fixes in any file of phases 49–55, this spec's Status line and Open issues, `docs/IDEAS.md` |
+| 57 | Equal circles, preview and lock contracts | 56 | 25 | `src/model/{nodeSize,graph,schema,yaml,layout,exchange,gml,dot,networkx}.ts` and their tests, `src/model/__fixtures__/locked.dag.yaml`, `src/store/{graphStore,uiStore}.ts` and their tests, `src/lib/copy.ts` (+ test), `docs/FORMAT.md`; mechanical `nodeDiameter`/`wrapLabel` replacements in `Canvas.tsx`, `canvas/CircleNode.tsx`, `useToolShortcuts.ts`, `src/lib/{imageScene,imageExport}.ts` and the image snapshots, only as far as the build and tests need |
+| 58 | Canvas: equal circles, preview and lock | 57 | 26 | `src/components/Canvas.tsx`, `canvas/CircleNode.tsx`, `canvas/types.ts`, `canvas/canvas.css` |
+| 59 | Editors: preview and lock | 57 | 26 | `src/components/NodeEditor.tsx`, `EdgeEditor.tsx`, `RolePicker.tsx`, `ListEditor.tsx`, `SharesEditor.tsx`, `SignEditor.tsx`, `SimulationSection.tsx`, `AnalysisPanel.tsx` |
+| 60 | Rail lock toggle and locked top bar | 57 | 26 | `src/components/ToolRail.tsx`, `useToolShortcuts.ts`, `TopBar.tsx` |
+| 61 | Images with equal circles | 57 | 26 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/lib/__snapshots__/imageExport/*`, `src/model/nodeSize.ts` and its test (tuned constants only), section 5.7.6 of this spec |
+| 62 | Equal circles, preview and lock: integration and end-to-end tests | 58, 59, 60, 61 | 27 | `e2e/graph-lock.spec.ts` (new), additions to `e2e/canvas.spec.ts` and `e2e/files.spec.ts`, fixes in any file of phases 57–61 and in e2e specs that depend on circle sizes, this spec's Status line and Open issues |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -3153,6 +3260,117 @@ Phases: 56. Parallel: single phase. Check after the wave: all checks; the browse
   - `e2e/simulation.spec.ts` has 9 tests covering section 9's list; it also checks that sign-map keys follow level edits and that the edge editor shares the section's open state. `export.spec.ts` checks the Signs checkbox (absent without signs; on by default; two `+` and one `±` badge in the SVG for `simulation.dag.yaml`; TikZ follows it; kept when the dialog reopens). `files.spec.ts` checks the changed Save as… notes.
   - No other integration fixes were needed in phases 49–55.
 
+### Wave 25: Equal circles, preview and lock contracts [x]
+
+Phases: 57. Parallel: single phase. Check after the wave: all checks. In the app, every circle has the same size and a long name has a smaller font on the canvas (images follow in phase 61). Nothing else is visible yet.
+
+#### Phase 57: Equal circles, preview and lock contracts [x] (7de608f)
+
+- **Goal:** the size contract of 5.7.6, the `locked` file key, the store guards, `namePreview` and the texts of 4.17 exist, so wave 26 can build the canvas, the editors, the rail and the images in parallel.
+- **Depends on:** phase 56.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `Graph` (3.2), the YAML rules (4.1), the store and history (4.6, 4.10), the UI store pattern (4.7), `replaceGraph` and the lesson store (4.8).
+- **Work:**
+  - **`nodeSize.ts`:** 5.7.6 for real, with the starting values. Remove the old exports.
+  - **Callers:** replace `nodeDiameter(…)` with `NODE_DIAMETER` and `wrapLabel` with `nodeLabel` everywhere (4.17 "Size"). In the UI and image files this is mechanical, with one exception: `CircleNode` already sets the label's `font-size` and `line-height` (1.25 × size) inline from `nodeLabel`, so the canvas never overflows. Image text keeps its fixed 13 px until phase 61. Regenerate the image snapshots (`npx vitest -u`) and look at a few to check the circles.
+  - **`graphStore.ts`:** remove the rename shift; add `setLocked` and the guards (4.17 "Store").
+  - **`graph.ts`, `schema.ts`, `yaml.ts`:** `Graph.locked` and the file key (4.17 "File"). Add the fixture `locked.dag.yaml`.
+  - **`uiStore.ts`:** `namePreview`.
+  - **`copy.ts`:** `GRAPH_LOCK`.
+  - **`docs/FORMAT.md`:** a `locked` row in the top-level table: "An editor setting: GraphCreator does not let people add, delete or edit the variables. It has no causal or simulation meaning; readers can ignore it."
+- **Tests:** the `nodeSize.test.ts` rewrite, and the additions to `layout.test.ts`, `yaml.test.ts`, `graphStore.test.ts`, `uiStore.test.ts` and `copy.test.ts` (section 9). Adjust the exchange-format tests whose expected centres change.
+- **Done when:** all checks pass. Existing e2e tests that click measured points may need new coordinates; fix them here only as far as the build needs, and leave new e2e tests to phase 62.
+- **Out of scope:** the font size in images, the preview, the toggle and the locked editor.
+- **Details fixed in phase 57:**
+  - `nodeLabel` keeps words whole while it looks for a font size, and breaks one only in the fallback (5.7.6 step 3). A broken word is not truncation: `truncated` is true only when text is dropped for an ellipsis, which takes a name of about 70 characters.
+  - `lineHeight(fontSize)` is exported for the canvas and the images. `CircleNode` sets only `font-size` inline, because `canvas.css` gives `.gc-circle` a unitless `line-height: 1.25`.
+  - The store guards `addNodeAt`, `renameNode`, `connect` and `removeSelection`, which do not go through `commit` or need their own answer; the other actions are stopped by the `commit` backstop.
+  - `setLocked` bypasses `commit` (which would refuse it) and records through `record` directly.
+  - `EdgeCheck.reason` gained `'locked'` (4.17), so `connect` can report it.
+  - The exchange-format round-trip tests skip `locked.dag.yaml`, as they already skip `simulation.dag.yaml`.
+  - The `pos` of every node is now the top-left of a 96 px square, so the centres in the GML, DOT and networkx examples of 4.15 changed; the examples in this spec and in the tests were updated with them. `src/model/__fixtures__/formats/reference.json` was regenerated with `scripts/check-formats.py` on the same tool versions it already recorded, and only coordinates changed.
+  - The image snapshots were regenerated. Image text still uses a fixed 13 px, so a long name overflows its circle in an exported image until phase 61.
+  - Existing e2e tests that assert circle sizes, export sizes or the old rename shift were updated; `canvas.spec.ts`'s rename test now checks that the circle keeps its size and gets an 11.5 px font.
+
+### Wave 26: Equal circles, preview and lock parts [x]
+
+Phases: 58, 59, 60, 61. Parallel: all four, one sub agent each in its own worktree; their files are disjoint. Land them in the order 58, 59, 60, 61. Parallel e2e runs need `CI=1` and a lock, as in wave 12: `CI=1 flock <one shared lock file> npm run test:e2e`. Check after the wave: all checks.
+
+#### Phase 58: Canvas: equal circles, preview and lock [x] (eedb9e6)
+
+- **Goal:** circles show their label at its own font size, follow the name being typed, and the canvas respects the lock (5.2, 5.3, 5.10).
+- **Depends on:** phase 57.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - `syncFlow` takes `namePreview` in its overlay. A node's data carries the shown name (the preview's trimmed draft when it is non-empty, otherwise the stored name). The reuse check compares the shown name.
+  - Nodes are `NODE_DIAMETER` wide and high. `measured` is kept across renames, since the size no longer changes.
+  - `CircleNode` renders `nodeLabel` of the shown name (phase 57 set up the inline font size), with `title` when truncated. The accessible name uses the shown name.
+  - **Lock:** with `graph.locked`, `<ReactFlow>` gets `nodesDraggable={false}`, `nodesConnectable={false}` and `deleteKeyCode={null}`, and `onDoubleClick`, the Add-tool `onPaneClick` and `onDelete` return early (5.10). The store guards stay the backstop.
+- **Tests:** the Canvas unit tests (if any) and existing e2e tests keep passing; the new end-to-end coverage is phase 62's.
+- **Done when:** all checks pass. In the browser, typing in the Name field changes the circle at once, Escape restores it, and a locked graph adds no node on double-click, cannot be dragged and starts no connection.
+
+#### Phase 59: Editors: preview and lock [x] (647120e)
+
+- **Goal:** the Name field drives the preview (5.3), and a locked graph shows read-only editors and disables the adjusted-set controls (5.10).
+- **Depends on:** phase 57.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - `NodeEditor`: the Name `onChange` sets or clears `namePreview`. `commitName` and `revertName` clear it as 5.3 says, and an unmount effect clears it.
+  - Both editors under a lock: the note under the header, every field disabled (text fields `readOnly`), the Simulation section's controls disabled, and the Delete node and Delete edge buttons disabled with their tooltips (5.10).
+  - `RolePicker`, `ListEditor`, `SharesEditor` and `SignEditor` gain `disabled?: boolean`. `ListEditor` makes its inputs read-only and disables all of its buttons.
+  - `AnalysisPanel`: the adjusted-set controls are disabled, with `GRAPH_LOCK.reason`.
+- **Tests:** component behaviour is covered end to end in phase 62; keep the existing tests passing.
+- **Done when:** all checks pass. In the browser, a locked graph's node and edge editors show the note and change nothing, and their text can still be selected.
+
+#### Phase 60: Rail lock toggle and locked top bar [x] (f113ab5)
+
+- **Goal:** the lock toggle, the disabled rail buttons and the read-only graph name of 5.10.
+- **Depends on:** phase 57.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - `ToolRail`: the divider and the toggle after Redo; Add node, Connect and Auto-layout disabled with their tooltips; the toggle disabled during a lesson. Switching the lock on with the Add or Connect tool active sets the tool to Select and clears the picked connect source.
+  - `useToolShortcuts`: N, C and L do nothing while locked, and `addNodeAtCentre` and the auto-layout action return early.
+  - `TopBar`: the graph name input is `readOnly` with `GRAPH_LOCK.reason` as its `title`.
+- **Done when:** all checks pass. In the browser, the toggle shows its state, survives a reload, and Add node, Connect, Auto-layout, their shortcuts and the graph name do nothing while locked.
+
+#### Phase 61: Images with equal circles [x] (e689d99)
+
+- **Goal:** SVG, PNG, PDF and TikZ draw equal circles with each label at its own font size, and the 5.7.6 constants are tuned.
+- **Depends on:** phase 57.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - `imageScene`: each node's text takes `nodeLabel(name).fontSize`, with a line pitch of 1.25 × the size and the baseline rule of 4.11 scaled from 13 px.
+  - `toSvg` and `sceneToPdf` write the per-node size. In TikZ, each node gets `font=\sffamily\fontsize{<0.75·s>}{<0.75·1.25·s>}\selectfont`.
+  - Tune `NODE_DIAMETER`, `LABEL_FONT_MIN`, `LABEL_FONT_MAX` and the inset by looking at exported SVGs (with the embedded Plex font) of the fixtures and of long names such as `Antihypertensive medication use`. Text must not touch the outline at any size, and the circles should not look empty for short names. Update the constants, the 5.7.6 example table and its unit tests together.
+  - Regenerate the snapshots and review them.
+- **Done when:** all checks pass, and the exported SVG of `smoking.dag.yaml` matches the canvas.
+
+### Wave 27: Equal circles, preview and lock integration [x]
+
+Phases: 62. Parallel: single phase. Check after the wave: all checks; the browser checks below.
+
+#### Phase 62: Equal circles, preview and lock: integration and end-to-end tests [x]
+
+- **Goal:** the three changes work end to end, and the spec reflects them.
+- **Depends on:** phases 58–61.
+- **Owns files:** see the task graph row.
+- **Work:**
+  - write `e2e/graph-lock.spec.ts` and the `canvas.spec.ts` and `files.spec.ts` additions (section 9);
+  - fix integration problems in any file of phases 57–61;
+  - update the Status line and the Open issues ("Text measurement", "Circle positions in older files").
+- **Done when:** all checks pass. In the browser (both app themes):
+  - all circles are equal, and long names fit or are truncated with a tooltip;
+  - typing a name updates the circle at once, and Escape and undo behave as 5.3 says;
+  - a locked graph refuses every change of 5.10 (nodes, arrows, simulation details, dragging, auto-layout and the graph name), and the lock survives Save → Open, a reload and a share link;
+  - a lesson started from a locked graph works, and the graph comes back locked;
+  - exported SVG, PDF and TikZ match the canvas.
+- **Out of scope:** showing edge annotations on the canvas (GitHub #6) and an alternative visual style (#7).
+- **Details fixed in phase 62:**
+  - **The one integration problem:** phases 58 and 59 together left the preview up after a refused rename, so the canvas showed two circles with the same name while the error said that name was taken. `NodeEditor` now clears the preview on a failed commit, and 5.3 says so.
+  - `LockNote` and `LockTip` are exported from `NodeEditor.tsx` and used by `EdgeEditor.tsx` and `AnalysisPanel.tsx`, because phase 59 could only touch the files it owned. They would sit better in a file of their own.
+  - `e2e/graph-lock.spec.ts` seeds `locked.dag.yaml` through the autosave key for the tests that start locked. Dragging a locked circle pans the canvas, so the test reads the stored positions instead of the circle's place on screen, and a read-only field takes `page.keyboard.type`, not `fill`.
+  - `e2e/simulation.spec.ts`'s sign-badge test failed twice under a full parallel run and passed every time on its own and on retry; it is flaky, not broken.
+
 ## 9. Tests
 
 - `src/model/graph.test.ts`: `newId` and `defaultNodeName` pick the smallest unused value; `addNode` returns a new graph and leaves the input unchanged; `renameNode` trims, refuses empty and duplicate names (case-sensitive: `Age` vs `age` allowed) and keeps edges; `updateNode` clears `levels`/`unit` when the type changes; `removeNodes` removes incident edges; `canAddEdge` returns `self`, `duplicate` and `cycle` with the exact messages, including the cycle path text; `addEdge` creates an edge with `evidence: []`.
@@ -3172,8 +3390,8 @@ Phases: 56. Parallel: single phase. Check after the wave: all checks; the browse
 Redesign (phases 10–16):
 
 - `src/lib/theme.test.ts` (phase 10): every token pair in 5.7.2 meets its ratio in both `:root` and `.dark`.
-- `src/model/nodeSize.test.ts` (phase 10): the three examples in 5.7.6; the minimum 64 and maximum 136; results are even; a word longer than 14 characters is hard-split; a name needing more than 3 lines is truncated with "…" and `truncated: true`; on a tie, fewer lines win; leading and trailing spaces are ignored.
-- `src/model/layout.test.ts` (phase 10 addition): node boxes use `nodeDiameter`, so a long-named node gets more space and positions are the top-left of its square.
+- `src/model/nodeSize.test.ts` (phase 10; rewritten in phase 57): the examples in 5.7.6; a short name gets `LABEL_FONT_MAX`; the font size never goes below `LABEL_FONT_MIN` and moves in 0.5 px steps; every line of every result fits its chord (the fit test of 5.7.6, checked independently in the test); at equal font size, fewer lines win; a single word too wide at the minimum size is hard-split; a name that cannot fit is truncated with "…" and `truncated: true`; leading and trailing spaces are ignored.
+- `src/model/layout.test.ts` (phase 10 addition; phase 57): node boxes are `NODE_DIAMETER` square and positions are the top-left of the square.
 - `src/store/graphStore.test.ts` (phase 10 addition): renaming `Age` to `Maternal smoking during pregnancy` keeps the circle's centre (pos shifts by −34 on both axes); a failed rename leaves `pos` unchanged.
 - `src/store/uiStore.test.ts` (phase 10): `setTool` clears `connectFrom`; `openWelcome` resets the slide to 0; `setWelcomeSlide` clamps to 0..3.
 - `src/store/lessonStore.test.ts` (phase 10): `start('tour')` sets the user's graph aside and loads an empty graph; `next` does nothing until the step is done; `back` stops at 0; `exit` and finishing restore the user's graph exactly; starting an unknown lesson throws; starting while a lesson runs exits the old one first.
@@ -3196,7 +3414,7 @@ Wave 12 (phases 21–23):
 
 - `src/store/graphStore.test.ts` (phase 21 addition): each recording action pushes exactly one entry and clears `future`; no-op actions (failed rename and connect, equal patches, same positions, removing nothing, the same name) push nothing and keep the same `graph` object; `undo` then `redo` returns the identical graph objects; `past` stops at `HISTORY_LIMIT` and drops the oldest; `replaceGraph` empties both stacks; `moveNodes` with three moves is one step; `undo` keeps a selection that still exists, clears one that does not, clears `focusNameOf` and increments `revision`; `undo` and `redo` on empty stacks change nothing.
 - `e2e/undo.spec.ts` (phase 21): add a node, Ctrl+Z removes it, Ctrl+Shift+Z and Ctrl+Y bring it back; the rail's Undo and Redo do the same and are disabled at the ends; renaming a node and undoing while it stays selected shows the old name in the side panel; a box-selected two-node drag is undone in one step; Ctrl+Z while typing in the name field does not change the graph; after a reload Undo is disabled; the undone state is what autosave stores.
-- `src/lib/imageExport.test.ts` (phase 22): `EXPORT_PALETTE` equals the `:root` tokens in `index.css`; for `smoking.dag.yaml`, `toSvg` has one `<circle>` per node, one `<text>` (or `<tspan>`) per wrapped line, one line and one arrowhead per edge, the size from `svgSize`, the `<title>`, and the `@font-face` only with `fontDataUrl`; names with `<`, `&` and quotes are escaped; an empty graph gives a valid empty SVG; `toTikz` has the header comments, one `\node` per node and one `\draw` per edge, only the colours in use, LaTeX-escaped names (`R&D_1 %`, which `wrapLabel` splits into two lines, gives `R\&D\_1\\\%`) and wrapped lines joined by `\\`; `imageFileName` gives `smoking-and-birth-weight.svg|.png|.tex` and `graph.svg` without a name.
+- `src/lib/imageExport.test.ts` (phase 22): `EXPORT_PALETTE` equals the `:root` tokens in `index.css`; for `smoking.dag.yaml`, `toSvg` has one `<circle>` per node, one `<text>` (or `<tspan>`) per wrapped line, one line and one arrowhead per edge, the size from `svgSize`, the `<title>`, and the `@font-face` only with `fontDataUrl`; names with `<`, `&` and quotes are escaped; an empty graph gives a valid empty SVG; `toTikz` has the header comments, one `\node` per node and one `\draw` per edge, only the colours in use, LaTeX-escaped names (`R&D_1 %`, which `wrapLabel` split into two lines, gave `R\&D\_1\\\%`; phase 57 updates this case, since `nodeLabel` keeps it on one line) and wrapped lines joined by `\\`; `imageFileName` gives `smoking-and-birth-weight.svg|.png|.tex` and `graph.svg` without a name.
 - `e2e/export.spec.ts` (phase 22): with no nodes the dialog shows the empty message and Download is disabled; with `smoking.dag.yaml` open, SVG shows the preview and downloads `<slug>.svg` starting with `<svg`; PNG with Scale 2× shows the pixel size and downloads a file starting with the PNG signature (`89 50 4E 47`); TikZ shows the code, Copy toasts, and Download gives `<slug>.tex` equal to the textarea text.
 - `src/lib/shareLink.test.ts` (phase 23): `decodeShare(SHARE_PREFIX + await encodeShare(g))` returns a graph whose `toYaml` equals `g`'s for `smoking.dag.yaml` and the empty graph; the payload uses only `A–Z a–z 0–9 - _`; `shareUrl` uses the given base; a hash without the prefix gives null; a damaged or truncated payload gives the exact damaged-link message; a valid payload of invalid YAML gives `parseYaml`'s errors.
 - `e2e/share.spec.ts` (phase 23, with clipboard permissions granted): Share copies a URL starting with the page URL and `#g=` and toasts; opening that URL in a fresh context (empty storage) shows the graph, the toast, no welcome slides and no fragment in the address bar; opening it over a different stored graph shows the dialog, Keep my graph keeps the stored graph and Open shared graph replaces it; a damaged link shows the error toast and keeps the stored graph; a reload after opening does not ask again.
@@ -3222,7 +3440,7 @@ Import and export (phases 31–40):
   - turns a number into text and a single text into a one-item list;
   - merges duplicate edges keeping the first's evidence;
   - gives the missing-node edge error;
-  - converts centres to top-left positions with `nodeDiameter`;
+  - converts centres to top-left positions with `NODE_DIAMETER` (`nodeDiameter` until phase 57);
   - lays out and warns when a centre is missing;
   - passes cycles, self-edges and `levels` on a continuous node through `validateGraph`;
   - keeps the parser's warnings first.
@@ -3391,6 +3609,25 @@ Import and export (phases 31–40):
   - undo reverts a share edit and a sign edit.
 - `e2e/export.spec.ts` (phase 56 additions): the Signs checkbox shows only when an edge has a sign, and toggling it changes the SVG text.
 - `e2e/files.spec.ts` (phase 56 additions): the changed Save as… notes.
+- `src/model/yaml.test.ts` (phase 57 additions): `locked.dag.yaml` round-trips canonically with `locked: true` after `name`; `locked: false` is read as unlocked and not written back; a non-boolean `locked` gives a Zod error; every existing fixture is written unchanged.
+- `src/store/graphStore.test.ts` (phase 57 additions):
+  - `setLocked` sets and clears `graph.locked`, is one undo step, and records nothing when unchanged;
+  - while locked, each of `addNodeAt`, `updateNode`, `setLevels`, `setAdjustedSet`, `removeSelection`, `moveNode`, `moveNodes`, `layout`, `connect`, `updateEdge` and `setGraphName` leaves the graph and the history untouched, and `renameNode` returns `GRAPH_LOCKED_MESSAGE`;
+  - a locked graph is unlocked by `setLocked(false)` and by one undo, and `replaceGraph` still replaces it;
+  - `renameNode` no longer moves the node.
+- `src/store/uiStore.test.ts` (phase 57 additions): `namePreview` starts as `null` and `setNamePreview` sets and clears it.
+- `src/lib/copy.test.ts` (phase 57 additions): `GRAPH_LOCK.tip` follows the tooltip rules.
+- `src/lib/imageScene.test.ts`, `imageExport.test.ts` and `pdfExport.test.ts` (phase 61 additions): every circle has diameter `NODE_DIAMETER`; a long name's text has its `nodeLabel` font size and line pitch; TikZ writes the per-node `\fontsize`.
+- `e2e/graph-lock.spec.ts` (phase 62), six tests:
+  - the rail toggle is off for a new graph, toggles `aria-pressed` and reaches the autosaved file;
+  - while locked: Add node, Connect and Auto-layout are disabled, and N, a pane click with the Add tool and a double-click add nothing; Delete removes neither a selected node nor a selected edge;
+  - while locked: dragging a circle leaves the stored positions, a drag from a rim adds no edge, and L lays nothing out;
+  - while locked: both editors show the note, the name field is read-only and takes no typing, Delete node and Delete edge are disabled, and the graph name is read-only;
+  - unlocking makes the graph editable again, and one undo after locking unlocks it;
+  - the lock survives a reload.
+  The editors' disabled fields, the Analysis tab's disabled "Use this set", the lesson round trip and the Save → Open round trip were checked in the browser (phase 62's "Done when") and by `e2e/files.spec.ts` below.
+- `e2e/canvas.spec.ts` (phase 62 additions): typing in the Name field changes the circle's text and font size before Enter while the autosaved file keeps the old name; Escape restores it; after Enter, one undo restores the old name; a refused rename leaves the circle on its stored name with the error in the field. The equal size of a short and a long name's circles is checked in the rename test above.
+- `e2e/files.spec.ts` (phase 62 addition): opening `locked.dag.yaml` locks the graph and disables Add node, saving writes the file back unchanged, and saving after unlocking drops the key.
 
 ## 10. Open issues
 
@@ -3398,7 +3635,8 @@ Import and export (phases 31–40):
 - **Raw exception text in messages:** `Could not read <file>: …`, `Could not export the graph: …` and `Could not download the file: …` append the exception's own message, which the voice rules (5.7.8) say to translate. Rewrite them case by case when the failure modes are known.
 - **Lessons:** the course in [LESSONS.md](LESSONS.md) is built (waves 19–21). Left for later: resuming a lesson mid-way, translations of the lesson texts, "Lesson: …" links at the end of info tooltips, and lessons on bidirected edges and direct effects once the app supports them.
 - **Analysis switches after a lesson:** a lesson that asks the user to switch on Paths, Instruments or Independencies leaves the switch on afterwards, because the switches are a stored viewer preference (4.14).
-- **Text measurement:** circle sizes come from an estimate (5.7.6). If names visibly overflow or float in their circles, tune the 7.5 px and 16 px constants against the rendered font rather than switching to DOM measurement.
+- **Text measurement:** label font sizes come from an estimate (5.7.6): one width for every character. Every real name measured in phase 61 stays inside its circle, but a name of only wide letters (`WWWWWWWW`) overflows, on the canvas and in images. If that turns up in practice, tune the character width, line height and inset against the rendered font rather than switching to DOM measurement.
+- **Circle positions in older files:** files saved before phase 57 store the top-left of name-sized circles, so their circles are drawn up to 20 px off their old centres. No migration is planned; Auto-layout tidies such a graph.
 - **Hidden evidence chips:** edge labels render below nodes, so the evidence chip of an edge whose line runs under a third circle is hidden by that circle.
 - **Bundle size:** the production build is one JavaScript chunk over 500 kB, and Vite warns about it. Code splitting (for example loading the dialogs lazily) can come later if load time matters.
 - **Share links and hosting:** a link names the address it was made on, so links made on a local or preview build only open there. Links made on the GitHub Pages address only open there, so a later move of host or domain breaks them.

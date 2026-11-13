@@ -350,3 +350,21 @@ test('the Save as… notes say which formats keep the simulation details', async
     await expect(dialog).toHaveCount(0)
   }
 })
+
+test('a locked file opens locked and saves its lock back', async ({ page }) => {
+  await openFile(page, fixture('locked.dag.yaml'))
+  await expect(circle(page, 'Maternal smoking')).toBeVisible()
+  const lock = rail(page).getByRole('button', { name: 'Lock graph' })
+  await expect(lock).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    rail(page).getByRole('button', { name: 'Add node' }),
+  ).toBeDisabled()
+
+  const saved = await saveFile(page)
+  expect(saved.text).toBe(fixtureText('locked.dag.yaml'))
+
+  // Unlocking and saving again drops the key.
+  await lock.click()
+  const unlocked = await saveFile(page)
+  expect(unlocked.text).not.toContain('locked')
+})

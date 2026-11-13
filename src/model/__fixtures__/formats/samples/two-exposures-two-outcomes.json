@@ -6,37 +6,37 @@
     {
       "id": "C",
       "name": "C",
-      "pos": [32, -68]
+      "pos": [48, -52]
     },
     {
       "id": "B",
       "name": "B",
       "role": "adjusted",
-      "pos": [332, -68]
+      "pos": [348, -52]
     },
     {
       "id": "E1",
       "name": "E1",
       "role": "exposure",
-      "pos": [32, 32]
+      "pos": [48, 48]
     },
     {
       "id": "E2",
       "name": "E2",
       "role": "exposure",
-      "pos": [182, 132]
+      "pos": [198, 148]
     },
     {
       "id": "D1",
       "name": "D1",
       "role": "outcome",
-      "pos": [332, 32]
+      "pos": [348, 48]
     },
     {
       "id": "D2",
       "name": "D2",
       "role": "outcome",
-      "pos": [332, 182]
+      "pos": [348, 198]
     }
   ],
   "edges": [

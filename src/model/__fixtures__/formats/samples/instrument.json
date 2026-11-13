@@ -6,25 +6,25 @@
     {
       "id": "Z",
       "name": "Z",
-      "pos": [32, 32]
+      "pos": [48, 48]
     },
     {
       "id": "X",
       "name": "X",
       "role": "exposure",
-      "pos": [182, 32]
+      "pos": [198, 48]
     },
     {
       "id": "Y",
       "name": "Y",
       "role": "outcome",
-      "pos": [332, 32]
+      "pos": [348, 48]
     },
     {
       "id": "U",
       "name": "U",
       "role": "latent",
-      "pos": [257, -68]
+      "pos": [273, -52]
     }
   ],
   "edges": [

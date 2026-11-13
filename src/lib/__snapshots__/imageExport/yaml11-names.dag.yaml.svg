@@ -1,26 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="592" height="352" viewBox="0 0 592 352">
+<svg xmlns="http://www.w3.org/2000/svg" width="594" height="384" viewBox="0 0 594 384">
 <title>yes</title>
-<rect width="592" height="352" fill="#ffffff"/>
-<line x1="88" y1="176" x2="314" y2="176" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322,176 L313,180.5 L313,171.5 Z" fill="#64748b"/>
-<line x1="181.01" y1="75.99" x2="88.8" y2="149.76" stroke="#64748b" stroke-width="1.5"/>
-<path d="M82.55,154.76 L86.77,145.62 L92.39,152.65 Z" fill="#64748b"/>
-<line x1="230.99" y1="276.01" x2="323.2" y2="202.24" stroke="#64748b" stroke-width="1.5"/>
-<path d="M329.45,197.24 L325.23,206.38 L319.61,199.35 Z" fill="#64748b"/>
-<line x1="517.87" y1="117.9" x2="508.79" y2="254.09" stroke="#64748b" stroke-width="1.5"/>
-<path d="M508.26,262.08 L504.37,252.8 L513.35,253.39 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="56" cy="176" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="180.88" fill="#24563a">yes</text>
-<circle cx="356" cy="176" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="356" y="180.88" fill="#23407a">No</text>
-<circle cx="206" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="206" y="60.88" fill="#0f172a">on</text>
-<circle cx="206" cy="296" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="206" y="300.88" fill="#0f172a">1_000</text>
-<circle cx="521" cy="71" r="46" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="521" y="75.88" fill="#0f172a">2024-01-31</text>
-<circle cx="506" cy="296" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="506" y="300.88" fill="#0f172a">~</text>
+<rect width="594" height="384" fill="#ffffff"/>
+<line x1="120" y1="192" x2="314" y2="192" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,192 L313,196.5 L313,187.5 Z" fill="#64748b"/>
+<line x1="184.52" y1="101.99" x2="117.29" y2="155.77" stroke="#64748b" stroke-width="1.5"/>
+<path d="M111.04,160.77 L115.26,151.63 L120.88,158.66 Z" fill="#64748b"/>
+<line x1="259.48" y1="282.01" x2="326.71" y2="228.23" stroke="#64748b" stroke-width="1.5"/>
+<path d="M332.96,223.23 L328.74,232.37 L323.12,225.34 Z" fill="#64748b"/>
+<line x1="522" y1="120" x2="522" y2="254" stroke="#64748b" stroke-width="1.5"/>
+<path d="M522,262 L517.5,253 L526.5,253 Z" fill="#64748b"/>
+<circle cx="72" cy="192" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="197.25" fill="#24563a">yes</text>
+</g>
+<circle cx="372" cy="192" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="197.25" fill="#23407a">No</text>
+</g>
+<circle cx="222" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="77.25" fill="#0f172a">on</text>
+</g>
+<circle cx="222" cy="312" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="317.25" fill="#0f172a">1_000</text>
+</g>
+<circle cx="522" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="522" y="77.25" fill="#0f172a">2024-01-31</text>
+</g>
+<circle cx="522" cy="312" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="522" y="317.25" fill="#0f172a">~</text>
 </g>
 </svg>

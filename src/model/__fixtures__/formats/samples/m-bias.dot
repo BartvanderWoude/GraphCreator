@@ -1,11 +1,11 @@
 digraph {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  D [gc_role="outcome", pos="99,-99!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  E [gc_role="exposure", pos="-126,-99!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  U1 [gc_role="latent", pos="-126,13.5!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
-  U2 [gc_role="latent", pos="99,13.5!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
-  Z [pos="-13.5,-61.5!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  D [gc_role="outcome", pos="111,-111!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  E [gc_role="exposure", pos="-114,-111!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  U1 [gc_role="latent", pos="-114,1.5!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  U2 [gc_role="latent", pos="111,1.5!", fillcolor="#f3f4f6", color="#80868f", fontcolor="#374151"]
+  Z [pos="-1.5,-73.5!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
   E -> D
   U1 -> E
   U1 -> Z

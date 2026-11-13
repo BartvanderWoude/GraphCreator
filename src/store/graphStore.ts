@@ -17,7 +17,6 @@ import {
   type Position,
 } from '@/model/graph'
 import { autoLayout } from '@/model/layout'
-import { nodeDiameter } from '@/model/nodeSize'
 import type { Result } from '@/model/result'
 import type { Role } from '@/model/schema'
 import { setLevels } from '@/model/simulation'
@@ -25,6 +24,9 @@ import { lessonEvent } from './lessonEvents'
 
 /** Most graphs kept on `past` and on `future` (spec 4.10). */
 export const HISTORY_LIMIT = 100
+
+/** Shown when an action is refused because the graph is locked (spec 4.17). */
+export const GRAPH_LOCKED_MESSAGE = 'This graph is locked.'
 
 type Selection = { kind: 'node' | 'edge'; id: string } | null
 
@@ -41,8 +43,8 @@ export interface GraphState {
   /** Adds a node with `defaultNodeName`, selects it and sets `focusNameOf`; returns its id. */
   addNodeAt(pos: Position): string
   /**
-   * Applies the rename on success and returns the model result. The circle keeps its centre: `pos`
-   * shifts by half the change in `nodeDiameter`, so `result.value` is the graph as stored.
+   * Applies the rename on success and returns the model result. A locked graph fails with
+   * `GRAPH_LOCKED_MESSAGE` (spec 4.17).
    */
   renameNode(nodeId: string, name: string): Result<Graph>
   updateNode(nodeId: string, patch: Partial<Omit<GNode, 'id' | 'name'>>): void
@@ -82,6 +84,11 @@ export interface GraphState {
    * Exposure, outcome, latent and selected nodes never change. One undo step.
    */
   setAdjustedSet(nodeIds: string[]): void
+  /**
+   * Locks or unlocks the graph (spec 4.17). While it is locked, every other action that would
+   * change the graph does nothing; `setLocked` and `replaceGraph` are the way out. One undo step.
+   */
+  setLocked(on: boolean): void
   /** Older graphs, most recent last; at most `HISTORY_LIMIT`. */
   past: Graph[]
   /** Graphs undone, most recent last; at most `HISTORY_LIMIT`. */
@@ -139,8 +146,13 @@ export const useGraphStore = create<GraphState>()((set, get) => {
     return { graph, past: pushLimited(past, before), future: [] }
   }
 
-  /** Commits `graph` with `record`; returns whether it changed anything. */
+  /**
+   * Commits `graph` with `record`; returns whether it changed anything. A locked graph is left
+   * alone unless the new graph unlocks it, so an action that forgets its own guard cannot change
+   * it either (spec 4.17).
+   */
   function commit(graph: Graph): boolean {
+    if (get().graph.locked && graph.locked) return false
     const update = record(graph)
     if (update) set(update)
     return update !== null
@@ -172,6 +184,7 @@ export const useGraphStore = create<GraphState>()((set, get) => {
     revision: 0,
 
     addNodeAt(pos) {
+      if (get().graph.locked) return ''
       const { graph, node } = addNode(get().graph, { pos })
       set({
         ...record(graph),
@@ -183,24 +196,17 @@ export const useGraphStore = create<GraphState>()((set, get) => {
 
     renameNode(nodeId, name) {
       const before = get().graph
-      const result = renameNode(before, nodeId, name)
-      if (!result.ok) return result
-      const oldNode = before.nodes.find((n) => n.id === nodeId)
-      let graph = result.value
-      if (oldNode) {
-        const shift = Math.round(
-          (nodeDiameter(oldNode.name) - nodeDiameter(name)) / 2,
-        )
-        if (shift !== 0) {
-          graph = moveNode(graph, nodeId, {
-            x: oldNode.pos.x + shift,
-            y: oldNode.pos.y + shift,
-          })
+      if (before.locked) {
+        return {
+          ok: false,
+          errors: [{ message: GRAPH_LOCKED_MESSAGE, nodeId }],
         }
       }
+      const result = renameNode(before, nodeId, name)
+      if (!result.ok) return result
       // Renaming to the same name changes nothing; `value` is then the graph as it was.
-      if (!commit(graph)) return { ...result, value: before }
-      return { ...result, value: graph }
+      if (!commit(result.value)) return { ...result, value: before }
+      return result
     },
 
     updateNode(nodeId, patch) {
@@ -221,6 +227,9 @@ export const useGraphStore = create<GraphState>()((set, get) => {
 
     connect(source, target) {
       const graph = get().graph
+      if (graph.locked) {
+        return { ok: false, reason: 'locked', message: GRAPH_LOCKED_MESSAGE }
+      }
       const check = canAddEdge(graph, source, target)
       if (check.ok) {
         const result = addEdge(graph, source, target)
@@ -235,6 +244,7 @@ export const useGraphStore = create<GraphState>()((set, get) => {
 
     removeSelection(nodeIds, edgeIds) {
       const { graph: before, selection } = get()
+      if (before.locked) return
       const graph = removeEdges(removeNodes(before, nodeIds), edgeIds)
       const update = record(graph)
       if (!update) return
@@ -279,6 +289,15 @@ export const useGraphStore = create<GraphState>()((set, get) => {
         return { ...node, role }
       })
       if (changed) commit({ ...graph, nodes })
+    },
+
+    setLocked(on) {
+      const { locked: _was, ...rest } = get().graph
+      void _was
+      // Not through `commit`: locking and unlocking are the two changes a lock allows.
+      const graph: Graph = on ? { ...rest, locked: true } : rest
+      const update = record(graph)
+      if (update) set(update)
     },
 
     undo() {

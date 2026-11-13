@@ -1,11 +1,11 @@
 digraph {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  A [pos="-141,90!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  B [pos="129,85.5!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
-  D [gc_role="outcome", pos="129,-145.57!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  E [gc_role="exposure", pos="-141,-143.77!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  Z [pos="1.5,-17.85!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  A [pos="-129,78!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  B [pos="141,73.5!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  D [gc_role="outcome", pos="141,-157.57!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  E [gc_role="exposure", pos="-129,-155.77!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  Z [pos="13.5,-29.85!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
   A -> E
   A -> Z
   B -> D

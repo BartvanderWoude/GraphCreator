@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { parseDagitty } from './dagitty'
 import { parseGml, toGml } from './gml'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import type { Issue, Result } from './result'
 import { parseYaml, toYaml } from './yaml'
 
@@ -49,8 +49,8 @@ const SMOKING_GML = `graph [
     levels "current"
     description "Self-reported during pregnancy"
     graphics [
-      x 42
-      y 42
+      x 48
+      y 48
     ]
   ]
   node [
@@ -61,8 +61,8 @@ const SMOKING_GML = `graph [
     var_type "continuous"
     unit "g"
     graphics [
-      x 336
-      y 36
+      x 348
+      y 48
     ]
   ]
   node [
@@ -74,8 +74,8 @@ const SMOKING_GML = `graph [
     levels "mid"
     levels "high"
     graphics [
-      x 182
-      y -88
+      x 198
+      y -72
     ]
   ]
   node [
@@ -84,8 +84,8 @@ const SMOKING_GML = `graph [
     name "Genetic factors"
     role "latent"
     graphics [
-      x 189
-      y 159
+      x 198
+      y 168
     ]
   ]
   edge [
@@ -173,7 +173,7 @@ describe('toGml', () => {
 
   it('writes at most two decimals, never -0, and skips dangling edges', () => {
     const graph = graphOf(['A', 'B'], [[0, 1]])
-    const r = nodeDiameter('A') / 2
+    const r = NODE_DIAMETER / 2
     graph.nodes[0].pos = { x: -r - 0.001, y: 1.23456 - r }
     graph.edges.push({ id: 'e9', source: 'n1', target: 'nX', evidence: [] })
     const text = toGml(graph)
@@ -193,6 +193,8 @@ describe('parseGml round trip', () => {
   for (const [path, text] of Object.entries(yamlFixtures)) {
     // GML leaves the simulation details out (spec 4.16).
     if (path.endsWith('/simulation.dag.yaml')) continue
+    // The lock is a GraphCreator setting; no exchange format carries it (spec 4.17).
+    if (path.endsWith('/locked.dag.yaml')) continue
     const result = parseYaml(text)
     if (result.ok) graphs.push([path, result.value])
   }
@@ -310,7 +312,7 @@ describe('parseGml', () => {
         'graph [ directed 1 node [ id 0 name "A" graphics [ x 100.5 y -20 ] ] ]',
       ),
     )
-    const r = nodeDiameter('A') / 2
+    const r = NODE_DIAMETER / 2
     expect(graph.nodes[0].pos).toEqual({ x: 100.5 - r, y: -20 - r })
   })
 
@@ -400,7 +402,7 @@ graph [ # the graph
 ]`),
     )
     expect(graph.nodes[0].name).toBe('A # not a comment')
-    const r = nodeDiameter('A # not a comment') / 2
+    const r = NODE_DIAMETER / 2
     expect(graph.nodes[0].pos).toEqual({ x: 150 - r, y: -0.5 - r })
   })
 

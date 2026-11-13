@@ -6,7 +6,7 @@ import {
   type ExchangeNode,
 } from './exchange'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import type { Issue, Result } from './result'
 
 /**
@@ -60,7 +60,7 @@ export function toGml(graph: Graph): string {
       out.push(`    description ${gmlString(node.description)}`)
     }
     if (node.unit !== undefined) out.push(`    unit ${gmlString(node.unit)}`)
-    const r = nodeDiameter(node.name) / 2
+    const r = NODE_DIAMETER / 2
     out.push(
       '    graphics [',
       `      x ${num(node.pos.x + r)}`,

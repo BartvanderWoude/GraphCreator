@@ -162,38 +162,38 @@
         "nodes": {
           "A": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "A"
           },
           "B": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "B"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 192
+              "x": 348,
+              "y": 208
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 192
+              "x": 48,
+              "y": 208
             },
             "name": "E",
             "role": "exposure"
           },
           "M": {
             "graphics": {
-              "x": 182,
-              "y": 112
+              "x": 198,
+              "y": 128
             },
             "name": "M"
           }
@@ -241,38 +241,38 @@
           "A": {
             "name": "A",
             "pos": [
-              32,
-              32
+              48,
+              48
             ]
           },
           "B": {
             "name": "B",
             "pos": [
-              332,
-              32
+              348,
+              48
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              192
+              348,
+              208
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              192
+              48,
+              208
             ],
             "role": "exposure"
           },
           "M": {
             "name": "M",
             "pos": [
-              182,
-              112
+              198,
+              128
             ]
           }
         }
@@ -320,33 +320,33 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           },
           "B": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-144!"
+            "pos": "261,-156!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-144!"
+            "pos": "36,-156!"
           },
           "M": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "136.5,-84!"
+            "pos": "148.5,-96!"
           }
         }
       }
@@ -441,24 +441,24 @@
         "nodes": {
           "C": {
             "graphics": {
-              "x": 182,
-              "y": 152
+              "x": 198,
+              "y": 168
             },
             "name": "C",
             "role": "adjusted"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "E",
             "role": "exposure"
@@ -487,24 +487,24 @@
           "C": {
             "name": "C",
             "pos": [
-              182,
-              152
+              198,
+              168
             ],
             "role": "adjusted"
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              32
+              348,
+              48
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              32
+              48,
+              48
             ],
             "role": "exposure"
           }
@@ -534,21 +534,21 @@
             "fillcolor": "#f8eedd",
             "fontcolor": "#6b4510",
             "gc_role": "adjusted",
-            "pos": "136.5,-114!"
+            "pos": "148.5,-126!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           }
         }
       }
@@ -715,38 +715,38 @@
         "nodes": {
           "A": {
             "graphics": {
-              "x": -188,
-              "y": -120
+              "x": -172,
+              "y": -104
             },
             "name": "A"
           },
           "B": {
             "graphics": {
-              "x": 172,
-              "y": -114
+              "x": 188,
+              "y": -98
             },
             "name": "B"
           },
           "D": {
             "graphics": {
-              "x": 172,
-              "y": 194.1
+              "x": 188,
+              "y": 210.1
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": -188,
-              "y": 191.7
+              "x": -172,
+              "y": 207.7
             },
             "name": "E",
             "role": "exposure"
           },
           "Z": {
             "graphics": {
-              "x": 2,
-              "y": 23.8
+              "x": 18,
+              "y": 39.8
             },
             "name": "Z"
           }
@@ -794,38 +794,38 @@
           "A": {
             "name": "A",
             "pos": [
-              -188,
-              -120
+              -172,
+              -104
             ]
           },
           "B": {
             "name": "B",
             "pos": [
-              172,
-              -114
+              188,
+              -98
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              172,
-              194.1
+              188,
+              210.1
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              -188,
-              191.7
+              -172,
+              207.7
             ],
             "role": "exposure"
           },
           "Z": {
             "name": "Z",
             "pos": [
-              2,
-              23.8
+              18,
+              39.8
             ]
           }
         }
@@ -873,33 +873,33 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "-141,90!"
+            "pos": "-129,78!"
           },
           "B": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "129,85.5!"
+            "pos": "141,73.5!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "129,-145.57!"
+            "pos": "141,-157.57!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "-141,-143.77!"
+            "pos": "-129,-155.77!"
           },
           "Z": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "1.5,-17.85!"
+            "pos": "13.5,-29.85!"
           }
         }
       }
@@ -1015,31 +1015,31 @@
         "nodes": {
           "Drug": {
             "graphics": {
-              "x": 32,
-              "y": 132
+              "x": 48,
+              "y": 148
             },
             "name": "Drug",
             "role": "exposure"
           },
           "Indication": {
             "graphics": {
-              "x": 47,
-              "y": 7
+              "x": 48,
+              "y": 8
             },
             "name": "Indication"
           },
           "Recovery": {
             "graphics": {
-              "x": 340,
-              "y": 140
+              "x": 348,
+              "y": 148
             },
             "name": "Recovery",
             "role": "outcome"
           },
           "Severity": {
             "graphics": {
-              "x": 190,
-              "y": -80
+              "x": 198,
+              "y": -72
             },
             "name": "Severity",
             "role": "latent"
@@ -1073,31 +1073,31 @@
           "Drug": {
             "name": "Drug",
             "pos": [
-              32,
-              132
+              48,
+              148
             ],
             "role": "exposure"
           },
           "Indication": {
             "name": "Indication",
             "pos": [
-              47,
-              7
+              48,
+              8
             ]
           },
           "Recovery": {
             "name": "Recovery",
             "pos": [
-              340,
-              140
+              348,
+              148
             ],
             "role": "outcome"
           },
           "Severity": {
             "name": "Severity",
             "pos": [
-              190,
-              -80
+              198,
+              -72
             ],
             "role": "latent"
           }
@@ -1132,27 +1132,27 @@
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-99!"
+            "pos": "36,-111!"
           },
           "Indication": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "35.25,-5.25!"
+            "pos": "36,-6!"
           },
           "Recovery": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "255,-105!"
+            "pos": "261,-111!"
           },
           "Severity": {
             "color": "#80868f",
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "142.5,60!"
+            "pos": "148.5,54!"
           }
         }
       }
@@ -1272,8 +1272,8 @@
         "nodes": {
           "1st_visit": {
             "graphics": {
-              "x": 233,
-              "y": 33
+              "x": 248,
+              "y": 48
             },
             "name": "1st visit",
             "role": "outcome",
@@ -1283,8 +1283,8 @@
           "Gr__e__": {
             "description": "Says \"hi\" & <bye>",
             "graphics": {
-              "x": 33,
-              "y": 33
+              "x": 48,
+              "y": 48
             },
             "levels": [
               "a;b",
@@ -1297,16 +1297,16 @@
           },
           "a.b": {
             "graphics": {
-              "x": 332,
-              "y": 182
+              "x": 348,
+              "y": 198
             },
             "name": "a.b",
             "role": "selected"
           },
           "node_2": {
             "graphics": {
-              "x": 132,
-              "y": 182
+              "x": 148,
+              "y": 198
             },
             "name": "node",
             "role": "adjusted"
@@ -1346,8 +1346,8 @@
           "1st_visit": {
             "name": "1st visit",
             "pos": [
-              233,
-              33
+              248,
+              48
             ],
             "role": "outcome",
             "unit": "kg/m²",
@@ -1362,8 +1362,8 @@
             ],
             "name": "Größe β",
             "pos": [
-              33,
-              33
+              48,
+              48
             ],
             "role": "exposure",
             "var_type": "ordinal"
@@ -1371,16 +1371,16 @@
           "a.b": {
             "name": "a.b",
             "pos": [
-              332,
-              182
+              348,
+              198
             ],
             "role": "selected"
           },
           "node_2": {
             "name": "node",
             "pos": [
-              132,
-              182
+              148,
+              198
             ],
             "role": "adjusted"
           }
@@ -1421,7 +1421,7 @@
             "gc_unit": "kg/m²",
             "gc_var_type": "continuous",
             "label": "1st visit",
-            "pos": "174.75,-24.75!"
+            "pos": "186,-36!"
           },
           "Gr__e__": {
             "color": "#4a946a",
@@ -1432,14 +1432,14 @@
             "gc_role": "exposure",
             "gc_var_type": "ordinal",
             "label": "Größe β",
-            "pos": "24.75,-24.75!"
+            "pos": "36,-36!"
           },
           "a.b": {
             "color": "#9375c4",
             "fillcolor": "#efe7f7",
             "fontcolor": "#4c2f75",
             "gc_role": "selected",
-            "pos": "249,-136.5!"
+            "pos": "261,-148.5!"
           },
           "node_2": {
             "color": "#ad7a2c",
@@ -1447,7 +1447,7 @@
             "fontcolor": "#6b4510",
             "gc_role": "adjusted",
             "label": "node",
-            "pos": "99,-136.5!"
+            "pos": "111,-148.5!"
           }
         }
       }
@@ -1563,32 +1563,32 @@
         "nodes": {
           "U": {
             "graphics": {
-              "x": 257,
-              "y": -68
+              "x": 273,
+              "y": -52
             },
             "name": "U",
             "role": "latent"
           },
           "X": {
             "graphics": {
-              "x": 182,
-              "y": 32
+              "x": 198,
+              "y": 48
             },
             "name": "X",
             "role": "exposure"
           },
           "Y": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "Y",
             "role": "outcome"
           },
           "Z": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "Z"
           }
@@ -1621,32 +1621,32 @@
           "U": {
             "name": "U",
             "pos": [
-              257,
-              -68
+              273,
+              -52
             ],
             "role": "latent"
           },
           "X": {
             "name": "X",
             "pos": [
-              182,
-              32
+              198,
+              48
             ],
             "role": "exposure"
           },
           "Y": {
             "name": "Y",
             "pos": [
-              332,
-              32
+              348,
+              48
             ],
             "role": "outcome"
           },
           "Z": {
             "name": "Z",
             "pos": [
-              32,
-              32
+              48,
+              48
             ]
           }
         }
@@ -1680,27 +1680,27 @@
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "192.75,51!"
+            "pos": "204.75,39!"
           },
           "X": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "136.5,-24!"
+            "pos": "148.5,-36!"
           },
           "Y": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "Z": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           }
         }
       }
@@ -1816,32 +1816,32 @@
         "nodes": {
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 132
+              "x": 348,
+              "y": 148
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 132
+              "x": 48,
+              "y": 148
             },
             "name": "E",
             "role": "exposure"
           },
           "L": {
             "graphics": {
-              "x": 32,
-              "y": -8
+              "x": 48,
+              "y": 8
             },
             "name": "L",
             "role": "adjusted"
           },
           "U": {
             "graphics": {
-              "x": 182,
-              "y": -88
+              "x": 198,
+              "y": -72
             },
             "name": "U",
             "role": "latent"
@@ -1875,32 +1875,32 @@
           "D": {
             "name": "D",
             "pos": [
-              332,
-              132
+              348,
+              148
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              132
+              48,
+              148
             ],
             "role": "exposure"
           },
           "L": {
             "name": "L",
             "pos": [
-              32,
-              -8
+              48,
+              8
             ],
             "role": "adjusted"
           },
           "U": {
             "name": "U",
             "pos": [
-              182,
-              -88
+              198,
+              -72
             ],
             "role": "latent"
           }
@@ -1935,28 +1935,28 @@
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-99!"
+            "pos": "261,-111!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-99!"
+            "pos": "36,-111!"
           },
           "L": {
             "color": "#ad7a2c",
             "fillcolor": "#f8eedd",
             "fontcolor": "#6b4510",
             "gc_role": "adjusted",
-            "pos": "24,6!"
+            "pos": "36,-6!"
           },
           "U": {
             "color": "#80868f",
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "136.5,66!"
+            "pos": "148.5,54!"
           }
         }
       }
@@ -2092,40 +2092,40 @@
         "nodes": {
           "D": {
             "graphics": {
-              "x": 132,
-              "y": 132
+              "x": 148,
+              "y": 148
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": -168,
-              "y": 132
+              "x": -152,
+              "y": 148
             },
             "name": "E",
             "role": "exposure"
           },
           "U1": {
             "graphics": {
-              "x": -168,
-              "y": -18
+              "x": -152,
+              "y": -2
             },
             "name": "U1",
             "role": "latent"
           },
           "U2": {
             "graphics": {
-              "x": 132,
-              "y": -18
+              "x": 148,
+              "y": -2
             },
             "name": "U2",
             "role": "latent"
           },
           "Z": {
             "graphics": {
-              "x": -18,
-              "y": 82
+              "x": -2,
+              "y": 98
             },
             "name": "Z"
           }
@@ -2163,40 +2163,40 @@
           "D": {
             "name": "D",
             "pos": [
-              132,
-              132
+              148,
+              148
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              -168,
-              132
+              -152,
+              148
             ],
             "role": "exposure"
           },
           "U1": {
             "name": "U1",
             "pos": [
-              -168,
-              -18
+              -152,
+              -2
             ],
             "role": "latent"
           },
           "U2": {
             "name": "U2",
             "pos": [
-              132,
-              -18
+              148,
+              -2
             ],
             "role": "latent"
           },
           "Z": {
             "name": "Z",
             "pos": [
-              -18,
-              82
+              -2,
+              98
             ]
           }
         }
@@ -2235,34 +2235,34 @@
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "99,-99!"
+            "pos": "111,-111!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "-126,-99!"
+            "pos": "-114,-111!"
           },
           "U1": {
             "color": "#80868f",
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "-126,13.5!"
+            "pos": "-114,1.5!"
           },
           "U2": {
             "color": "#80868f",
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "99,13.5!"
+            "pos": "111,1.5!"
           },
           "Z": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "-13.5,-61.5!"
+            "pos": "-1.5,-73.5!"
           }
         }
       }
@@ -2393,31 +2393,31 @@
         "nodes": {
           "C": {
             "graphics": {
-              "x": 332,
-              "y": -18
+              "x": 348,
+              "y": -2
             },
             "name": "C"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 132
+              "x": 348,
+              "y": 148
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 132
+              "x": 48,
+              "y": 148
             },
             "name": "E",
             "role": "exposure"
           },
           "M": {
             "graphics": {
-              "x": 182,
-              "y": 32
+              "x": 198,
+              "y": 48
             },
             "name": "M",
             "role": "adjusted"
@@ -2456,31 +2456,31 @@
           "C": {
             "name": "C",
             "pos": [
-              332,
-              -18
+              348,
+              -2
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              132
+              348,
+              148
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              132
+              48,
+              148
             ],
             "role": "exposure"
           },
           "M": {
             "name": "M",
             "pos": [
-              182,
-              32
+              198,
+              48
             ],
             "role": "adjusted"
           }
@@ -2519,28 +2519,28 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "249,13.5!"
+            "pos": "261,1.5!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-99!"
+            "pos": "261,-111!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-99!"
+            "pos": "36,-111!"
           },
           "M": {
             "color": "#ad7a2c",
             "fillcolor": "#f8eedd",
             "fontcolor": "#6b4510",
             "gc_role": "adjusted",
-            "pos": "136.5,-24!"
+            "pos": "148.5,-36!"
           }
         }
       }
@@ -2637,24 +2637,24 @@
         "nodes": {
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "E",
             "role": "exposure"
           },
           "U": {
             "graphics": {
-              "x": 182,
-              "y": -68
+              "x": 198,
+              "y": -52
             },
             "name": "U",
             "role": "latent"
@@ -2683,24 +2683,24 @@
           "D": {
             "name": "D",
             "pos": [
-              332,
-              32
+              348,
+              48
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              32
+              48,
+              48
             ],
             "role": "exposure"
           },
           "U": {
             "name": "U",
             "pos": [
-              182,
-              -68
+              198,
+              -52
             ],
             "role": "latent"
           }
@@ -2730,21 +2730,21 @@
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           },
           "U": {
             "color": "#80868f",
             "fillcolor": "#f3f4f6",
             "fontcolor": "#374151",
             "gc_role": "latent",
-            "pos": "136.5,51!"
+            "pos": "148.5,39!"
           }
         }
       }
@@ -2860,31 +2860,31 @@
         "nodes": {
           "Birth_weight": {
             "graphics": {
-              "x": 336,
-              "y": 36
+              "x": 348,
+              "y": 48
             },
             "name": "Birth weight",
             "role": "outcome"
           },
           "Maternal_smoking": {
             "graphics": {
-              "x": 42,
-              "y": 42
+              "x": 48,
+              "y": 48
             },
             "name": "Maternal smoking",
             "role": "exposure"
           },
           "Socio_economic_status": {
             "graphics": {
-              "x": 213,
-              "y": -57
+              "x": 198,
+              "y": -72
             },
             "name": "Socio-economic status"
           },
           "say__hi_": {
             "graphics": {
-              "x": 182,
-              "y": 152
+              "x": 198,
+              "y": 168
             },
             "name": "say \"hi\"",
             "role": "latent"
@@ -2918,31 +2918,31 @@
           "Birth_weight": {
             "name": "Birth weight",
             "pos": [
-              336,
-              36
+              348,
+              48
             ],
             "role": "outcome"
           },
           "Maternal_smoking": {
             "name": "Maternal smoking",
             "pos": [
-              42,
-              42
+              48,
+              48
             ],
             "role": "exposure"
           },
           "Socio_economic_status": {
             "name": "Socio-economic status",
             "pos": [
-              213,
-              -57
+              198,
+              -72
             ]
           },
           "say__hi_": {
             "name": "say \"hi\"",
             "pos": [
-              182,
-              152
+              198,
+              168
             ],
             "role": "latent"
           }
@@ -2978,7 +2978,7 @@
             "fontcolor": "#23407a",
             "gc_role": "outcome",
             "label": "Birth weight",
-            "pos": "252,-27!"
+            "pos": "261,-36!"
           },
           "Maternal_smoking": {
             "color": "#4a946a",
@@ -2986,14 +2986,14 @@
             "fontcolor": "#24563a",
             "gc_role": "exposure",
             "label": "Maternal smoking",
-            "pos": "31.5,-31.5!"
+            "pos": "36,-36!"
           },
           "Socio_economic_status": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
             "label": "Socio-economic status",
-            "pos": "159.75,42.75!"
+            "pos": "148.5,54!"
           },
           "say__hi_": {
             "color": "#80868f",
@@ -3001,7 +3001,7 @@
             "fontcolor": "#374151",
             "gc_role": "latent",
             "label": "say \"hi\"",
-            "pos": "136.5,-114!"
+            "pos": "148.5,-126!"
           }
         }
       }
@@ -3115,31 +3115,31 @@
         "nodes": {
           "C": {
             "graphics": {
-              "x": 332,
-              "y": 152
+              "x": 348,
+              "y": 168
             },
             "name": "C"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "E",
             "role": "exposure"
           },
           "S": {
             "graphics": {
-              "x": 182,
-              "y": 152
+              "x": 198,
+              "y": 168
             },
             "name": "S",
             "role": "selected"
@@ -3173,31 +3173,31 @@
           "C": {
             "name": "C",
             "pos": [
-              332,
-              152
+              348,
+              168
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              32
+              348,
+              48
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              32
+              48,
+              48
             ],
             "role": "exposure"
           },
           "S": {
             "name": "S",
             "pos": [
-              182,
-              152
+              198,
+              168
             ],
             "role": "selected"
           }
@@ -3231,28 +3231,28 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "249,-114!"
+            "pos": "261,-126!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           },
           "S": {
             "color": "#9375c4",
             "fillcolor": "#efe7f7",
             "fontcolor": "#4c2f75",
             "gc_role": "selected",
-            "pos": "136.5,-114!"
+            "pos": "148.5,-126!"
           }
         }
       }
@@ -3385,38 +3385,38 @@
         "nodes": {
           "A": {
             "graphics": {
-              "x": 32,
-              "y": -68
+              "x": 48,
+              "y": -52
             },
             "name": "A"
           },
           "C": {
             "graphics": {
-              "x": 332,
-              "y": -68
+              "x": 348,
+              "y": -52
             },
             "name": "C"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 82
+              "x": 348,
+              "y": 98
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 82
+              "x": 48,
+              "y": 98
             },
             "name": "E",
             "role": "exposure"
           },
           "S": {
             "graphics": {
-              "x": 182,
-              "y": -68
+              "x": 198,
+              "y": -52
             },
             "name": "S",
             "role": "selected"
@@ -3455,38 +3455,38 @@
           "A": {
             "name": "A",
             "pos": [
-              32,
-              -68
+              48,
+              -52
             ]
           },
           "C": {
             "name": "C",
             "pos": [
-              332,
-              -68
+              348,
+              -52
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              82
+              348,
+              98
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              82
+              48,
+              98
             ],
             "role": "exposure"
           },
           "S": {
             "name": "S",
             "pos": [
-              182,
-              -68
+              198,
+              -52
             ],
             "role": "selected"
           }
@@ -3525,34 +3525,34 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "24,51!"
+            "pos": "36,39!"
           },
           "C": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "249,51!"
+            "pos": "261,39!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-61.5!"
+            "pos": "261,-73.5!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-61.5!"
+            "pos": "36,-73.5!"
           },
           "S": {
             "color": "#9375c4",
             "fillcolor": "#efe7f7",
             "fontcolor": "#4c2f75",
             "gc_role": "selected",
-            "pos": "136.5,51!"
+            "pos": "148.5,39!"
           }
         }
       }
@@ -3666,31 +3666,31 @@
         "nodes": {
           "C": {
             "graphics": {
-              "x": 182,
-              "y": -68
+              "x": 198,
+              "y": -52
             },
             "name": "C"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 82
+              "x": 348,
+              "y": 98
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 82
+              "x": 48,
+              "y": 98
             },
             "name": "E",
             "role": "exposure"
           },
           "S": {
             "graphics": {
-              "x": 32,
-              "y": 232
+              "x": 48,
+              "y": 248
             },
             "name": "S",
             "role": "selected"
@@ -3724,31 +3724,31 @@
           "C": {
             "name": "C",
             "pos": [
-              182,
-              -68
+              198,
+              -52
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              82
+              348,
+              98
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              82
+              48,
+              98
             ],
             "role": "exposure"
           },
           "S": {
             "name": "S",
             "pos": [
-              32,
-              232
+              48,
+              248
             ],
             "role": "selected"
           }
@@ -3782,28 +3782,28 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "136.5,51!"
+            "pos": "148.5,39!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-61.5!"
+            "pos": "261,-73.5!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-61.5!"
+            "pos": "36,-73.5!"
           },
           "S": {
             "color": "#9375c4",
             "fillcolor": "#efe7f7",
             "fontcolor": "#4c2f75",
             "gc_role": "selected",
-            "pos": "24,-174!"
+            "pos": "36,-186!"
           }
         }
       }
@@ -3936,38 +3936,38 @@
         "nodes": {
           "A": {
             "graphics": {
-              "x": 32,
-              "y": -68
+              "x": 48,
+              "y": -52
             },
             "name": "A"
           },
           "C": {
             "graphics": {
-              "x": 182,
-              "y": -88
+              "x": 198,
+              "y": -72
             },
             "name": "C"
           },
           "D": {
             "graphics": {
-              "x": 332,
-              "y": 82
+              "x": 348,
+              "y": 98
             },
             "name": "D",
             "role": "outcome"
           },
           "E": {
             "graphics": {
-              "x": 32,
-              "y": 82
+              "x": 48,
+              "y": 98
             },
             "name": "E",
             "role": "exposure"
           },
           "S": {
             "graphics": {
-              "x": -118,
-              "y": -68
+              "x": -102,
+              "y": -52
             },
             "name": "S",
             "role": "selected"
@@ -4006,38 +4006,38 @@
           "A": {
             "name": "A",
             "pos": [
-              32,
-              -68
+              48,
+              -52
             ]
           },
           "C": {
             "name": "C",
             "pos": [
-              182,
-              -88
+              198,
+              -72
             ]
           },
           "D": {
             "name": "D",
             "pos": [
-              332,
-              82
+              348,
+              98
             ],
             "role": "outcome"
           },
           "E": {
             "name": "E",
             "pos": [
-              32,
-              82
+              48,
+              98
             ],
             "role": "exposure"
           },
           "S": {
             "name": "S",
             "pos": [
-              -118,
-              -68
+              -102,
+              -52
             ],
             "role": "selected"
           }
@@ -4076,34 +4076,34 @@
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "24,51!"
+            "pos": "36,39!"
           },
           "C": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "136.5,66!"
+            "pos": "148.5,54!"
           },
           "D": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-61.5!"
+            "pos": "261,-73.5!"
           },
           "E": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-61.5!"
+            "pos": "36,-73.5!"
           },
           "S": {
             "color": "#9375c4",
             "fillcolor": "#efe7f7",
             "fontcolor": "#4c2f75",
             "gc_role": "selected",
-            "pos": "-88.5,51!"
+            "pos": "-76.5,39!"
           }
         }
       }
@@ -4225,8 +4225,8 @@
         "nodes": {
           "Birth_weight": {
             "graphics": {
-              "x": 336,
-              "y": 36
+              "x": 348,
+              "y": 48
             },
             "name": "Birth weight",
             "role": "outcome",
@@ -4235,8 +4235,8 @@
           },
           "Genetic_factors": {
             "graphics": {
-              "x": 189,
-              "y": 159
+              "x": 198,
+              "y": 168
             },
             "name": "Genetic factors",
             "role": "latent"
@@ -4244,8 +4244,8 @@
           "Maternal_smoking": {
             "description": "Self-reported during pregnancy",
             "graphics": {
-              "x": 42,
-              "y": 42
+              "x": 48,
+              "y": 48
             },
             "levels": [
               "never",
@@ -4258,8 +4258,8 @@
           },
           "SES": {
             "graphics": {
-              "x": 182,
-              "y": -88
+              "x": 198,
+              "y": -72
             },
             "levels": [
               "low",
@@ -4304,8 +4304,8 @@
           "Birth_weight": {
             "name": "Birth weight",
             "pos": [
-              336,
-              36
+              348,
+              48
             ],
             "role": "outcome",
             "unit": "g",
@@ -4314,8 +4314,8 @@
           "Genetic_factors": {
             "name": "Genetic factors",
             "pos": [
-              189,
-              159
+              198,
+              168
             ],
             "role": "latent"
           },
@@ -4328,8 +4328,8 @@
             ],
             "name": "Maternal smoking",
             "pos": [
-              42,
-              42
+              48,
+              48
             ],
             "role": "exposure",
             "var_type": "categorical"
@@ -4342,8 +4342,8 @@
             ],
             "name": "SES",
             "pos": [
-              182,
-              -88
+              198,
+              -72
             ],
             "var_type": "ordinal"
           }
@@ -4384,7 +4384,7 @@
             "gc_unit": "g",
             "gc_var_type": "continuous",
             "label": "Birth weight",
-            "pos": "252,-27!"
+            "pos": "261,-36!"
           },
           "Genetic_factors": {
             "color": "#80868f",
@@ -4392,7 +4392,7 @@
             "fontcolor": "#374151",
             "gc_role": "latent",
             "label": "Genetic factors",
-            "pos": "141.75,-119.25!"
+            "pos": "148.5,-126!"
           },
           "Maternal_smoking": {
             "color": "#4a946a",
@@ -4403,7 +4403,7 @@
             "gc_role": "exposure",
             "gc_var_type": "categorical",
             "label": "Maternal smoking",
-            "pos": "31.5,-31.5!"
+            "pos": "36,-36!"
           },
           "SES": {
             "color": "#7d8a9c",
@@ -4411,7 +4411,7 @@
             "fontcolor": "#0f172a",
             "gc_levels": "low;mid;high",
             "gc_var_type": "ordinal",
-            "pos": "136.5,66!"
+            "pos": "148.5,54!"
           }
         }
       }
@@ -4582,47 +4582,47 @@
         "nodes": {
           "B": {
             "graphics": {
-              "x": 332,
-              "y": -68
+              "x": 348,
+              "y": -52
             },
             "name": "B",
             "role": "adjusted"
           },
           "C": {
             "graphics": {
-              "x": 32,
-              "y": -68
+              "x": 48,
+              "y": -52
             },
             "name": "C"
           },
           "D1": {
             "graphics": {
-              "x": 332,
-              "y": 32
+              "x": 348,
+              "y": 48
             },
             "name": "D1",
             "role": "outcome"
           },
           "D2": {
             "graphics": {
-              "x": 332,
-              "y": 182
+              "x": 348,
+              "y": 198
             },
             "name": "D2",
             "role": "outcome"
           },
           "E1": {
             "graphics": {
-              "x": 32,
-              "y": 32
+              "x": 48,
+              "y": 48
             },
             "name": "E1",
             "role": "exposure"
           },
           "E2": {
             "graphics": {
-              "x": 182,
-              "y": 132
+              "x": 198,
+              "y": 148
             },
             "name": "E2",
             "role": "exposure"
@@ -4671,47 +4671,47 @@
           "B": {
             "name": "B",
             "pos": [
-              332,
-              -68
+              348,
+              -52
             ],
             "role": "adjusted"
           },
           "C": {
             "name": "C",
             "pos": [
-              32,
-              -68
+              48,
+              -52
             ]
           },
           "D1": {
             "name": "D1",
             "pos": [
-              332,
-              32
+              348,
+              48
             ],
             "role": "outcome"
           },
           "D2": {
             "name": "D2",
             "pos": [
-              332,
-              182
+              348,
+              198
             ],
             "role": "outcome"
           },
           "E1": {
             "name": "E1",
             "pos": [
-              32,
-              32
+              48,
+              48
             ],
             "role": "exposure"
           },
           "E2": {
             "name": "E2",
             "pos": [
-              182,
-              132
+              198,
+              148
             ],
             "role": "exposure"
           }
@@ -4761,41 +4761,41 @@
             "fillcolor": "#f8eedd",
             "fontcolor": "#6b4510",
             "gc_role": "adjusted",
-            "pos": "249,51!"
+            "pos": "261,39!"
           },
           "C": {
             "color": "#7d8a9c",
             "fillcolor": "#ffffff",
             "fontcolor": "#0f172a",
-            "pos": "24,51!"
+            "pos": "36,39!"
           },
           "D1": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-24!"
+            "pos": "261,-36!"
           },
           "D2": {
             "color": "#5b83cf",
             "fillcolor": "#e2eaf8",
             "fontcolor": "#23407a",
             "gc_role": "outcome",
-            "pos": "249,-136.5!"
+            "pos": "261,-148.5!"
           },
           "E1": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "24,-24!"
+            "pos": "36,-36!"
           },
           "E2": {
             "color": "#4a946a",
             "fillcolor": "#e3f1e8",
             "fontcolor": "#24563a",
             "gc_role": "exposure",
-            "pos": "136.5,-99!"
+            "pos": "148.5,-111!"
           }
         }
       }

@@ -7,24 +7,24 @@
       "id": "Severity",
       "name": "Severity",
       "role": "latent",
-      "pos": [190, -80]
+      "pos": [198, -72]
     },
     {
       "id": "Indication",
       "name": "Indication",
-      "pos": [47, 7]
+      "pos": [48, 8]
     },
     {
       "id": "Drug",
       "name": "Drug",
       "role": "exposure",
-      "pos": [32, 132]
+      "pos": [48, 148]
     },
     {
       "id": "Recovery",
       "name": "Recovery",
       "role": "outcome",
-      "pos": [340, 140]
+      "pos": [348, 148]
     }
   ],
   "edges": [

@@ -1,91 +1,133 @@
 import { describe, expect, it } from 'vitest'
 import {
-  LABEL_MAX_CHARS,
+  LABEL_FONT_MAX,
+  LABEL_FONT_MIN,
   LABEL_MAX_LINES,
-  NODE_MAX_DIAMETER,
-  NODE_MIN_DIAMETER,
-  nodeDiameter,
-  wrapLabel,
+  NODE_DIAMETER,
+  nodeLabel,
+  lineHeight,
 } from './nodeSize'
 
-describe('wrapLabel and nodeDiameter', () => {
+/**
+ * The fit test of spec 5.7.6, written out again here: every line must be no wider than the
+ * circle's chord at the line's edge farthest from the centre, inside the 6 px inset.
+ */
+function everyLineFits(lines: string[], fontSize: number): boolean {
+  const radius = NODE_DIAMETER / 2 - 6
+  const pitch = 1.25 * fontSize
+  const charWidth = (7.5 / 13) * fontSize
+  return lines.every((line, i) => {
+    const top = (i - lines.length / 2) * pitch
+    const edge = Math.max(Math.abs(top), Math.abs(top + pitch))
+    if (edge >= radius) return false
+    const chord = 2 * Math.sqrt(radius * radius - edge * edge)
+    return [...line].length * charWidth <= chord
+  })
+}
+
+const NAMES = [
+  'A',
+  'Age',
+  'Birth weight',
+  'Smoking',
+  'Body mass index',
+  'Socioeconomic status',
+  'Genetic factors',
+  'Gestational age at birth',
+  'Maternal smoking during pregnancy',
+  'Pre-existing cardiovascular disease',
+  'Antihypertensive medication use',
+  'Number of cigarettes smoked per day during pregnancy',
+  'Pneumonoultramicroscopic',
+  'x'.repeat(30),
+]
+
+describe('nodeLabel', () => {
   it.each([
-    ['Age', ['Age'], 64],
-    ['Birth weight', ['Birth', 'weight'], 72],
+    ['Age', ['Age'], 14],
+    ['Birth weight', ['Birth', 'weight'], 14],
+    ['Socioeconomic status', ['Socioeconomic', 'status'], 10.5],
     [
       'Maternal smoking during pregnancy',
-      ['Maternal', 'smoking during', 'pregnancy'],
-      132,
+      ['Maternal', 'smoking', 'during', 'pregnancy'],
+      11.5,
     ],
-  ])('wraps %j as in the spec examples', (name, lines, diameter) => {
-    expect(wrapLabel(name)).toEqual({ lines, truncated: false })
-    expect(nodeDiameter(name)).toBe(diameter)
+    [
+      'Pre-existing cardiovascular disease',
+      ['Pre-existing', 'cardiovascular', 'disease'],
+      10,
+    ],
+  ])('wraps %j as in the spec examples', (name, lines, fontSize) => {
+    expect(nodeLabel(name)).toEqual({ lines, fontSize, truncated: false })
   })
 
-  it('never goes below the minimum or above the maximum', () => {
-    expect(nodeDiameter('A')).toBe(NODE_MIN_DIAMETER)
-    expect(nodeDiameter('')).toBe(NODE_MIN_DIAMETER)
-    const long = 'word '.repeat(40)
-    expect(nodeDiameter(long)).toBeLessThanOrEqual(NODE_MAX_DIAMETER)
-    // Three full lines of 14 characters: √(105² + 48²) + 16 ≈ 131.5 → 132.
-    expect(nodeDiameter('abcdefghijklmn abcdefghijklmn abcdefghijklmn')).toBe(
-      132,
-    )
-  })
-
-  it('gives even diameters', () => {
-    const names = [
-      'A',
-      'Age',
-      'Birth weight',
-      'Socioeconomic status',
-      'Smoking',
-      'Body mass index',
-      'Genetic factors',
-      'Maternal smoking during pregnancy',
-      'x'.repeat(13),
-      'a b c d e f g h i j k l m n o p',
-    ]
-    for (const name of names) {
-      const d = nodeDiameter(name)
-      expect(d % 2, name).toBe(0)
-      expect(d).toBeGreaterThanOrEqual(NODE_MIN_DIAMETER)
-      expect(d).toBeLessThanOrEqual(NODE_MAX_DIAMETER)
+  it('gives a short name the largest font', () => {
+    for (const name of ['A', 'Age', 'SES', 'Smoking']) {
+      expect(nodeLabel(name).fontSize, name).toBe(LABEL_FONT_MAX)
     }
   })
 
-  it('hard-splits a word longer than 14 characters', () => {
-    expect(wrapLabel('Pneumonoultramicroscopic')).toEqual({
-      lines: ['Pneumonoultram', 'icroscopic'],
-      truncated: false,
-    })
-    for (const line of wrapLabel('x'.repeat(30)).lines) {
-      expect(line.length).toBeLessThanOrEqual(LABEL_MAX_CHARS)
+  it('keeps every font size within the limits, in steps of 0.5 px', () => {
+    for (const name of NAMES) {
+      const { fontSize } = nodeLabel(name)
+      expect(fontSize, name).toBeLessThanOrEqual(LABEL_FONT_MAX)
+      expect(fontSize, name).toBeGreaterThanOrEqual(LABEL_FONT_MIN)
+      expect((fontSize * 2) % 1, name).toBe(0)
     }
   })
 
-  it('truncates a name that needs more than three lines', () => {
-    const label = wrapLabel(
-      'aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk',
-    )
-    expect(label).toEqual({
-      lines: ['aaaa bbbb cccc', 'dddd eeee ffff', 'gggg hhhh iii…'],
-      truncated: true,
-    })
+  it('fits every line in the circle, and uses at most LABEL_MAX_LINES', () => {
+    for (const name of NAMES) {
+      const { lines, fontSize } = nodeLabel(name)
+      expect(lines.length, name).toBeLessThanOrEqual(LABEL_MAX_LINES)
+      expect(everyLineFits(lines, fontSize), name).toBe(true)
+    }
+  })
+
+  it('prefers fewer lines at the same font size', () => {
+    expect(nodeLabel('Ab cd').lines).toEqual(['Ab cd'])
+    // Two lines at LABEL_FONT_MAX beat three lines at the same size.
+    expect(nodeLabel('Body mass index').lines).toEqual(['Body mass', 'index'])
+  })
+
+  it('breaks a word that is too wide for any line', () => {
+    const label = nodeLabel('Pneumonoultramicroscopic')
+    expect(label.truncated).toBe(false)
+    expect(label.lines.join('')).toBe('Pneumonoultramicroscopic')
+    expect(label.lines.length).toBeGreaterThan(1)
+    expect(everyLineFits(label.lines, label.fontSize)).toBe(true)
+  })
+
+  it('truncates a name that cannot fit at the smallest font', () => {
+    const label = nodeLabel('x'.repeat(200))
+    expect(label.truncated).toBe(true)
+    expect(label.fontSize).toBe(LABEL_FONT_MIN)
     expect(label.lines).toHaveLength(LABEL_MAX_LINES)
-    expect(
-      nodeDiameter('aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk'),
-    ).toBe(132)
-  })
-
-  it('prefers fewer lines on a tie', () => {
-    // One line and two lines both give the minimum diameter.
-    expect(wrapLabel('Ab cd')).toEqual({ lines: ['Ab cd'], truncated: false })
-    expect(nodeDiameter('Ab cd')).toBe(NODE_MIN_DIAMETER)
+    expect(label.lines.at(-1)?.endsWith('…')).toBe(true)
+    expect(everyLineFits(label.lines, label.fontSize)).toBe(true)
   })
 
   it('ignores leading, trailing and repeated spaces', () => {
-    expect(wrapLabel('  Birth   weight  ')).toEqual(wrapLabel('Birth weight'))
-    expect(nodeDiameter('  Age ')).toBe(nodeDiameter('Age'))
+    expect(nodeLabel('  Birth   weight  ')).toEqual(nodeLabel('Birth weight'))
+    expect(nodeLabel('  Age ')).toEqual(nodeLabel('Age'))
+  })
+
+  it('gives an empty name no lines', () => {
+    expect(nodeLabel('')).toEqual({
+      lines: [],
+      fontSize: LABEL_FONT_MAX,
+      truncated: false,
+    })
+  })
+
+  it('counts a character outside the BMP once', () => {
+    // Four astral characters are as wide as four ordinary ones, not eight.
+    expect(nodeLabel('𝔄𝔅ℭ𝔇').lines).toEqual(['𝔄𝔅ℭ𝔇'])
+    expect(nodeLabel('𝔄𝔅ℭ𝔇').fontSize).toBe(LABEL_FONT_MAX)
+  })
+
+  it('gives the line pitch for a font size', () => {
+    expect(lineHeight(13)).toBeCloseTo(16.25)
+    expect(lineHeight(10)).toBeCloseTo(12.5)
   })
 })

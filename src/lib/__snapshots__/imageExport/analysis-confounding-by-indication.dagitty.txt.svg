@@ -1,22 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="428" height="348" viewBox="0 0 428 348">
+<svg xmlns="http://www.w3.org/2000/svg" width="444" height="364" viewBox="0 0 444 364">
 <title>Graph</title>
-<rect width="428" height="348" fill="#ffffff"/>
-<line x1="179.83" y1="84.79" x2="119.7" y2="121.37" stroke="#64748b" stroke-width="1.5"/>
-<path d="M112.86,125.53 L118.21,117.01 L122.89,124.7 Z" fill="#64748b"/>
-<line x1="65.4" y1="197.67" x2="61" y2="234.3" stroke="#64748b" stroke-width="1.5"/>
-<path d="M60.05,242.24 L56.66,232.77 L65.59,233.84 Z" fill="#64748b"/>
-<line x1="236.53" y1="97.05" x2="335.83" y2="242.69" stroke="#64748b" stroke-width="1.5"/>
-<path d="M340.34,249.3 L331.55,244.4 L338.99,239.33 Z" fill="#64748b"/>
-<line x1="87.99" y1="276.83" x2="314.02" y2="282.7" stroke="#64748b" stroke-width="1.5"/>
-<path d="M322.01,282.91 L312.9,287.17 L313.13,278.18 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="214" cy="64" r="39" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
-<text x="214" y="68.88" fill="#374151">Severity</text>
-<circle cx="71" cy="151" r="46" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="71" y="155.88" fill="#0f172a">Indication</text>
-<circle cx="56" cy="276" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="280.88" fill="#24563a">Drug</text>
-<circle cx="364" cy="284" r="39" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="364" y="288.88" fill="#23407a">Recovery</text>
+<rect width="444" height="364" fill="#ffffff"/>
+<line x1="179.65" y1="94.59" x2="123.18" y2="124.71" stroke="#64748b" stroke-width="1.5"/>
+<path d="M116.12,128.47 L121.94,120.26 L126.18,128.21 Z" fill="#64748b"/>
+<line x1="72" y1="200" x2="72" y2="234" stroke="#64748b" stroke-width="1.5"/>
+<path d="M72,242 L67.5,233 L76.5,233 Z" fill="#64748b"/>
+<line x1="249.04" y1="111.66" x2="339.33" y2="244.08" stroke="#64748b" stroke-width="1.5"/>
+<path d="M343.83,250.69 L335.05,245.79 L342.48,240.72 Z" fill="#64748b"/>
+<line x1="120" y1="292" x2="314" y2="292" stroke="#64748b" stroke-width="1.5"/>
+<path d="M322,292 L313,296.5 L313,287.5 Z" fill="#64748b"/>
+<circle cx="222" cy="72" r="47" fill="#f3f4f6" stroke="#80868f" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="222" y="77.25" fill="#374151">Severity</text>
+</g>
+<circle cx="72" cy="152" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="157.25" fill="#0f172a">Indication</text>
+</g>
+<circle cx="72" cy="292" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="297.25" fill="#24563a">Drug</text>
+</g>
+<circle cx="372" cy="292" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="297.25" fill="#23407a">Recovery</text>
 </g>
 </svg>

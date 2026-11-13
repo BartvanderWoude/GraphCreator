@@ -7,25 +7,25 @@
       "id": "U",
       "name": "U",
       "role": "latent",
-      "pos": [182, -88]
+      "pos": [198, -72]
     },
     {
       "id": "L",
       "name": "L",
       "role": "adjusted",
-      "pos": [32, -8]
+      "pos": [48, 8]
     },
     {
       "id": "E",
       "name": "E",
       "role": "exposure",
-      "pos": [32, 132]
+      "pos": [48, 148]
     },
     {
       "id": "D",
       "name": "D",
       "role": "outcome",
-      "pos": [332, 132]
+      "pos": [348, 148]
     }
   ],
   "edges": [

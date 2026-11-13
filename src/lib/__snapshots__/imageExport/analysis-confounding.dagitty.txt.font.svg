@@ -1,31 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="472" height="427" viewBox="0 0 472 427">
+<svg xmlns="http://www.w3.org/2000/svg" width="504" height="459" viewBox="0 0 504 459">
 <title>Graph</title>
 <style>@font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:500;src:url(data:font/woff2;base64,AAAA) format('woff2');}</style>
-<rect width="472" height="427" fill="#ffffff"/>
-<line x1="56" y1="88" x2="56" y2="325.7" stroke="#64748b" stroke-width="1.5"/>
-<path d="M56,333.7 L51.5,324.7 L60.5,324.7 Z" fill="#64748b"/>
-<line x1="81.52" y1="75.31" x2="212.51" y2="174.45" stroke="#64748b" stroke-width="1.5"/>
-<path d="M218.89,179.28 L209,177.44 L214.43,170.26 Z" fill="#64748b"/>
-<line x1="416" y1="94" x2="416" y2="328.1" stroke="#64748b" stroke-width="1.5"/>
-<path d="M416,336.1 L411.5,327.1 L420.5,327.1 Z" fill="#64748b"/>
-<line x1="391.14" y1="82.15" x2="278.63" y2="173.35" stroke="#64748b" stroke-width="1.5"/>
-<path d="M272.41,178.39 L276.57,169.23 L282.24,176.22 Z" fill="#64748b"/>
-<line x1="88" y1="367.91" x2="374" y2="369.82" stroke="#64748b" stroke-width="1.5"/>
-<path d="M382,369.87 L372.97,374.31 L373.03,365.31 Z" fill="#64748b"/>
-<line x1="268.61" y1="222.45" x2="386.33" y2="340.38" stroke="#64748b" stroke-width="1.5"/>
-<path d="M391.98,346.04 L382.44,342.85 L388.81,336.49 Z" fill="#64748b"/>
-<line x1="222.02" y1="220.99" x2="87.47" y2="339.89" stroke="#64748b" stroke-width="1.5"/>
-<path d="M81.48,345.19 L85.24,335.85 L91.2,342.6 Z" fill="#64748b"/>
-<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="13" font-weight="500" text-anchor="middle">
-<circle cx="56" cy="56" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="56" y="60.88" fill="#0f172a">A</text>
-<circle cx="416" cy="62" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="416" y="66.88" fill="#0f172a">B</text>
-<circle cx="416" cy="370.1" r="31" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
-<text x="416" y="374.98" fill="#23407a">D</text>
-<circle cx="56" cy="367.7" r="31" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
-<text x="56" y="372.58" fill="#24563a">E</text>
-<circle cx="246" cy="199.8" r="31" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
-<text x="246" y="204.68" fill="#0f172a">Z</text>
+<rect width="504" height="459" fill="#ffffff"/>
+<line x1="72" y1="120" x2="72" y2="325.7" stroke="#64748b" stroke-width="1.5"/>
+<path d="M72,333.7 L67.5,324.7 L76.5,324.7 Z" fill="#64748b"/>
+<line x1="110.27" y1="100.97" x2="215.75" y2="180.8" stroke="#64748b" stroke-width="1.5"/>
+<path d="M222.13,185.63 L212.24,183.78 L217.67,176.61 Z" fill="#64748b"/>
+<line x1="432" y1="126" x2="432" y2="328.1" stroke="#64748b" stroke-width="1.5"/>
+<path d="M432,336.1 L427.5,327.1 L436.5,327.1 Z" fill="#64748b"/>
+<line x1="394.71" y1="108.23" x2="307.06" y2="179.28" stroke="#64748b" stroke-width="1.5"/>
+<path d="M300.84,184.32 L305,175.15 L310.67,182.14 Z" fill="#64748b"/>
+<line x1="120" y1="384.02" x2="374" y2="385.71" stroke="#64748b" stroke-width="1.5"/>
+<path d="M382,385.77 L372.97,390.21 L373.03,381.21 Z" fill="#64748b"/>
+<line x1="295.91" y1="249.77" x2="391.02" y2="345.05" stroke="#64748b" stroke-width="1.5"/>
+<path d="M396.68,350.71 L387.13,347.52 L393.5,341.16 Z" fill="#64748b"/>
+<line x1="226.03" y1="247.58" x2="115.46" y2="345.29" stroke="#64748b" stroke-width="1.5"/>
+<path d="M109.47,350.59 L113.23,341.26 L119.19,348 Z" fill="#64748b"/>
+<circle cx="72" cy="72" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="77.25" fill="#0f172a">A</text>
+</g>
+<circle cx="432" cy="78" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="432" y="83.25" fill="#0f172a">B</text>
+</g>
+<circle cx="432" cy="386.1" r="47" fill="#e2eaf8" stroke="#5b83cf" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="432" y="391.35" fill="#23407a">D</text>
+</g>
+<circle cx="72" cy="383.7" r="47" fill="#e3f1e8" stroke="#4a946a" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="388.95" fill="#24563a">E</text>
+</g>
+<circle cx="262" cy="215.8" r="47" fill="#ffffff" stroke="#7d8a9c" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="262" y="221.05" fill="#0f172a">Z</text>
 </g>
 </svg>

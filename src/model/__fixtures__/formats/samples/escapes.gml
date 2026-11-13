@@ -12,8 +12,8 @@ graph [
     levels "c"
     description "Says &#34;hi&#34; &#38; <bye>"
     graphics [
-      x 33
-      y 33
+      x 48
+      y 48
     ]
   ]
   node [
@@ -24,8 +24,8 @@ graph [
     var_type "continuous"
     unit "kg/m&#178;"
     graphics [
-      x 233
-      y 33
+      x 248
+      y 48
     ]
   ]
   node [
@@ -34,8 +34,8 @@ graph [
     name "node"
     role "adjusted"
     graphics [
-      x 132
-      y 182
+      x 148
+      y 198
     ]
   ]
   node [
@@ -44,8 +44,8 @@ graph [
     name "a.b"
     role "selected"
     graphics [
-      x 332
-      y 182
+      x 348
+      y 198
     ]
   ]
   edge [

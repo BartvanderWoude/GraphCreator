@@ -11,7 +11,7 @@ import {
   type SceneText,
 } from '@/lib/imageScene'
 import type { GNode, Graph } from '@/model/graph'
-import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES, type ImageTheme } from '@/model/palette'
 import { ROLES } from '@/model/schema'
 import { fileSlug } from '@/model/yaml'
@@ -140,21 +140,22 @@ export function toSvg(
     out.push('</g>')
   }
 
-  // Each circle is followed by its name lines; the scene keeps both in node order.
+  // Each circle is followed by its name lines; the scene keeps both in node order. Every name
+  // has its own font size (5.7.6), so each node's lines get their own `<g>`.
   const lineCounts = new Map(
-    graph.nodes.map((n) => [n.id, wrapLabel(n.name).lines.length]),
-  )
-  out.push(
-    svgFontGroup(scene.texts[0] ?? { size: 13, weight: 500, anchor: 'middle' }),
+    graph.nodes.map((n) => [n.id, nodeLabel(n.name).lines.length]),
   )
   let next = 0
   scene.circles.forEach((c, i) => {
     out.push(svgCircle(c))
     const count = lineCounts.get(scene.nodeIds[i]) ?? 0
-    for (const t of scene.texts.slice(next, next + count)) out.push(svgText(t))
+    const texts = scene.texts.slice(next, next + count)
     next += count
+    if (texts.length === 0) return
+    out.push(svgFontGroup(texts[0]))
+    for (const t of texts) out.push(svgText(t))
+    out.push('</g>')
   })
-  out.push('</g>')
 
   const legend = scene.legend
   if (legend) {
@@ -214,7 +215,7 @@ function htmlColor(hex: string): string {
 
 /** The node's centre on the canvas, which is where TikZ puts it. */
 function canvasCentre(node: GNode): { x: number; y: number } {
-  const d = nodeDiameter(node.name)
+  const d = NODE_DIAMETER
   return { x: node.pos.x + d / 2, y: node.pos.y + d / 2 }
 }
 
@@ -272,19 +273,22 @@ export function toTikz(
   graph.nodes.forEach((node, i) => {
     const id = `v${i + 1}`
     ids.set(node.id, id)
-    const d = nodeDiameter(node.name)
+    const d = NODE_DIAMETER
     const c = canvasCentre(node)
     const name = `gc${capitalize(node.role)}`
     // `{}` keeps `\\` from reading a line that starts with `[` or `*` as its own argument.
-    const text = wrapLabel(node.name)
-      .lines.map((line, j) =>
+    const label = nodeLabel(node.name)
+    const text = label.lines
+      .map((line, j) =>
         j > 0 && /^[[*]/.test(line)
           ? `{}${escapeLatex(line)}`
           : escapeLatex(line),
       )
       .join('\\\\')
+    // The name's own size (5.7.6) in points, with the matching line pitch.
+    const font = `\\sffamily\\fontsize{${num(0.75 * label.fontSize)}}{${num(0.75 * lineHeight(label.fontSize))}}\\selectfont`
     out.push(
-      `\\node[circle, draw=${name}Line, fill=${name}Fill, text=${name}Text, line width=1.5pt, minimum size=${num(0.75 * d)}pt, inner sep=0pt, align=center, font=\\sffamily\\small] (${id}) at (${num(c.x)},${num(c.y)}) {${text}};`,
+      `\\node[circle, draw=${name}Line, fill=${name}Fill, text=${name}Text, line width=1.5pt, minimum size=${num(0.75 * d)}pt, inner sep=0pt, align=center, font=${font}] (${id}) at (${num(c.x)},${num(c.y)}) {${text}};`,
     )
   })
   for (const edge of graph.edges) {

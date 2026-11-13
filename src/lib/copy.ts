@@ -187,3 +187,11 @@ export const ANALYSIS_TEXT = {
     given.length === 0 ? `${a} ⫫ ${b}` : `${a} ⫫ ${b} | ${given.join(', ')}`,
   noIndependencies: 'This DAG implies no testable independencies.',
 } as const
+
+/** Texts of the graph lock (spec 4.17, 5.10). */
+export const GRAPH_LOCK = {
+  label: 'Lock graph',
+  tip: 'Lock graph: nothing in the graph can be changed. Variables, arrows and their positions stay as they are.',
+  note: 'This graph is locked. Unlock it in the tool rail to make changes.',
+  reason: 'Not available while the graph is locked.',
+} as const

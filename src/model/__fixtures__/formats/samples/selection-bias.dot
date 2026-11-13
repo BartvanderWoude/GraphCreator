@@ -1,10 +1,10 @@
 digraph {
   node [shape=circle, style=filled, fontname="Helvetica"]
   edge [color="#64748b"]
-  E [gc_role="exposure", pos="24,-24!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
-  D [gc_role="outcome", pos="249,-24!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
-  S [gc_role="selected", pos="136.5,-114!", fillcolor="#efe7f7", color="#9375c4", fontcolor="#4c2f75"]
-  C [pos="249,-114!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
+  E [gc_role="exposure", pos="36,-36!", fillcolor="#e3f1e8", color="#4a946a", fontcolor="#24563a"]
+  D [gc_role="outcome", pos="261,-36!", fillcolor="#e2eaf8", color="#5b83cf", fontcolor="#23407a"]
+  S [gc_role="selected", pos="148.5,-126!", fillcolor="#efe7f7", color="#9375c4", fontcolor="#4c2f75"]
+  C [pos="261,-126!", fillcolor="#ffffff", color="#7d8a9c", fontcolor="#0f172a"]
   E -> D
   E -> S
   C -> S

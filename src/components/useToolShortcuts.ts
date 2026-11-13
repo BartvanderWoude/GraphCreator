@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useReactFlow, useStoreApi } from '@xyflow/react'
-import { defaultNodeName } from '@/model/graph'
-import { nodeDiameter } from '@/model/nodeSize'
+import { NODE_DIAMETER } from '@/model/nodeSize'
 import { useGraphStore } from '@/store/graphStore'
 import { useUiStore } from '@/store/uiStore'
 
@@ -56,17 +55,20 @@ export function useCanvasActions(): CanvasActions {
       zoomIn: () => void flow.zoomIn(),
       zoomOut: () => void flow.zoomOut(),
       autoLayout() {
+        // A locked graph is never laid out, and the view does not jump (spec 5.10).
+        if (useGraphStore.getState().graph.locked) return
         useGraphStore.getState().layout()
         fitView()
       },
       addNodeAtCentre() {
+        if (useGraphStore.getState().graph.locked) return
         const rect = flowStore.getState().domNode?.getBoundingClientRect()
         const centre = rect
           ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
           : { x: window.innerWidth / 2, y: window.innerHeight / 2 }
         const pos = flow.screenToFlowPosition(centre)
-        const { graph, addNodeAt } = useGraphStore.getState()
-        const half = nodeDiameter(defaultNodeName(graph)) / 2
+        const { addNodeAt } = useGraphStore.getState()
+        const half = NODE_DIAMETER / 2
         addNodeAt({ x: Math.round(pos.x - half), y: Math.round(pos.y - half) })
       },
     }
@@ -129,6 +131,8 @@ export function useToolShortcuts(): void {
 
       const { setTool } = useUiStore.getState()
       const view = registered
+      // While the graph is locked, N, C and L do nothing (spec 5.10). V, F, + and − still work.
+      const locked = useGraphStore.getState().graph.locked === true
       switch (e.key) {
         case 'v':
         case 'V':
@@ -136,10 +140,12 @@ export function useToolShortcuts(): void {
           break
         case 'n':
         case 'N':
+          if (locked) return
           setTool('add')
           break
         case 'c':
         case 'C':
+          if (locked) return
           setTool('connect')
           break
         case 'Escape':
@@ -147,7 +153,7 @@ export function useToolShortcuts(): void {
           break
         case 'l':
         case 'L':
-          if (!view) return
+          if (locked || !view) return
           view.autoLayout()
           break
         case 'f':

@@ -7,24 +7,24 @@
       "id": "E",
       "name": "E",
       "role": "exposure",
-      "pos": [32, 32]
+      "pos": [48, 48]
     },
     {
       "id": "D",
       "name": "D",
       "role": "outcome",
-      "pos": [332, 32]
+      "pos": [348, 48]
     },
     {
       "id": "S",
       "name": "S",
       "role": "selected",
-      "pos": [182, 152]
+      "pos": [198, 168]
     },
     {
       "id": "C",
       "name": "C",
-      "pos": [332, 152]
+      "pos": [348, 168]
     }
   ],
   "edges": [

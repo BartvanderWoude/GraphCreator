@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { Trash2Icon } from 'lucide-react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { LockIcon, Trash2Icon } from 'lucide-react'
+import { cn } from 'cn'
 import { InfoTip } from '@/components/InfoTip'
 import { ListEditor } from '@/components/ListEditor'
 import { RolePicker } from '@/components/RolePicker'
@@ -20,6 +21,7 @@ import {
   FIELD_TIPS,
   FORM_DESCRIPTIONS,
   FORM_LABELS,
+  GRAPH_LOCK,
   VAR_TYPE_LABELS,
 } from '@/lib/copy'
 import type { GNode } from '@/model/graph'
@@ -33,11 +35,14 @@ import {
 } from '@/model/schema'
 import { equalShares, hasSimulationDetails } from '@/model/simulation'
 import { useGraphStore } from '@/store/graphStore'
+import { useUiStore } from '@/store/uiStore'
 
 /** Select value standing for "untyped" (Radix Select items cannot have an empty value). */
 const UNTYPED = 'untyped'
 /** Select value standing for "no functional form". */
 const NO_FORM = 'none'
+/** The quiet look of a read-only field while the graph is locked (spec 5.10). */
+const READ_ONLY = 'cursor-default bg-input/50 dark:bg-input/80'
 
 /**
  * Edits one node (spec 5.3). Local field state is read from `node` on mount, so the parent
@@ -51,6 +56,8 @@ export function NodeEditor({ node }: { node: GNode }) {
   const removeSelection = useGraphStore((s) => s.removeSelection)
   const focusNameOf = useGraphStore((s) => s.focusNameOf)
   const clearFocusName = useGraphStore((s) => s.clearFocusName)
+  const locked = useGraphStore((s) => s.graph.locked === true)
+  const setNamePreview = useUiStore((s) => s.setNamePreview)
 
   const [name, setName] = useState(node.name)
   const [nameError, setNameError] = useState<string | null>(null)
@@ -64,22 +71,36 @@ export function NodeEditor({ node }: { node: GNode }) {
     clearFocusName()
   }, [focusNameOf, node.id, clearFocusName])
 
+  // The editor is keyed by node and revision, so leaving it (or an undo) takes the preview with it.
+  useEffect(() => () => useUiStore.getState().setNamePreview(null), [])
+
+  /** Shows the draft on the circle while it differs from the stored name (spec 5.3). */
+  const previewName = (draft: string) => {
+    setNamePreview(draft === node.name ? null : { id: node.id, name: draft })
+  }
+
   const commitName = () => {
     if (name === node.name) {
+      setNamePreview(null)
       setNameError(null)
       return
     }
     const result = renameNode(node.id, name)
     if (result.ok) {
       setName(name.trim())
+      setNamePreview(null)
       setNameError(null)
     } else {
+      // The rename did not happen, so the circle goes back to the stored name; the draft and
+      // the error stay in the field until the name is fixed (spec 5.3).
+      setNamePreview(null)
       setNameError(result.errors[0]?.message ?? 'Invalid name.')
     }
   }
 
   const revertName = () => {
     setName(node.name)
+    setNamePreview(null)
     setNameError(null)
   }
 
@@ -94,16 +115,22 @@ export function NodeEditor({ node }: { node: GNode }) {
         Node
       </h2>
 
+      {locked && <LockNote />}
+
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${id}-name`}>Name</Label>
         <Input
           id={`${id}-name`}
           ref={nameRef}
-          className="rounded-md"
+          className={cn('rounded-md', locked && READ_ONLY)}
           value={name}
+          readOnly={locked}
           aria-invalid={nameError !== null}
           aria-describedby={nameError ? `${id}-name-error` : undefined}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value)
+            previewName(e.target.value)
+          }}
           onBlur={commitName}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
@@ -131,6 +158,7 @@ export function NodeEditor({ node }: { node: GNode }) {
         <RolePicker
           id={`${id}-role`}
           value={node.role}
+          disabled={locked}
           onChange={(role) => updateNode(node.id, { role })}
         />
       </div>
@@ -144,6 +172,7 @@ export function NodeEditor({ node }: { node: GNode }) {
         />
         <Select
           value={node.varType ?? UNTYPED}
+          disabled={locked}
           onValueChange={(value) =>
             updateNode(node.id, {
               varType: value === UNTYPED ? undefined : (value as VarType),
@@ -189,6 +218,7 @@ export function NodeEditor({ node }: { node: GNode }) {
             onCommit={(levels, origin) => setLevels(node.id, levels, origin)}
             itemLabel="Level"
             addLabel="Add level"
+            disabled={locked}
           />
         </div>
       )}
@@ -197,6 +227,7 @@ export function NodeEditor({ node }: { node: GNode }) {
         <UnitField
           id={`${id}-unit`}
           unit={node.unit}
+          readOnly={locked}
           onCommit={(unit) => updateNode(node.id, { unit })}
         />
       )}
@@ -205,27 +236,67 @@ export function NodeEditor({ node }: { node: GNode }) {
         <Label htmlFor={`${id}-description`}>Description</Label>
         <Textarea
           id={`${id}-description`}
-          className="rounded-md"
+          className={cn('rounded-md', locked && READ_ONLY)}
           value={description}
+          readOnly={locked}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={commitDescription}
         />
       </div>
 
       <SimulationSection marked={hasSimulationDetails(node)}>
-        <NodeSimulation id={`${id}-sim`} node={node} />
+        <NodeSimulation id={`${id}-sim`} node={node} disabled={locked} />
       </SimulationSection>
 
-      <Button
-        type="button"
-        variant="destructive"
-        className="self-start rounded-md"
-        onClick={() => removeSelection([node.id], [])}
-      >
-        <Trash2Icon data-icon="inline-start" strokeWidth={1.75} />
-        Delete node
-      </Button>
+      <LockTip locked={locked} className="self-start">
+        <Button
+          type="button"
+          variant="destructive"
+          className="self-start rounded-md"
+          disabled={locked}
+          onClick={() => removeSelection([node.id], [])}
+        >
+          <Trash2Icon data-icon="inline-start" strokeWidth={1.75} />
+          Delete node
+        </Button>
+      </LockTip>
     </section>
+  )
+}
+
+/** The locked-graph line under the editor's header (spec 5.10). */
+export function LockNote() {
+  return (
+    <p className="flex items-start gap-1.5 text-[13px] leading-[1.4] text-muted-foreground">
+      <LockIcon
+        aria-hidden
+        strokeWidth={1.75}
+        className="size-4 shrink-0 translate-y-px"
+      />
+      {GRAPH_LOCK.note}
+    </p>
+  )
+}
+
+/**
+ * Wraps a control disabled by the lock so its reason shows on hover: a disabled button takes no
+ * pointer events of its own (spec 5.10).
+ */
+export function LockTip({
+  locked,
+  className,
+  children,
+}: {
+  locked: boolean
+  /** Layout classes the wrapper takes over from the control it wraps, e.g. `self-start`. */
+  className?: string
+  children: ReactNode
+}) {
+  if (!locked) return children
+  return (
+    <span className={className} title={GRAPH_LOCK.reason}>
+      {children}
+    </span>
   )
 }
 
@@ -257,10 +328,13 @@ function FieldLabel({
 function UnitField({
   id,
   unit,
+  readOnly,
   onCommit,
 }: {
   id: string
   unit: string | undefined
+  /** Locked graph (spec 5.10). */
+  readOnly: boolean
   onCommit(unit: string): void
 }) {
   const [draft, setDraft] = useState(unit ?? '')
@@ -272,8 +346,9 @@ function UnitField({
       <FieldLabel htmlFor={id} label="Unit" tip={FIELD_TIPS.unit} />
       <Input
         id={id}
-        className="rounded-md"
+        className={cn('rounded-md', readOnly && READ_ONLY)}
         value={draft}
+        readOnly={readOnly}
         placeholder="e.g. g, years"
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
@@ -292,7 +367,16 @@ function UnitField({
  * The node's simulation fields (spec 5.9): Shares for a categorical or ordinal node with at least
  * two levels (or shares already), Form for a node with causes (or a form already), else a hint.
  */
-function NodeSimulation({ id, node }: { id: string; node: GNode }) {
+function NodeSimulation({
+  id,
+  node,
+  disabled,
+}: {
+  id: string
+  node: GNode
+  /** Locked graph (spec 5.10): the values are shown but cannot be changed. */
+  disabled: boolean
+}) {
   const updateNode = useGraphStore((s) => s.updateNode)
   const hasCauses = useGraphStore((s) =>
     s.graph.edges.some((e) => e.target === node.id),
@@ -338,6 +422,7 @@ function NodeSimulation({ id, node }: { id: string; node: GNode }) {
                 variant="outline"
                 size="sm"
                 className="self-start rounded-md"
+                disabled={disabled}
                 onClick={() =>
                   updateNode(node.id, { shares: equalShares(levels.length) })
                 }
@@ -350,6 +435,7 @@ function NodeSimulation({ id, node }: { id: string; node: GNode }) {
               <SharesEditor
                 levels={levels}
                 shares={node.shares}
+                disabled={disabled}
                 onCommit={(shares) => updateNode(node.id, { shares })}
               />
               <Button
@@ -357,6 +443,7 @@ function NodeSimulation({ id, node }: { id: string; node: GNode }) {
                 variant="ghost"
                 size="sm"
                 className="-ml-2 self-start rounded-md px-2"
+                disabled={disabled}
                 onClick={() => updateNode(node.id, { shares: undefined })}
               >
                 Remove shares
@@ -370,6 +457,7 @@ function NodeSimulation({ id, node }: { id: string; node: GNode }) {
         <FormField
           id={`${id}-form`}
           form={node.form}
+          disabled={disabled}
           onChange={(form) => updateNode(node.id, { form })}
         />
       )}
@@ -384,10 +472,13 @@ function NodeSimulation({ id, node }: { id: string; node: GNode }) {
 function FormField({
   id,
   form,
+  disabled,
   onChange,
 }: {
   id: string
   form: Form | undefined
+  /** Locked graph (spec 5.10). */
+  disabled: boolean
   onChange(form: Form | undefined): void
 }) {
   return (
@@ -400,6 +491,7 @@ function FormField({
       />
       <Select
         value={form ?? NO_FORM}
+        disabled={disabled}
         onValueChange={(value) =>
           onChange(value === NO_FORM ? undefined : (value as Form))
         }

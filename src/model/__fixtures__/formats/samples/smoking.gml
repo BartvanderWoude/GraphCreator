@@ -12,8 +12,8 @@ graph [
     levels "current"
     description "Self-reported during pregnancy"
     graphics [
-      x 42
-      y 42
+      x 48
+      y 48
     ]
   ]
   node [
@@ -24,8 +24,8 @@ graph [
     var_type "continuous"
     unit "g"
     graphics [
-      x 336
-      y 36
+      x 348
+      y 48
     ]
   ]
   node [
@@ -37,8 +37,8 @@ graph [
     levels "mid"
     levels "high"
     graphics [
-      x 182
-      y -88
+      x 198
+      y -72
     ]
   ]
   node [
@@ -47,8 +47,8 @@ graph [
     name "Genetic factors"
     role "latent"
     graphics [
-      x 189
-      y 159
+      x 198
+      y 168
     ]
   ]
   edge [

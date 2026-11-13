@@ -3,7 +3,7 @@ import { parseDagitty, toDagittyIds } from './dagitty'
 import { decodeList } from './exchange'
 import { exportText, type ExportFormat } from './fileFormat'
 import type { Graph } from './graph'
-import { nodeDiameter } from './nodeSize'
+import { NODE_DIAMETER } from './nodeSize'
 import { parseYaml } from './yaml'
 
 /**
@@ -141,7 +141,7 @@ function expected(graph: Graph) {
   const id = (nodeId: string) => ids.get(nodeId)!
   const centre = (nodeId: string) => {
     const n = graph.nodes.find((m) => m.id === nodeId)!
-    const d = nodeDiameter(n.name)
+    const d = NODE_DIAMETER
     return [n.pos.x + d / 2, n.pos.y + d / 2]
   }
   return {

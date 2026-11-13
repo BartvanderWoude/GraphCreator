@@ -6,8 +6,8 @@ graph [
     name "Severity"
     role "latent"
     graphics [
-      x 190
-      y -80
+      x 198
+      y -72
     ]
   ]
   node [
@@ -15,8 +15,8 @@ graph [
     label "Indication"
     name "Indication"
     graphics [
-      x 47
-      y 7
+      x 48
+      y 8
     ]
   ]
   node [
@@ -25,8 +25,8 @@ graph [
     name "Drug"
     role "exposure"
     graphics [
-      x 32
-      y 132
+      x 48
+      y 148
     ]
   ]
   node [
@@ -35,8 +35,8 @@ graph [
     name "Recovery"
     role "outcome"
     graphics [
-      x 340
-      y 140
+      x 348
+      y 148
     ]
   ]
   edge [

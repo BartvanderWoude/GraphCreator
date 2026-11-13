@@ -7,30 +7,30 @@
       "id": "D",
       "name": "D",
       "role": "outcome",
-      "pos": [132, 132]
+      "pos": [148, 148]
     },
     {
       "id": "E",
       "name": "E",
       "role": "exposure",
-      "pos": [-168, 132]
+      "pos": [-152, 148]
     },
     {
       "id": "U1",
       "name": "U1",
       "role": "latent",
-      "pos": [-168, -18]
+      "pos": [-152, -2]
     },
     {
       "id": "U2",
       "name": "U2",
       "role": "latent",
-      "pos": [132, -18]
+      "pos": [148, -2]
     },
     {
       "id": "Z",
       "name": "Z",
-      "pos": [-18, 82]
+      "pos": [-2, 98]
     }
   ],
   "edges": [

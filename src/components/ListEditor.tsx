@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { cn } from 'cn'
 
+/** The quiet look of a read-only field while the graph is locked (spec 5.10). */
+const READ_ONLY = 'cursor-default bg-input/50 dark:bg-input/80'
+
 interface Row {
   key: number
   value: string
@@ -29,6 +32,11 @@ export interface ListEditorProps {
   placeholder?: string
   /** Show items in Plex Mono, for text that is an identifier (evidence, spec 5.7.3). */
   mono?: boolean
+  /**
+   * Locked graph (spec 5.10): the inputs are read-only, so their text can still be selected and
+   * copied, and every button is disabled.
+   */
+  disabled?: boolean
 }
 
 /**
@@ -43,6 +51,7 @@ export function ListEditor({
   addLabel,
   placeholder,
   mono = false,
+  disabled = false,
 }: ListEditorProps) {
   const [rows, setRows] = useState<Row[]>(() =>
     items.map((value, key) => ({ key, value, origin: key })),
@@ -94,7 +103,7 @@ export function ListEditor({
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key !== 'Enter') return
+    if (e.key !== 'Enter' || disabled) return
     e.preventDefault()
     commit(rows)
     if (index === rows.length - 1 && rows[index].value.trim() !== '') add()
@@ -115,9 +124,14 @@ export function ListEditor({
             <li key={row.key} className="flex items-center gap-0.5">
               <Input
                 ref={setInput(row.key)}
-                className={cn('mr-1 rounded-md', mono && 'font-mono')}
+                className={cn(
+                  'mr-1 rounded-md',
+                  mono && 'font-mono',
+                  disabled && READ_ONLY,
+                )}
                 aria-label={`${itemLabel} ${i + 1}`}
                 placeholder={placeholder}
+                readOnly={disabled}
                 value={row.value}
                 onChange={(e) =>
                   setRows(
@@ -135,7 +149,7 @@ export function ListEditor({
                 size="icon-sm"
                 className="rounded-md text-muted-foreground"
                 aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} up`}
-                disabled={i === 0}
+                disabled={disabled || i === 0}
                 onClick={() => move(i, -1)}
               >
                 <ArrowUpIcon strokeWidth={1.75} />
@@ -146,7 +160,7 @@ export function ListEditor({
                 size="icon-sm"
                 className="rounded-md text-muted-foreground"
                 aria-label={`Move ${itemLabel.toLowerCase()} ${i + 1} down`}
-                disabled={i === rows.length - 1}
+                disabled={disabled || i === rows.length - 1}
                 onClick={() => move(i, 1)}
               >
                 <ArrowDownIcon strokeWidth={1.75} />
@@ -157,6 +171,7 @@ export function ListEditor({
                 size="icon-sm"
                 className="rounded-md text-muted-foreground"
                 aria-label={`Remove ${itemLabel.toLowerCase()} ${i + 1}`}
+                disabled={disabled}
                 onClick={() => remove(i)}
               >
                 <XIcon strokeWidth={1.75} />
@@ -170,6 +185,7 @@ export function ListEditor({
         variant="outline"
         size="sm"
         className="self-start rounded-md"
+        disabled={disabled}
         onClick={add}
       >
         <PlusIcon data-icon="inline-start" strokeWidth={1.75} />

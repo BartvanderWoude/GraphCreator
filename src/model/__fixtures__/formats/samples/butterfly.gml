@@ -5,8 +5,8 @@ graph [
     label "A"
     name "A"
     graphics [
-      x 32
-      y 32
+      x 48
+      y 48
     ]
   ]
   node [
@@ -14,8 +14,8 @@ graph [
     label "B"
     name "B"
     graphics [
-      x 332
-      y 32
+      x 348
+      y 48
     ]
   ]
   node [
@@ -23,8 +23,8 @@ graph [
     label "M"
     name "M"
     graphics [
-      x 182
-      y 112
+      x 198
+      y 128
     ]
   ]
   node [
@@ -33,8 +33,8 @@ graph [
     name "E"
     role "exposure"
     graphics [
-      x 32
-      y 192
+      x 48
+      y 208
     ]
   ]
   node [
@@ -43,8 +43,8 @@ graph [
     name "D"
     role "outcome"
     graphics [
-      x 332
-      y 192
+      x 348
+      y 208
     ]
   ]
   edge [

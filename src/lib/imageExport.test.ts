@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { parseGraphText } from '@/model/fileFormat'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
-import { nodeDiameter, wrapLabel } from '@/model/nodeSize'
+import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { parseYaml } from '@/model/yaml'
 import {
   EXPORT_MARGIN,
@@ -51,10 +51,8 @@ describe('svgSize', () => {
     const g = smoking()
     // Maternal smoking at (0, 0), Birth weight at (300, 0), SES at (150, -120), Genetic factors at (150, 120).
     expect(svgSize(g)).toEqual({
-      width: Math.ceil(300 + nodeDiameter('Birth weight') + 2 * EXPORT_MARGIN),
-      height: Math.ceil(
-        120 + 120 + nodeDiameter('Genetic factors') + 2 * EXPORT_MARGIN,
-      ),
+      width: Math.ceil(300 + NODE_DIAMETER + 2 * EXPORT_MARGIN),
+      height: Math.ceil(120 + 120 + NODE_DIAMETER + 2 * EXPORT_MARGIN),
     })
   })
 
@@ -63,8 +61,8 @@ describe('svgSize', () => {
       nodes: [node('n1', 'A', 0, 0), node('n2', 'B', 10.5, 0.25)],
       edges: [],
     }
-    // 10.5 + 64 + 48 = 122.5 and 0.25 + 64 + 48 = 112.25.
-    expect(svgSize(g)).toEqual({ width: 123, height: 113 })
+    // 10.5 + 96 + 48 = 154.5 and 0.25 + 96 + 48 = 144.25.
+    expect(svgSize(g)).toEqual({ width: 155, height: 145 })
   })
 
   it('is a square of twice the margin for an empty graph', () => {
@@ -78,7 +76,7 @@ describe('toSvg', () => {
     const svg = toSvg(g)
     const { width, height } = svgSize(g)
     const lines = g.nodes.reduce(
-      (n, v) => n + wrapLabel(v.name).lines.length,
+      (n, v) => n + nodeLabel(v.name).lines.length,
       0,
     )
     expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true)
@@ -121,14 +119,18 @@ describe('toSvg', () => {
       edges: [{ id: 'e1', source: 'n1', target: 'n2', evidence: [] }],
     }
     const svg = toSvg(g)
-    // Both circles are 64 px; the drawing starts 24 px left of and above the first one.
-    expect(svg).toContain('<circle cx="56" cy="56" r="31"')
-    expect(svg).toContain('<circle cx="256" cy="56" r="31"')
-    // Line from the source rim (x 88) to 8 px before the tip; tip at 256 - 32 - 2 = 222.
-    expect(svg).toContain('<line x1="88" y1="56" x2="214" y2="56"')
-    expect(svg).toContain('<path d="M222,56 L213,60.5 L213,51.5 Z"')
-    // One line of text, its baseline below the centre.
-    expect(svg).toContain('<text x="56" y="60.88" fill="#0f172a">A</text>')
+    // Both circles are 96 px; the drawing starts 24 px left of and above the first one.
+    expect(svg).toContain('<circle cx="72" cy="72" r="47"')
+    expect(svg).toContain('<circle cx="272" cy="72" r="47"')
+    // Line from the source rim (x 120) to 8 px before the tip; tip at 272 - 48 - 2 = 222.
+    expect(svg).toContain('<line x1="120" y1="72" x2="214" y2="72"')
+    expect(svg).toContain('<path d="M222,72 L213,76.5 L213,67.5 Z"')
+    // One line of text at the name's own size, its baseline 0.375 em below the centre.
+    const size = nodeLabel('A').fontSize
+    expect(svg).toContain(`font-size="${size}" font-weight="500"`)
+    expect(svg).toContain(
+      `<text x="72" y="${72 + 0.375 * size}" fill="#0f172a">A</text>`,
+    )
   })
 
   it('embeds the font only with fontDataUrl', () => {
@@ -190,10 +192,14 @@ describe('toTikz', () => {
 
   it('places nodes on their centres and joins wrapped lines with \\\\', () => {
     const tikz = toTikz(smoking())
-    const d = nodeDiameter('Maternal smoking')
-    expect(wrapLabel('Maternal smoking').lines).toEqual(['Maternal', 'smoking'])
+    const d = NODE_DIAMETER
+    const label = nodeLabel('Maternal smoking')
+    expect(label.lines).toEqual(['Maternal', 'smoking'])
+    // The name's own size in points, with the 1.25 × line pitch (5.7.6).
+    const size = 0.75 * label.fontSize
+    const pitch = Math.round(0.75 * lineHeight(label.fontSize) * 100) / 100
     expect(tikz).toContain(
-      `\\node[circle, draw=gcExposureLine, fill=gcExposureFill, text=gcExposureText, line width=1.5pt, minimum size=${0.75 * d}pt, inner sep=0pt, align=center, font=\\sffamily\\small] (v1) at (${d / 2},${d / 2}) {Maternal\\\\smoking};`,
+      `\\node[circle, draw=gcExposureLine, fill=gcExposureFill, text=gcExposureText, line width=1.5pt, minimum size=${0.75 * d}pt, inner sep=0pt, align=center, font=\\sffamily\\fontsize{${size}}{${pitch}}\\selectfont] (v1) at (${d / 2},${d / 2}) {Maternal\\\\smoking};`,
     )
     expect(tikz).toContain('(v4) at (')
     // SES → Maternal smoking is the first edge.
@@ -210,9 +216,9 @@ describe('toTikz', () => {
       edges: [],
     }
     const tikz = toTikz(g)
-    // `R&D_1 %` → `R\&D\_1 \%`, here wrapped into the lines `R&D_1` and `%`.
-    expect(wrapLabel('R&D_1 %').lines).toEqual(['R&D_1', '%'])
-    expect(tikz).toContain('{R\\&D\\_1\\\\\\%};')
+    // `R&D_1 %` → `R\&D\_1 \%`, on one line.
+    expect(nodeLabel('R&D_1 %').lines).toEqual(['R&D_1 %'])
+    expect(tikz).toContain('{R\\&D\\_1 \\%};')
     expect(tikz).toContain(
       '{\\textbackslash{}a\\{b\\}\\$\\#\\textasciicircum{}\\textasciitilde{}};',
     )
@@ -222,7 +228,7 @@ describe('toTikz', () => {
 
   it('keeps a line starting with [ or * from becoming an argument of \\\\', () => {
     const g: Graph = { nodes: [node('n1', 'Weight [kg] *', 0, 0)], edges: [] }
-    expect(wrapLabel('Weight [kg] *').lines).toEqual(['Weight', '[kg] *'])
+    expect(nodeLabel('Weight [kg] *').lines).toEqual(['Weight', '[kg] *'])
     expect(toTikz(g)).toContain('{Weight\\\\{}[kg] *};')
   })
 
@@ -329,18 +335,18 @@ describe('theme and legend', () => {
       ],
       edges: [],
     }
-    // Top-right corner of the bounding box (-10, -20)–(454, 344): x 358–454, y -20–36.
+    // Top-right corner of the bounding box (-10, -20)–(486, 376): x 390–486, y -20–36.
     const tikz = toTikz(g, { legend: true })
     expect(tikz).toContain(
-      '\\draw[gcBorder, fill=white, rounded corners=3pt] (358,-20) rectangle (454,36);',
+      '\\draw[gcBorder, fill=white, rounded corners=3pt] (390,-20) rectangle (486,36);',
     )
     expect(tikz).toContain(
-      '\\node[circle, draw=gcExposureLine, fill=gcExposureFill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt] at (371,-2) {};',
+      '\\node[circle, draw=gcExposureLine, fill=gcExposureFill, line width=1.125pt, minimum size=7.5pt, inner sep=0pt] at (403,-2) {};',
     )
     expect(tikz).toContain(
-      '\\node[anchor=west, inner sep=0pt, text=gcText, font=\\sffamily\\footnotesize] at (384,-2) {Exposure};',
+      '\\node[anchor=west, inner sep=0pt, text=gcText, font=\\sffamily\\footnotesize] at (416,-2) {Exposure};',
     )
-    expect(tikz).toContain('at (384,18) {Other};')
+    expect(tikz).toContain('at (416,18) {Other};')
   })
 })
 
@@ -369,8 +375,9 @@ describe('sign badges', () => {
     )
     const first = svg.indexOf('r="7.5"')
     expect(first).toBeGreaterThan(svg.lastIndexOf('<path '))
+    // Before the node circles, whose radius is half the diameter minus the outline.
     expect(svg.lastIndexOf('r="7.5"')).toBeLessThan(
-      svg.indexOf('font-size="13"'),
+      svg.indexOf(`r="${NODE_DIAMETER / 2 - 1}"`),
     )
     expect(balanced(svg)).toBe(true)
     const dark = toSvg(signed(), { signs: true, theme: 'dark' })

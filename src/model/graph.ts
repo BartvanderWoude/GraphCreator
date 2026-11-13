@@ -62,6 +62,11 @@ export interface GEdge {
 
 export interface Graph {
   name?: string
+  /**
+   * Read-only graph (spec 4.17): the store refuses every change while this is true. Stored as
+   * `true` or absent, never `false`.
+   */
+  locked?: boolean
   nodes: GNode[]
   edges: GEdge[]
 }
@@ -70,7 +75,8 @@ export type EdgeCheck =
   | { ok: true }
   | {
       ok: false
-      reason: 'self' | 'duplicate' | 'cycle'
+      /** 'locked' comes from the store only (spec 4.17); `canAddEdge` never returns it. */
+      reason: 'self' | 'duplicate' | 'cycle' | 'locked'
       message: string
       /** For 'cycle': node ids of the cycle the edge would close, first id repeated at the end. */
       cycle?: string[]

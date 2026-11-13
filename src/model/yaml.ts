@@ -358,6 +358,8 @@ export function parseYaml(text: string): Result<Graph> {
   let graph: Graph = { nodes, edges }
   const name = optionalText(file.name)
   if (name !== undefined) graph.name = name
+  // `locked: false` is the same as no lock at all (spec 4.17).
+  if (file.locked === true) graph.locked = true
 
   const { errors: graphErrors, warnings } = validateGraph(graph)
   // Missing names go where validateGraph reports dangling edges: before the cycle.
@@ -480,6 +482,7 @@ export function toYaml(graph: Graph): string {
 
   const file: Record<string, unknown> = { schema: SCHEMA_ID }
   if (graph.name !== undefined) file.name = graph.name
+  if (graph.locked) file.locked = true
   file.nodes = graph.nodes.map((n) => {
     const out: Record<string, unknown> = { name: n.name }
     if (n.role !== 'other') out.role = n.role

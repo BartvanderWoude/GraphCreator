@@ -281,4 +281,14 @@ describe('Simulation section state (phase 49)', () => {
     expect(() => writeSimulationOpen(null, true)).not.toThrow()
     expect(() => writeSimulationOpen(throwing, true)).not.toThrow()
   })
+
+  it('namePreview starts empty and setNamePreview sets and clears it', () => {
+    expect(ui().namePreview).toBeNull()
+    ui().setNamePreview({ id: 'n1', name: 'Ag' })
+    expect(ui().namePreview).toEqual({ id: 'n1', name: 'Ag' })
+    ui().setNamePreview({ id: 'n1', name: 'Age' })
+    expect(ui().namePreview).toEqual({ id: 'n1', name: 'Age' })
+    ui().setNamePreview(null)
+    expect(ui().namePreview).toBeNull()
+  })
 })

@@ -12,7 +12,7 @@
       "var_type": "ordinal",
       "levels": ["a;b", "back\\slash", "c"],
       "description": "Says \"hi\" & <bye>",
-      "pos": [33, 33]
+      "pos": [48, 48]
     },
     {
       "id": "1st_visit",
@@ -20,19 +20,19 @@
       "role": "outcome",
       "var_type": "continuous",
       "unit": "kg/m²",
-      "pos": [233, 33]
+      "pos": [248, 48]
     },
     {
       "id": "node_2",
       "name": "node",
       "role": "adjusted",
-      "pos": [132, 182]
+      "pos": [148, 198]
     },
     {
       "id": "a.b",
       "name": "a.b",
       "role": "selected",
-      "pos": [332, 182]
+      "pos": [348, 198]
     }
   ],
   "edges": [

@@ -55,7 +55,14 @@ function withMapSign(
  * `signShape`: one control, one control per level of the nominal end, or a line saying no sign is
  * available. A stored sign that does not fit the shape can only be cleared.
  */
-export function SignEditor({ edge }: { edge: GEdge }) {
+export function SignEditor({
+  edge,
+  disabled = false,
+}: {
+  edge: GEdge
+  /** Locked graph (spec 5.10): the sign is shown but cannot be changed or cleared. */
+  disabled?: boolean
+}) {
   const id = useId()
   const updateEdge = useGraphStore((s) => s.updateEdge)
   // Read from the live graph, so a type or level change on an end (or an undo) shows at once.
@@ -79,6 +86,7 @@ export function SignEditor({ edge }: { edge: GEdge }) {
           type="button"
           variant="ghost"
           className="-ml-2 self-start rounded-md px-2"
+          disabled={disabled}
           onClick={() => setSign(undefined)}
         >
           Clear sign
@@ -97,6 +105,7 @@ export function SignEditor({ edge }: { edge: GEdge }) {
       <SignControl
         labelledBy={labelId}
         value={typeof sign === 'string' ? sign : undefined}
+        disabled={disabled}
         onChange={setSign}
       />
     )
@@ -120,6 +129,7 @@ export function SignEditor({ edge }: { edge: GEdge }) {
               <SignControl
                 label={`Sign for ${level}`}
                 value={mapSign(sign, level)}
+                disabled={disabled}
                 onChange={(value) => setSign(withMapSign(sign, level, value))}
               />
             </li>
@@ -154,6 +164,7 @@ function SignControl({
   label,
   labelledBy,
   value,
+  disabled,
   onChange,
 }: {
   /** The group's accessible name, when no visible label names it. */
@@ -161,12 +172,15 @@ function SignControl({
   /** Id of the visible label that names the group. */
   labelledBy?: string
   value: Sign | undefined
+  /** Locked graph (spec 5.10): the buttons are disabled and the arrow keys do nothing. */
+  disabled: boolean
   onChange(value: Sign | undefined): void
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const current = OPTIONS.findIndex((o) => o.value === value)
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) return
     const step =
       e.key === 'ArrowRight' || e.key === 'ArrowDown'
         ? 1
@@ -201,6 +215,7 @@ function SignControl({
             aria-checked={checked}
             aria-label={option.glyph ? undefined : option.name}
             tabIndex={checked ? 0 : -1}
+            disabled={disabled}
             onClick={() => {
               if (!checked) onChange(option.value)
             }}
@@ -208,10 +223,15 @@ function SignControl({
               'inline-flex h-7 items-center gap-1 rounded-sm px-2 text-sm font-medium whitespace-nowrap transition-colors duration-120 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background motion-reduce:transition-none',
               // A chosen sign is teal; a chosen "no sign" stays quiet, so unset rows recede.
               !checked
-                ? 'text-foreground hover:bg-muted'
+                ? cn('text-foreground', !disabled && 'hover:bg-muted')
                 : option.value === undefined
                   ? 'bg-muted text-foreground'
-                  : 'bg-primary text-primary-foreground hover:bg-primary-hover',
+                  : cn(
+                      'bg-primary text-primary-foreground',
+                      !disabled && 'hover:bg-primary-hover',
+                    ),
+              // Locked: the sign stays readable, so it is dimmed only a little.
+              disabled && 'cursor-default opacity-80',
             )}
           >
             {option.glyph ? (

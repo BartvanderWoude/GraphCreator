@@ -5,8 +5,8 @@ graph [
     label "A"
     name "A"
     graphics [
-      x -188
-      y -120
+      x -172
+      y -104
     ]
   ]
   node [
@@ -14,8 +14,8 @@ graph [
     label "B"
     name "B"
     graphics [
-      x 172
-      y -114
+      x 188
+      y -98
     ]
   ]
   node [
@@ -24,8 +24,8 @@ graph [
     name "D"
     role "outcome"
     graphics [
-      x 172
-      y 194.1
+      x 188
+      y 210.1
     ]
   ]
   node [
@@ -34,8 +34,8 @@ graph [
     name "E"
     role "exposure"
     graphics [
-      x -188
-      y 191.7
+      x -172
+      y 207.7
     ]
   ]
   node [
@@ -43,8 +43,8 @@ graph [
     label "Z"
     name "Z"
     graphics [
-      x 2
-      y 23.8
+      x 18
+      y 39.8
     ]
   ]
   edge [

@@ -11,6 +11,9 @@ const SEGMENT_COLOURS = [
   'bg-primary/95',
 ] as const
 
+/** The quiet look of a read-only field while the graph is locked (spec 5.10). */
+const READ_ONLY = 'cursor-default bg-input/50 dark:bg-input/80'
+
 /** A share as the percentage its input shows: `share × 100` rounded to two decimals. */
 function sharePercent(share: number): string {
   return String(Math.round(share * 10_000) / 100)
@@ -27,6 +30,8 @@ export interface SharesEditorProps {
   shares: number[]
   /** Called with the full list when one share is committed and changed. */
   onCommit(shares: number[]): void
+  /** Locked graph (spec 5.10): the inputs are read-only, so their text can still be copied. */
+  disabled?: boolean
 }
 
 /**
@@ -34,7 +39,12 @@ export interface SharesEditorProps {
  * a stacked bar and the total, with a warning when the shares do not add up to 100%. The inputs
  * show the stored shares except while being edited, so they follow levels that move.
  */
-export function SharesEditor({ levels, shares, onCommit }: SharesEditorProps) {
+export function SharesEditor({
+  levels,
+  shares,
+  onCommit,
+  disabled = false,
+}: SharesEditorProps) {
   const values = levels.map((_, i) => shares[i] ?? 0)
   const total = sharesTotal(values)
   const off = Math.abs(total - 1) > 0.001
@@ -55,6 +65,7 @@ export function SharesEditor({ levels, shares, onCommit }: SharesEditorProps) {
             <ShareInput
               level={level}
               share={values[i]}
+              disabled={disabled}
               onCommit={(share) => commitShare(i, share)}
             />
           </li>
@@ -84,10 +95,12 @@ export function SharesEditor({ levels, shares, onCommit }: SharesEditorProps) {
 function ShareInput({
   level,
   share,
+  disabled,
   onCommit,
 }: {
   level: string
   share: number
+  disabled: boolean
   onCommit(share: number): void
 }) {
   // The text being typed, or null when the field shows the stored share.
@@ -113,7 +126,11 @@ function ShareInput({
         step={0.1}
         aria-label={`Share of ${level}`}
         // No spin buttons: the 64 px field needs its width for two decimals.
-        className="h-8 w-16 [appearance:textfield] rounded-md px-2 text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        className={cn(
+          'h-8 w-16 [appearance:textfield] rounded-md px-2 text-right tabular-nums [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          disabled && READ_ONLY,
+        )}
+        readOnly={disabled}
         value={draft ?? sharePercent(share)}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}

@@ -6,8 +6,8 @@ graph [
     name "D"
     role "outcome"
     graphics [
-      x 132
-      y 132
+      x 148
+      y 148
     ]
   ]
   node [
@@ -16,8 +16,8 @@ graph [
     name "E"
     role "exposure"
     graphics [
-      x -168
-      y 132
+      x -152
+      y 148
     ]
   ]
   node [
@@ -26,8 +26,8 @@ graph [
     name "U1"
     role "latent"
     graphics [
-      x -168
-      y -18
+      x -152
+      y -2
     ]
   ]
   node [
@@ -36,8 +36,8 @@ graph [
     name "U2"
     role "latent"
     graphics [
-      x 132
-      y -18
+      x 148
+      y -2
     ]
   ]
   node [
@@ -45,8 +45,8 @@ graph [
     label "Z"
     name "Z"
     graphics [
-      x -18
-      y 82
+      x -2
+      y 98
     ]
   ]
   edge [

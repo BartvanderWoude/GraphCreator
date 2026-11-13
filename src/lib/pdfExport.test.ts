@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import type { Graph } from '@/model/graph'
+import { nodeLabel } from '@/model/nodeSize'
 import type { Scene, SceneCircle, SceneText } from './imageScene'
-import { sceneToPdf } from './pdfExport'
+import { sceneToPdf, toPdf } from './pdfExport'
 
 function circle(cx: number, cy: number, r: number): SceneCircle {
   return { cx, cy, r, fill: '#e3f1e8', stroke: '#4a946a', strokeWidth: 2 }
@@ -256,5 +258,29 @@ describe('sceneToPdf', () => {
     for (const n of body.match(/-?\d+\.\d+/g) ?? []) {
       expect(n.split('.')[1].length).toBeLessThanOrEqual(3)
     }
+  })
+})
+
+describe('toPdf', () => {
+  it('draws every name at its own font size (5.7.6)', () => {
+    const graph: Graph = {
+      name: 'Sizes',
+      nodes: [
+        { id: 'n1', name: 'Age', role: 'other', pos: { x: 0, y: 0 } },
+        {
+          id: 'n2',
+          name: 'Maternal smoking during pregnancy',
+          role: 'other',
+          pos: { x: 200, y: 0 },
+        },
+      ],
+      edges: [],
+    }
+    const short = nodeLabel('Age').fontSize
+    const long = nodeLabel('Maternal smoking during pregnancy').fontSize
+    expect(long).toBeLessThan(short)
+    const body = stream(latin1(toPdf(graph)))
+    expect(body).toContain(`BT /F1 ${short} Tf`)
+    expect(count(body, new RegExp(`BT /F1 ${long} Tf`, 'g'))).toBe(4)
   })
 })

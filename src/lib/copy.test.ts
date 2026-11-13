@@ -11,6 +11,7 @@ import {
   SIGN_LABELS,
   STRENGTH_DESCRIPTIONS,
   STRENGTH_LABELS,
+  GRAPH_LOCK,
 } from './copy'
 
 describe('joinNames', () => {
@@ -157,5 +158,18 @@ describe('simulation texts (phase 49)', () => {
     expect(FORM_DESCRIPTIONS.threshold).toBe(
       'Effects switch at cut-offs, such as a risk that jumps above an age.',
     )
+  })
+})
+
+describe('GRAPH_LOCK (spec 4.17)', () => {
+  it('follows the tooltip and voice rules', () => {
+    expect(GRAPH_LOCK.tip.startsWith('Lock graph:')).toBe(true)
+    expect(GRAPH_LOCK.tip.split(/\s+/).length).toBeLessThanOrEqual(30)
+    for (const text of [GRAPH_LOCK.tip, GRAPH_LOCK.note, GRAPH_LOCK.reason]) {
+      expect(text.endsWith('.')).toBe(true)
+      expect(text).not.toMatch(/n't|'re|'s /)
+    }
+    // A button label is not a sentence.
+    expect(GRAPH_LOCK.label).toBe('Lock graph')
   })
 })

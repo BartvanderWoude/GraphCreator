@@ -355,7 +355,7 @@ describe('simulation details (spec 4.16)', () => {
     expect(g.edges[2].strength).toBe('large')
   })
 
-  it.each(['simulation.dag.yaml', 'yaml11-names.dag.yaml'])(
+  it.each(['simulation.dag.yaml', 'yaml11-names.dag.yaml', 'locked.dag.yaml'])(
     'round-trips %s canonically',
     (name) => {
       const text = fixture(name)
@@ -701,5 +701,35 @@ describe('YAML 1.1 safety', () => {
     const out = toYaml(g)
     expect(out).toContain('name: "Off"\n')
     expect(out).toContain('    unit: "1:30"\n')
+  })
+})
+
+describe('the graph lock (spec 4.17)', () => {
+  it('reads locked: true and writes it back after the name', () => {
+    const g = ok(parseYaml(fixture('locked.dag.yaml'))).value
+    expect(g.locked).toBe(true)
+    const lines = toYaml(g).split('\n')
+    expect(lines[1]).toBe('name: Imported study variables')
+    expect(lines[2]).toBe('locked: true')
+  })
+
+  it('reads locked: false as no lock, and writes nothing for it', () => {
+    const text =
+      'schema: graphcreator/0.1\nlocked: false\nnodes: []\nedges: []\n'
+    const g = ok(parseYaml(text)).value
+    expect(g.locked).toBeUndefined()
+    expect(toYaml(g)).not.toContain('locked')
+  })
+
+  it('writes nothing for an unlocked graph, so older files are unchanged', () => {
+    const g = ok(parseYaml(fixture('smoking.dag.yaml'))).value
+    expect(toYaml(g)).toBe(fixture('smoking.dag.yaml'))
+    expect(toYaml({ ...g, locked: true })).toContain('locked: true')
+  })
+
+  it('refuses a locked value that is not a boolean', () => {
+    const result = parseYaml('schema: graphcreator/0.1\nlocked: yes please\n')
+    expect(result.ok).toBe(false)
+    expect(result.ok === false && result.errors[0].path).toBe('locked')
   })
 })
