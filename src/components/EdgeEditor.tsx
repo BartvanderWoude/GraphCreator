@@ -1,7 +1,10 @@
 import { useId, useState } from 'react'
 import { Trash2Icon } from 'lucide-react'
+import { cn } from 'cn'
 import { InfoTip } from '@/components/InfoTip'
 import { ListEditor } from '@/components/ListEditor'
+// The lock note and the lock tooltip are shared with the node editor (spec 5.10).
+import { LockNote, LockTip } from '@/components/NodeEditor'
 import { SignEditor } from '@/components/SignEditor'
 import { SimulationSection } from '@/components/SimulationSection'
 import { Button } from '@/components/ui/button'
@@ -22,6 +25,8 @@ import { useGraphStore } from '@/store/graphStore'
 
 /** Select value standing for "no strength" (Radix Select items cannot have an empty value). */
 const NO_STRENGTH = 'none'
+/** The quiet look of a read-only field while the graph is locked (spec 5.10). */
+const READ_ONLY = 'cursor-default bg-input/50 dark:bg-input/80'
 
 /**
  * Edits one edge (spec 5.3). Local field state is read from `edge` on mount, so the parent
@@ -37,6 +42,7 @@ export function EdgeEditor({ edge }: { edge: GEdge }) {
   const targetName = useGraphStore(
     (s) => s.graph.nodes.find((n) => n.id === edge.target)?.name ?? '?',
   )
+  const locked = useGraphStore((s) => s.graph.locked === true)
   const [note, setNote] = useState(edge.note ?? '')
 
   const commitNote = () => {
@@ -53,6 +59,8 @@ export function EdgeEditor({ edge }: { edge: GEdge }) {
           {sourceName} → {targetName}
         </h3>
       </div>
+
+      {locked && <LockNote />}
 
       <div
         role="group"
@@ -75,6 +83,7 @@ export function EdgeEditor({ edge }: { edge: GEdge }) {
           addLabel="Add evidence"
           placeholder="e.g. PMID:123, doi:10.1000/xyz"
           mono
+          disabled={locked}
         />
       </div>
 
@@ -85,31 +94,36 @@ export function EdgeEditor({ edge }: { edge: GEdge }) {
         </div>
         <Textarea
           id={`${id}-note`}
-          className="rounded-md"
+          className={cn('rounded-md', locked && READ_ONLY)}
           value={note}
+          readOnly={locked}
           onChange={(e) => setNote(e.target.value)}
           onBlur={commitNote}
         />
       </div>
 
       <SimulationSection marked={hasSimulationDetails(edge)}>
-        <SignEditor edge={edge} />
+        <SignEditor edge={edge} disabled={locked} />
         <StrengthField
           id={`${id}-strength`}
           strength={edge.strength}
+          disabled={locked}
           onChange={(strength) => updateEdge(edge.id, { strength })}
         />
       </SimulationSection>
 
-      <Button
-        type="button"
-        variant="destructive"
-        className="self-start rounded-md"
-        onClick={() => removeSelection([], [edge.id])}
-      >
-        <Trash2Icon data-icon="inline-start" strokeWidth={1.75} />
-        Delete edge
-      </Button>
+      <LockTip locked={locked} className="self-start">
+        <Button
+          type="button"
+          variant="destructive"
+          className="self-start rounded-md"
+          disabled={locked}
+          onClick={() => removeSelection([], [edge.id])}
+        >
+          <Trash2Icon data-icon="inline-start" strokeWidth={1.75} />
+          Delete edge
+        </Button>
+      </LockTip>
     </section>
   )
 }
@@ -121,10 +135,13 @@ export function EdgeEditor({ edge }: { edge: GEdge }) {
 function StrengthField({
   id,
   strength,
+  disabled,
   onChange,
 }: {
   id: string
   strength: Strength | undefined
+  /** Locked graph (spec 5.10). */
+  disabled: boolean
   onChange(strength: Strength | undefined): void
 }) {
   return (
@@ -135,6 +152,7 @@ function StrengthField({
       </div>
       <Select
         value={strength ?? NO_STRENGTH}
+        disabled={disabled}
         onValueChange={(value) =>
           onChange(value === NO_STRENGTH ? undefined : (value as Strength))
         }

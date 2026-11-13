@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { cn } from 'cn'
+// The lock tooltip is shared with the editors (spec 5.10).
+import { LockTip } from '@/components/NodeEditor'
 import { useAnalysis } from '@/components/useAnalysis'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -266,6 +268,8 @@ function AdjustmentBody({
   namesOf: NamesOf
 }) {
   const setAdjustedSet = useGraphStore((s) => s.setAdjustedSet)
+  // A locked graph still runs the analyses, but its adjusted set cannot be changed (spec 5.10).
+  const locked = useGraphStore((s) => s.graph.locked === true)
   if (adjustment.sets.length === 0) {
     return <Line>{ANALYSIS_TEXT.noSufficientSet}</Line>
   }
@@ -284,14 +288,17 @@ function AdjustmentBody({
                 {ANALYSIS_TEXT.inUse}
               </span>
             ) : (
-              <Button
-                variant="ghost"
-                size="xs"
-                className="shrink-0"
-                onClick={() => setAdjustedSet(set)}
-              >
-                {ANALYSIS_TEXT.useThisSet}
-              </Button>
+              <LockTip locked={locked} className="shrink-0">
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  className="shrink-0"
+                  disabled={locked}
+                  onClick={() => setAdjustedSet(set)}
+                >
+                  {ANALYSIS_TEXT.useThisSet}
+                </Button>
+              </LockTip>
             )}
           </Row>
         ))}

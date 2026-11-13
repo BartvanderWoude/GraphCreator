@@ -39,6 +39,8 @@ export interface RolePickerProps {
   id: string
   value: Role
   onChange(role: Role): void
+  /** Locked graph (spec 5.10): the role can be read but not changed. */
+  disabled?: boolean
 }
 
 /**
@@ -46,10 +48,19 @@ export interface RolePickerProps {
  * swatch, label and the role's description. An option's accessible name is its label alone;
  * the description is attached with `aria-describedby`.
  */
-export function RolePicker({ id, value, onChange }: RolePickerProps) {
+export function RolePicker({
+  id,
+  value,
+  onChange,
+  disabled = false,
+}: RolePickerProps) {
   const descId = useId()
   return (
-    <Select value={value} onValueChange={(role) => onChange(role as Role)}>
+    <Select
+      value={value}
+      onValueChange={(role) => onChange(role as Role)}
+      disabled={disabled}
+    >
       <SelectTrigger id={id} className="w-full rounded-md">
         <SelectValue>
           <RoleSwatch role={value} />
