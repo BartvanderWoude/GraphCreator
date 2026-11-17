@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Per-level edge signs on a categorical cause (4.16 and 5.9: every level of a cause carries its own sign, read against the average over its levels, with no reference level; waves 28–30, phases 63–66) were agreed on 2026-11-17 and are implemented (the model and the validator, the editor, the reader doc and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Per-level edge signs on a categorical cause (4.16 and 5.9: every level of a cause carries its own sign, read against the average over its levels, with no reference level; waves 28–30, phases 63–66) were agreed on 2026-11-17 and are implemented (the model and the validator, the editor, the reader doc and the end-to-end tests). Display options (4.18 and 5.11: signs, sign colours, strength widths, form and type marks and dashed latent nodes, switched in a Display section of the Edit tab and shown on the canvas and in exported images; waves 31–33, phases 67–71) were agreed on 2026-11-17 and are to be built. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -441,7 +441,7 @@ export interface UiState {
 export const useUiStore: UseBoundStore<StoreApi<UiState>>
 ```
 
-Phase 49 adds `simulationOpen` (4.16 "UI store"). Phase 57 adds `namePreview` (4.17 "UI store").
+Phase 49 adds `simulationOpen` (4.16 "UI store"). Phase 57 adds `namePreview` (4.17 "UI store"). Phase 67 adds `display` (4.18 "UI store").
 
 ### 4.8 Lesson store (`src/store/lessonStore.ts`, phase 10)
 
@@ -1349,7 +1349,8 @@ export function writeSimulationOpen(storage: Pick<Storage, 'setItem'> | null, op
 - `Scene` gains `badges: { circle: SceneCircle; text: SceneText }[]`, drawn after the edges and before the circles. The `circles[i]`/`nodeIds[i]` pairing is unchanged.
 - `toSvg` and `sceneToPdf` draw the badges.
 - `toTikz(graph, { legend, signs })` adds one `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (<x>,<y>) {$+$};` per badge (`$-$`, `$\pm$`), after the edges.
-- The legend does not explain the badges.
+- The legend does not explain the badges. (Phase 70 changes this: with Legend on, the legend lists the display options that are on, 4.18 "Images".)
+- From phase 68 the `signs` option comes from the Display section (5.11), not an Export dialog checkbox, and is off by default; phase 70 colours the badges with Sign colors on.
 
 ### 4.17 Equal circles, name preview and graph lock (phases 57–62)
 
@@ -1408,6 +1409,141 @@ setNamePreview(preview: { id: string; name: string } | null): void
 | `GRAPH_LOCK.tip` | "Lock graph: nothing in the graph can be changed. Variables, arrows and their positions stay as they are." |
 | `GRAPH_LOCK.note` | "This graph is locked. Unlock it in the tool rail to make changes." |
 | `GRAPH_LOCK.reason` | "Not available while the graph is locked." |
+
+### 4.18 Display options (`src/lib/display.ts`, phases 67–71)
+
+Feedback asked to show the annotations of arrows visually. Agreed on 2026-11-17 in three design rounds:
+
+- Six **display options** decide what the canvas and every exported image show besides names, roles and arrows: **Signs**, **Sign colors**, **Strength**, **Forms**, **Variable types** and **Dashed latent**.
+- They are switched in a **Display** section of the Edit tab when nothing is selected (5.11), not in the Export dialog, so a picture is styled on the canvas and exported as it looks. The Export dialog keeps only Legend (5.11 "Export dialog").
+- Every option is **off by default**, Signs included: from phase 69 the canvas no longer shows a sign badge until Signs is on.
+- They are a **viewer preference** kept in this browser (like the Analysis switches, 4.14), not part of the graph, the file, share links or the undo history. They can be switched on a locked graph and during a lesson.
+
+What each option shows (on the canvas and in images):
+
+| Option | Shows |
+|---|---|
+| Signs | The `+`/`−`/`±` badge at the edge's midpoint (4.16 "Images", 5.9 "Canvas"), for edges with a `signBadge`. |
+| Sign colors | Every edge's line and arrowhead in its **tone**: green for a positive sign, red for a negative one, the foreground colour (black in light, near-white in dark) for a mixed sign or none. With Signs on as well, the badge's border and glyph take the tone too. |
+| Strength | The line width by strength: small 1.5 px (the default width), medium 3 px, large 4.5 px; an edge without strength stays 1.5 px. The arrowhead grows with the width (`arrowSize`). |
+| Forms | A 20 px **mark** on the circle's rim at the top right (45°) for a node with a `form`: a circle with a glyph, a diagonal line for linear, an S-curve for smooth, a step for threshold. |
+| Variable types | A 20 px mark on the rim at the top left for a node with a `varType`, with the letter C (categorical), O (ordinal), N (continuous) or D (discrete). |
+| Dashed latent | The outline of every latent node dashed (`5 3`). |
+
+Red and green alone are hard to tell apart for colour-blind readers; Signs adds the `+`/`−` glyphs, so the two can be switched on together. The 5.7.2 rule "red appears only for errors" has this one exception, chosen by the user.
+
+#### Contracts (`src/lib/display.ts`, pure, no DOM; phase 67)
+
+```ts
+export type DisplayKey = 'signs' | 'signColors' | 'strength' | 'forms' | 'types' | 'dashedLatent'
+export const DISPLAY_KEYS: readonly DisplayKey[]          // in this order, also the switch order
+export type DisplayOptions = Record<DisplayKey, boolean>
+export const DISPLAY_DEFAULTS: DisplayOptions             // every key false
+
+export type Tone = 'positive' | 'negative' | 'neutral'
+export function signTone(sign: EdgeSign | undefined): Tone   // signBadge: positive → positive, negative → negative, mixed or undefined → neutral
+
+export const EDGE_WIDTH = 1.5                              // px, the default edge width (5.7.7)
+export const STRENGTH_WIDTHS: Record<Strength, number>    // small 1.5, medium 3, large 4.5
+export function edgeWidth(strength: Strength | undefined): number   // STRENGTH_WIDTHS[strength], else EDGE_WIDTH
+export function arrowSize(width: number): number          // 6 + 2 × width: 9 at 1.5 px (today's head), 12 at 3, 15 at 4.5; length and width of the closed head
+
+export const TYPE_LETTERS: Record<VarType, string>        // categorical 'C', ordinal 'O', continuous 'N', discrete 'D'
+
+export type GlyphSegment =
+  | ['M', number, number] | ['L', number, number]
+  | ['C', number, number, number, number, number, number]
+export const GLYPH_BOX = 12                               // glyph coordinates lie in a 12 × 12 box, y down
+export const FORM_GLYPHS: Record<Form, GlyphSegment[]>
+//   linear:    M 1 11 L 11 1
+//   smooth:    M 1 11 C 6 11 6 1 11 1
+//   threshold: M 1 10 L 6 10 L 6 2 L 11 2
+export function placeGlyph(segments: GlyphSegment[], cx: number, cy: number, size: number): GlyphSegment[]   // scaled to a size × size square centred on cx, cy
+export function glyphPathData(segments: GlyphSegment[]): string   // SVG `d`, numbers with at most two decimals
+
+export const MARK_SIZE = 20                               // px, the rim marks' diameter (as the untyped dot, 5.7.7)
+export const MARK_GLYPH = 10                              // px, the glyph's square inside a mark
+export type MarkCorner = 'top-left' | 'top-right'
+export function markCentre(cx: number, cy: number, r: number, corner: MarkCorner): { x: number; y: number }   // on the circle of radius r at 45°: (cx ± r/√2, cy − r/√2)
+```
+
+`signTone`, `edgeWidth` and `arrowSize` are what both the canvas and the image scene use, so the two cannot drift.
+
+#### Colours (5.7.2 and 4.11 additions, phase 67)
+
+- `src/index.css` gains `--sign-positive` (light `#15803D`, dark `#4ADE80`) and `--sign-negative` (light `#B91C1C`, dark `#F87171`). The neutral tone is `--foreground`. `theme.test.ts` checks both against `--canvas` at 3:1 or more, as for edges.
+- `ExportPalette` (`src/model/palette.ts`) gains `positive` and `negative`, the same literals, checked by `palette.test.ts`. The neutral tone is the palette's `foreground`.
+
+#### UI store (4.7 addition, phase 67)
+
+```ts
+export const DISPLAY_STORAGE_KEY = 'graphcreator:display'
+display: DisplayOptions                                   // initial value from readDisplay(safeLocalStorage())
+setDisplay(key: DisplayKey, on: boolean): void            // also writes all options with writeDisplay
+export function readDisplay(storage: Pick<Storage, 'getItem'> | null): DisplayOptions
+export function writeDisplay(storage: Pick<Storage, 'setItem'> | null, display: DisplayOptions): void
+```
+
+`readDisplay` and `writeDisplay` behave as `readAnalysisOn` and `writeAnalysisOn` (4.14): each key's stored boolean, else its default; null or throwing storage and bad JSON give the defaults; writes to null or throwing storage are ignored.
+
+#### Canvas data (phase 67)
+
+`src/components/canvas/types.ts` gains optional fields, filled by `Canvas` only for options that are on:
+
+```ts
+CircleNodeData.form?: Form              // Forms on and the node has a form
+CircleNodeData.typeLetter?: string      // Variable types on and the node has a varType: TYPE_LETTERS[varType]
+CircleNodeData.dashed?: boolean         // Dashed latent on and the node is latent
+FloatingEdgeData.tone?: Tone            // Sign colors on: signTone(edge.sign)
+FloatingEdgeData.width?: number         // Strength on: edgeWidth(edge.strength)
+```
+
+`FloatingEdgeData.sign` (5.9) is filled only while Signs is on.
+
+#### Images (4.11 and 4.16 "Images" additions, phases 67 and 70)
+
+- `ImageOptions` becomes `{ theme?: ImageTheme; legend?: boolean } & Partial<DisplayOptions>`; `signs` keeps its meaning and every other key defaults to false. `toTikz(graph, opts?: { legend?: boolean } & Partial<DisplayOptions>)`. With every display key false, every writer's output is byte-identical to before (the stored snapshots keep passing).
+- `Scene` additions:
+
+```ts
+export interface SceneCircle { …; dash?: [number, number] }          // dashed outline (Dashed latent)
+export interface ScenePath { segments: GlyphSegment[]; color: string; width: number }   // absolute image coordinates, stroked, not filled
+export interface SceneMark { circle: SceneCircle; path?: ScenePath; text?: SceneText }   // a rim mark: a glyph (Forms) or a letter (Variable types)
+Scene.marks: SceneMark[]                // drawn after the circles and names, before the legend
+```
+
+- **Edges:** the colour is the palette's `positive`, `negative` or `foreground` by `signTone` when `signColors` is on, else `edge`. The width is `edgeWidth(strength)` when `strength` is on, else 1.5. The arrowhead is `arrowSize(width)` long and wide (the line runs `arrowSize − 1` px into it, as now).
+- **Sign badges:** with `signColors` on, the badge's stroke and glyph take the edge's colour.
+- **Marks:** a circle of radius `MARK_SIZE / 2 − 0.5` centred on `markCentre(node centre, NODE_DIAMETER / 2, corner)`, filled with the palette's background and stroked 1 px in `edge`. A form mark holds `placeGlyph(FORM_GLYPHS[form], centre, MARK_GLYPH)` stroked 1.5 px in `edge`; a type mark holds the letter at 11 px, weight 500, in `edge`, centred with the node text's baseline rule. Marks come in node order, the type mark before the form mark.
+- **Dashed latent:** a latent node's circle gets `dash: [5, 3]`.
+- **Legend:** with `legend` on, the box lists the roles as now and then, for each display option that is on and shows something in this graph, one row per look in use, in this order:
+  - **Signs and Sign colors** (one group): a row per sign value in use among the drawn edges: positive, negative, mixed, and (only with Sign colors) no sign. Labels: `Positive effect`, `Negative effect`, `Mixed effects`, `No sign`. The swatch is a 24 px horizontal line sample with a small arrowhead, in the tone's colour with Sign colors on, else `edge`; with Signs on, the value's badge sits on the line's middle (no badge for no sign). Without Sign colors only signed edges have a row.
+  - **Strength:** a row per width in use (edges without strength count as 1.5 px), the line sample at that width in `edge`. Labels: `Small effect`, `Medium effect`, `Large effect`, `No strength`. Only when at least one edge has a strength.
+  - **Forms:** a row per form in use, the swatch the form mark at 16 px. Labels: `FORM_LABELS`.
+  - **Variable types:** a row per type in use, the swatch the type mark at 16 px. Labels: `VAR_TYPE_LABELS`.
+  - **Dashed latent:** no row; the Latent role's swatch is dashed (`2 1.5`).
+  - Rows whose swatches would look the same are merged into one row, their labels joined with ` or ` in the order above (for example `Small effect or No strength`, or with Sign colors but not Signs, `Mixed effects or No sign`).
+  - With any such row the swatch column is 24 px wide instead of `LEGEND.swatch`, and every swatch (role circles included) is centred in it. The box is `max(LEGEND.width, padding + column + gap + label width + padding)` wide, the label width estimated as `0.6 × LEGEND.font` per character. Without such rows the legend is unchanged. The placement rules of 4.11 apply to the bigger box.
+- **SVG:** a dashed circle gets `stroke-dasharray="5 3"`. Marks follow the names: per mark a `<circle>`, then a `<path d=… fill="none" stroke-linecap="round" stroke-linejoin="round">` or the letter in a `<g>` with its font attributes.
+- **PDF:** a dashed circle is stroked after `[5 3] 0 d` and followed by `[] 0 d`. A mark's path is `m`/`l`/`c` with `S`, round caps and joins (`1 J 1 j`, reset after). Letters are Helvetica, as all text.
+- **TikZ:** colours `gcPositive`, `gcNegative` and `gcNeutral` (the light `foreground`) are defined only when used. An edge's `\draw` gets `draw=gc<Tone>` and `line width=<0.75 × width>pt` and a `Stealth[length=<0.75 × arrowSize>pt,width=<0.75 × arrowSize>pt]` head. A badge uses its edge's colour. A dashed latent node adds `dashed`. A mark is `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (…) {};` followed by a `\draw[gcEdge, line width=1.125pt, line cap=round, line join=round]` path (`--` and `.. controls … and … ..`) or, for a letter, `font=\sffamily\scriptsize, text=gcEdge` and the letter in the node. Legend rows are drawn the same way at the scene's positions.
+
+#### Copy (5.7.8 addition, phase 67)
+
+| Key | Text |
+|---|---|
+| `DISPLAY_TITLE` | "Display" |
+| `DISPLAY_LABELS` | signs "Signs", signColors "Sign colors", strength "Strength", forms "Forms", types "Variable types", dashedLatent "Dashed latent" |
+| `DISPLAY_TIPS.title` | "Display: what the canvas and exported images show besides names, roles and arrows. These settings are kept in this browser, not in the graph." |
+| `DISPLAY_TIPS.signs` | "Signs: a +, − or ± badge in the middle of each arrow with a sign." |
+| `DISPLAY_TIPS.signColors` | "Sign colors: arrows with a positive sign turn green, negative ones red, and mixed or unsigned ones black." |
+| `DISPLAY_TIPS.strength` | "Strength: arrows with a medium or large effect are drawn thicker." |
+| `DISPLAY_TIPS.forms` | "Forms: a small badge on each variable with a functional form: a line for linear, a curve for smooth, a step for threshold." |
+| `DISPLAY_TIPS.types` | "Variable types: a small letter on each typed variable: C categorical, O ordinal, N continuous, D discrete." |
+| `DISPLAY_TIPS.dashedLatent` | "Dashed latent: latent variables get a dashed outline, a common way to mark unmeasured variables." |
+| `LEGEND_LABELS` | the legend labels of 4.18 "Images": `Positive effect`, `Negative effect`, `Mixed effects`, `No sign`, `Small effect`, `Medium effect`, `Large effect`, `No strength` |
+| `EXPORT_DESCRIPTION` | "The image shows the graph as on the canvas, with the Display options of the Edit panel, and an optional legend." |
+| `MARK_LABELS` | form `Functional form: <Form label>`, type `Variable type: <Type label>` (accessible names and titles of the canvas marks) |
 
 ## 5. Behaviour
 
@@ -1562,6 +1698,7 @@ All colours are CSS variables in `src/index.css`. Light values sit in `:root`, d
 | `--rim` | `rgb(15 118 110 / 0.25)` | `rgb(45 212 191 / 0.30)` | hover rim around circles |
 | `--warning-bg`, `--warning-fg`, `--warning-border` | `#FEF9C3`, `#854D0E`, `#F3E08A` | `#3A2E0A`, `#FDE68A`, `#5C4A12` | warnings badge, untyped dot, warning toasts |
 | `--error-bg`, `--error-fg`, `--error-border` | `#FEF3F2`, `#B42318`, `#F8C9C4` | `#3B1512`, `#FDA29B`, `#6B241E` | error toasts and callouts |
+| `--sign-positive`, `--sign-negative` (phase 67) | `#15803D`, `#B91C1C` | `#4ADE80`, `#F87171` | edge and badge tones with the Sign colors display option (4.18); the one exception to "red only for errors" |
 
 **Roles** (`--role-<role>-fill`, `--role-<role>-line`, `--role-<role>-text`; replacing v1's single `--role-<role>`):
 
@@ -1657,6 +1794,10 @@ Pure and deterministic (no DOM), so `autoLayout`, the store and the image export
 | Connection line | while dragging | 1.75 px `--primary`, dashed `6 4` |
 | Evidence chip | edge has evidence | 20 px high, `--background`, 1 px `--input` border, `rounded-sm`, `Bookmark` 10 px and the count in Plex Mono 11 px |
 | Sign badge (phase 54) | edge has a sign | 16 px circle, `--background`, 1 px `--edge` border, `+`/`−`/`±` in Plex Sans 12 px weight 500 in `--edge`; `--primary` border and glyph when the edge is selected (5.9) |
+| Edge | Sign colors on (phase 69) | line and arrowhead in `--sign-positive`, `--sign-negative` or `--foreground` by `signTone`; path marking, selection and hover win (5.11) |
+| Edge | Strength on (phase 69) | 1.5 / 3 / 4.5 px by strength, arrowhead `arrowSize(width)`; selected and hover use the larger of their width and this one |
+| Rim mark (phase 69) | Forms or Variable types on | 20 px circle on the rim at 45°, `--background`, 1 px `--edge` border; form glyph top right, type letter top left; the untyped dot moves to the top left when a form mark is shown |
+| Circle | latent, Dashed latent on (phase 69) | outline `2px dashed` in the role line colour |
 
 #### 5.7.8 Voice and copy
 
@@ -1874,7 +2015,7 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 
 **`ListEditor` addition (phase 52).** `onCommit(items, origin)` gains a second argument: `origin[i]` is the index in the `items` prop of the row that became item `i`, or `null` for a row added since mount. Rows keep their origin through moves and edits. Existing callers ignore the argument.
 
-**Canvas (phase 54).**
+**Canvas (phase 54).** From phase 69 the badge shows only while the Signs display option is on (4.18, 5.11).
 - Each edge with a `signBadge` shows a badge at its midpoint: a 16 px circle with a `--background` fill and a 1 px `--edge` border, and the glyph `+`, `−` or `±` in Plex Sans 12 px, weight 500, `--edge`. It has `role="img"` and `aria-label` `Positive effect`, `Negative effect` or `Mixed effects per level`, and the `title` `Sign: positive` and so on.
 - When the edge also has an evidence chip, the badge and the chip sit side by side with a 4 px gap, centred together on the midpoint (badge first).
 - A click on the badge selects the edge, like the chip. A selected edge's badge has a `--primary` border and glyph.
@@ -1883,7 +2024,7 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 
 **Issues (phase 53).** `IssueList` renders issues with an `edgeId` as buttons, like node issues, calling a new optional `onSelectEdge(edgeId)`. `IssuesDialog` selects the edge (`select({ kind: 'edge', id })`) and closes itself, as it does for nodes (phase 56; phase 53 wired this in `TopBar`).
 
-**Export dialog (phase 55).** A **Signs** checkbox (label "Signs") comes after Legend for every format. It is shown only when at least one edge has a `signBadge`, is on by default and is kept while the page is open, like Legend. It passes `signs` to `toSvg`, `svgSize`, `toPdf` and `toTikz`. The preview and sizes follow it.
+**Export dialog (phase 55; removed in phase 68, 5.11).** A **Signs** checkbox (label "Signs") comes after Legend for every format. It is shown only when at least one edge has a `signBadge`, is on by default and is kept while the page is open, like Legend. It passes `signs` to `toSvg`, `svgSize`, `toPdf` and `toTikz`. The preview and sizes follow it.
 
 **Dialog notes (5.4 addition, phase 49).** `CodeDialog`'s `COPY` notes change only by the added words:
 - **GraphCreator:** "The GraphCreator file keeps everything: roles, variable types, levels, descriptions, units, evidence, positions and simulation details."
@@ -1935,6 +2076,37 @@ Everything that only looks at the graph still works: selecting, hovering, pannin
 - **Top bar (phase 60):** the graph name input is `readOnly`, with `GRAPH_LOCK.reason` as its `title`. New, Open…, Save, Export… and Share are unchanged, so a locked graph can still be saved and shared.
 - **Analysis tab (phase 59):** the controls that set the adjusted set are disabled, with `GRAPH_LOCK.reason` in their tooltip. The analyses themselves still run and show.
 - **Lessons:** while a lesson runs, the practice graph is unlocked and fully editable, and the user's locked graph comes back locked when the lesson ends (4.17 "Store").
+
+### 5.11 Display section (phases 68–71)
+
+The display options of 4.18 are switched in the side panel, so the canvas shows what an export will show.
+
+**Display section (`DisplaySection.tsx`, phase 68).**
+- The Edit tab with nothing selected shows the Display section **above** the cheat sheet (`PanelHelp`), separated from it by a 1 px `--border` line with 16 px space on each side.
+- Its heading is `DISPLAY_TITLE` in the editor heading style (15 px, semibold), with the info tip `DISPLAY_TIPS.title`.
+- Below it, one row per `DISPLAY_KEYS` entry, **always all six**, whatever the graph holds: the `DISPLAY_LABELS` text (14 px) with a `<Label>` tied to its switch, the info tip `DISPLAY_TIPS[key]`, and a shadcn `Switch` at the right end of the row (`id="display-<key>"`). Rows are 32 px high.
+- A switch shows `uiStore.display[key]` and calls `setDisplay(key, on)`. The switches stay enabled on a locked graph and during a lesson.
+- With a node or an edge selected, the editors show as before and the section is not shown.
+
+**Export dialog (phase 68).**
+- The Signs checkbox is removed; Legend stays (for every format).
+- When the dialog opens it reads `uiStore.display` with the graph, and passes both, with Theme and Legend, to `svgSize`, `toSvg`, `toPdf` and `toTikz`. The preview and the sizes follow them.
+- Its description becomes `EXPORT_DESCRIPTION`.
+
+**Canvas (phase 69).**
+- `Canvas` fills the 4.18 "Canvas data" fields from `uiStore.display`, and `FloatingEdgeData.sign` only while Signs is on.
+- **Edges** (`FloatingEdge.tsx`, `canvas.css`): the line and arrowhead carry `data-tone` when `tone` is set, coloured `--sign-positive`, `--sign-negative` or `--foreground`. A `width` sets the line's stroke width, and the arrowhead marker is `arrowSize(width)` long and wide (9 without a width). Precedence, from strongest:
+  - on an open causal or biasing path (5.7.7): the path's colour, width and dash, as now, whatever the tone and width;
+  - selected: `--primary`, width `max(2.5, width)`;
+  - hover: `--edge-hover`, width `max(2, width)`;
+  - otherwise the tone (or `--edge`) and the width (or 1.5).
+- **Sign badge:** with a tone, its border and glyph take the tone's colour (selected still `--primary`).
+- **Marks** (`CircleNode.tsx`): a form mark at the top right and a type mark at the top left, each a 20 px circle with a `--background` fill and a 1 px `--edge` border, centred on the rim at 45° like the untyped dot. The form mark holds an inline SVG of `FORM_GLYPHS[form]` in a 10 px square, stroked 1.5 px in `--edge`, round caps and joins; the type mark holds the letter in Plex Sans 11 px, weight 500, `--edge`. Each has `role="img"` with `MARK_LABELS` as `aria-label` and `title`. They are decorative to pointer events (`pointer-events: none`), so a click lands on the circle.
+- **Untyped dot:** when a form mark is shown on an untyped node, the dot moves to the top left (an untyped node has no type mark), so the two never overlap.
+- **Dashed latent:** the circle carries `data-dashed`, and its outline becomes `2px dashed` in the role line colour; selected and drop-target looks are unchanged.
+- 5.7.7 gains the rows of 4.18 (tone colours, strength widths, the marks and the dashed outline).
+
+**Lessons and the welcome slides** do not mention the display options; a lesson leaves them as they are, like the Analysis switches (section 10).
 
 ## 6. Project setup and conventions
 
@@ -2125,6 +2297,15 @@ Everything that only looks at the graph still works: selecting, hovering, pannin
 | Graph lock: what | The whole graph is read-only: variables, arrows, simulation details, positions and the graph name | Only adding and deleting nodes; nodes and their positions, with arrows still editable | User's choice (2026-11-13), after a first round that kept arrows and positions editable. A lock that leaves gaps is not a lock. |
 | Graph lock: undo | The first undo after locking unlocks the graph | Clearing the history on locking; a confirmation dialog | Recommended option. It takes back a lock applied by mistake without a dialog. |
 | Graph lock: switch | A toggle at the bottom of the tool rail | A top bar switch; an Edit menu | Recommended option. It sits with the other canvas controls. |
+| Showing annotations (2026-11-17) | Six display options, each off by default: Signs, Sign colors, Strength, Forms, Variable types, Dashed latent | Only in the Export dialog; always on | User's choice, from feedback asking to show arrow annotations visually without clutter. |
+| Where the options live | A Display section in the Edit tab when nothing is selected; they change the canvas and the images | Checkboxes in the Export dialog (the first design round) | User's choice: the graph is styled on the canvas and exported as it looks. The Export dialog keeps only Legend. |
+| Where they are stored | A preference in this browser (`graphcreator:display`) | In the graph file | User's choice (recommended option): no format change, and it works on locked graphs. Per-graph settings are in IDEAS.md. |
+| Sign badges on the canvas | Off by default, shown with the Signs option | Always shown when an edge has a sign (phases 54–66) | User's choice: every option starts plain. |
+| Sign colours | Green positive, red negative, the foreground colour for mixed or no sign | Blue and orange (colour-blind safe) | User's choice. Signs adds `+`/`−`, which colour-blind readers can use alongside. |
+| Strength widths | 1.5, 3 and 4.5 px; no strength as small | No strength thinnest; no strength dashed | User's choice, picked from three drawn options. |
+| Form and type marks | Rim marks: form top right, type top left | Bottom rim; inside the circle under or above the name | User's choice, picked from three drawn options. The untyped dot moves to the top left when a form mark needs its place. |
+| Display switches | All six always shown | Only those whose data the graph has | User's choice. |
+| Legend for the options | The legend gains rows for the options that are on, values in use only | The legend lists roles only | User's choice. |
 
 ## 8. Implementation phases
 
@@ -2208,6 +2389,11 @@ General rules for every phase:
 | 64 | Sign editor per level | 63 | 29 | `src/components/SignEditor.tsx` |
 | 65 | Per-level signs in the reader doc | 63 | 29 | `docs/FORMAT.md` |
 | 66 | Per-level signs: integration and end-to-end tests | 64, 65 | 30 | `e2e/simulation.spec.ts`, `e2e/export.spec.ts` (the badge counts), fixes in any file of phases 63–65, this spec's Status line and Open issues |
+| 67 | Display contracts | 66 | 31 | `src/lib/display.ts` (new, + test), `src/index.css`, `src/lib/theme.test.ts`, `src/model/palette.ts` (+ test), `src/store/uiStore.ts` (+ test), `src/components/canvas/types.ts`, `src/lib/copy.ts` (+ test), type-only changes to `src/lib/imageScene.ts` and `src/lib/imageExport.ts` |
+| 68 | Display section and Export dialog | 67 | 32 | `src/components/DisplaySection.tsx` (new), `src/components/SidePanel.tsx`, `src/components/ExportDialog.tsx`, `e2e/export.spec.ts` |
+| 69 | Canvas display | 67 | 32 | `src/components/Canvas.tsx`, `canvas/FloatingEdge.tsx`, `canvas/CircleNode.tsx`, `canvas/canvas.css`, `e2e/simulation.spec.ts` |
+| 70 | Images with display options | 67 | 32 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/lib/__snapshots__/imageExport/*` |
+| 71 | Display integration and end-to-end tests | 68, 69, 70 | 33 | `e2e/display.spec.ts` (new), fixes in any file of phases 67–70, this spec's Status line and Open issues, `docs/IDEAS.md` |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -3391,7 +3577,7 @@ Phases: 62. Parallel: single phase. Check after the wave: all checks; the browse
 
 Phases: 63. Parallel: single phase. Check after the wave: all checks. In the app the editor still hides the parent's first level (phase 64 fixes that), but a sign on it no longer warns.
 
-#### Phase 63: Per-level sign contracts [x]
+#### Phase 63: Per-level sign contracts [x] (7114841)
 
 - **Goal:** the sign meaning of 4.16 ("Levels in signs", `parent-levels`) for real in the model, the validator and the texts, so the editor and the reader doc can follow in parallel.
 - **Depends on:** phase 62.
@@ -3410,7 +3596,7 @@ Phases: 63. Parallel: single phase. Check after the wave: all checks. In the app
 
 Phases: 64, 65. Parallel: both, one sub agent each; their files are disjoint. Land them in the order 64, 65. Check after the wave: all checks.
 
-#### Phase 64: Sign editor per level [x]
+#### Phase 64: Sign editor per level [x] (7114841)
 
 - **Goal:** the edge editor asks for a sign on every level of a categorical cause (5.9 "Edge editor").
 - **Depends on:** phase 63.
@@ -3422,7 +3608,7 @@ Phases: 64, 65. Parallel: both, one sub agent each; their files are disjoint. La
 - **Out of scope:** the Strength field, `NodeEditor` and the canvas.
 - **Details fixed in phase 64:** the component reads `s.graph` once and calls the helpers in render, instead of one store selector per helper. `signLevelMap` builds a fresh object for the two-level shorthand, which a Zustand selector compares by identity and so sees as a new value on every render, which loops the editor.
 
-#### Phase 65: Per-level signs in the reader doc [x]
+#### Phase 65: Per-level signs in the reader doc [x] (7114841)
 
 - **Goal:** [FORMAT.md](FORMAT.md) describes the new sign meaning, so simulators read it correctly.
 - **Depends on:** phase 63.
@@ -3437,7 +3623,7 @@ Phases: 64, 65. Parallel: both, one sub agent each; their files are disjoint. La
 
 Phases: 66. Parallel: single phase. Check after the wave: all checks.
 
-#### Phase 66: Per-level signs: integration and end-to-end tests [x]
+#### Phase 66: Per-level signs: integration and end-to-end tests [x] (7114841)
 
 - **Goal:** the whole change works in the browser and is covered end to end.
 - **Depends on:** phases 64 and 65.
@@ -3445,6 +3631,77 @@ Phases: 66. Parallel: single phase. Check after the wave: all checks.
 - **Work:** the `e2e/simulation.spec.ts` tests of section 9, the badge counts in `e2e/export.spec.ts` (the fixture's `Wound class → SSI` edge is mixed now that its first level is signed), fixes anywhere in phases 63–65, and this spec's Status line and Open issues.
 - **Tests:** section 9's phase 66 bullet, and the whole suite.
 - **Done when:** all checks pass and the walk-through of 4.16 can be reproduced in the app: a three-level cause signed on every level, saved and reopened unchanged.
+
+### Wave 31: Display contracts [ ]
+
+Phases: 67. Parallel: single phase. Check after the wave: all checks. The app looks and works as before: nothing reads the new state yet.
+
+#### Phase 67: Display contracts [ ]
+
+- **Goal:** the types, helpers, colours, store state and texts of 4.18, so the panel, the canvas and the images can be built in parallel.
+- **Depends on:** phase 66.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.7, 4.11, 4.14 (the stored-switch pattern), 4.16, 5.7.2, 5.7.8.
+- **Work:**
+  - **`src/lib/display.ts`** (new, + `display.test.ts`): everything in 4.18 "Contracts".
+  - **Colours:** `--sign-positive` and `--sign-negative` in `src/index.css` (`:root` and `.dark`, plus their `--color-…` theme entries), checked in `theme.test.ts`; `positive` and `negative` in `EXPORT_PALETTES`, checked in `palette.test.ts`.
+  - **`uiStore.ts`:** `display`, `setDisplay`, `readDisplay`, `writeDisplay`, `DISPLAY_STORAGE_KEY` (4.18 "UI store").
+  - **`canvas/types.ts`:** the optional fields of 4.18 "Canvas data".
+  - **`imageScene.ts`, `imageExport.ts`:** the `ImageOptions`, `toTikz` options and `Scene` additions of 4.18 "Images" as types only: `marks` is always `[]` and no circle gets `dash`. The writers accept and ignore the new options.
+  - **`copy.ts`:** the texts of 4.18 "Copy".
+- **Tests:** section 9's phase 67 bullets.
+- **Done when:** all checks pass and every image snapshot is unchanged.
+- **Out of scope:** drawing anything new, the panel and the dialog.
+
+### Wave 32: Display parts [ ]
+
+Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are disjoint. Land them in the order 70, 69, 68 (the dialog last, so it shows what the images can draw). Check after the wave: all checks; in the browser the six switches change the canvas, and an export matches it.
+
+#### Phase 68: Display section and Export dialog [ ]
+
+- **Goal:** the Display section and the slimmer Export dialog of 5.11.
+- **Depends on:** phase 67.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.18 "UI store" and "Copy", 5.11 "Display section" and "Export dialog", `InfoTip` (5.3).
+- **Work:** the new `DisplaySection.tsx`, mounted by `SidePanel.tsx` above `PanelHelp`; `ExportDialog.tsx` without Signs, passing `uiStore.display`. In `e2e/export.spec.ts`, replace the Signs checkbox test with one that sets Signs through the Display section (or the stored preference) and checks the badges in the SVG and TikZ.
+- **Tests:** the e2e change above; the rest in phase 71.
+- **Done when:** all checks pass.
+- **Out of scope:** the canvas, the scene and the writers.
+
+#### Phase 69: Canvas display [ ]
+
+- **Goal:** the canvas shows the display options (5.11 "Canvas").
+- **Depends on:** phase 67.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.18 "Contracts", "Colours" and "Canvas data", 5.7.7, 5.11 "Canvas".
+- **Work:** `Canvas.tsx` fills the data; `FloatingEdge.tsx` tone, width and marker size; `CircleNode.tsx` marks, the moving untyped dot and `data-dashed`; `canvas.css`. The canvas sign badge now needs Signs on, so the badge tests in `e2e/simulation.spec.ts` switch Signs on first (through the stored preference `graphcreator:display` before the page loads, or the Display section once phase 68 has landed).
+- **Tests:** the e2e change above; the rest in phase 71.
+- **Done when:** all checks pass, and in the browser each option changes the canvas in both themes while path marking, hover and selection still win.
+- **Out of scope:** the side panel, the Export dialog and the images.
+
+#### Phase 70: Images with display options [ ]
+
+- **Goal:** SVG, PNG, PDF and TikZ draw the display options and the legend rows (4.18 "Images").
+- **Depends on:** phase 67.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.11, 4.16 "Images", 4.18 "Contracts", "Colours" and "Images".
+- **Work:** `imageScene.ts` (tones, widths, heads, badge colours, marks, dashed latent, the legend rows and their merging, the wider legend), `toSvg` and `toTikz` in `imageExport.ts`, `pdfExport.ts`; new snapshots for a graph with every option on, with and without the legend, in both themes.
+- **Tests:** section 9's phase 70 bullets.
+- **Done when:** all checks pass, the existing snapshots are unchanged, and the new SVG, PDF (checked with `pdftoppm`) and TikZ look like the canvas.
+- **Out of scope:** the dialog and the canvas.
+
+### Wave 33: Display integration [ ]
+
+Phases: 71. Parallel: single phase. Check after the wave: all checks.
+
+#### Phase 71: Display integration and end-to-end tests [ ]
+
+- **Goal:** the whole change works in the browser and is covered end to end.
+- **Depends on:** phases 68, 69 and 70.
+- **Owns files:** see the task graph row.
+- **Work:** `e2e/display.spec.ts` (section 9), fixes anywhere in phases 67–70, this spec's Status line and Open issues, and an IDEAS.md entry for display settings stored in the graph file.
+- **Tests:** section 9's phase 71 bullet, and the whole suite.
+- **Done when:** all checks pass, and `simulation.dag.yaml` with every option on looks the same on the canvas and in an exported SVG, PNG and PDF, in light and dark.
 
 ## 9. Tests
 
@@ -3708,6 +3965,19 @@ Import and export (phases 31–40):
 - `src/model/yaml.test.ts` (phase 63 addition): the amended `simulation.dag.yaml` round-trips canonically, with the parent's first level written first in the map.
 - `e2e/simulation.spec.ts` (phase 66): every level of a three-level cause can be signed, the first included, and the saved file holds all three keys; the same signs on every level raise no issue; a two-level cause shows one row per level, not a single control; opening `simulation.dag.yaml` shows `yes` signed on the `Diabetes → SSI` edge with a `+` badge and saves the file back unchanged. The earlier sign tests are adjusted to the new shapes: the `Clear sign` case needs an end that gives a real mismatch, such as a continuous cause.
 
+- `src/lib/display.test.ts` (phase 67): `signTone` for each sign, a mixed map, an all-negative map and `undefined`; `edgeWidth` for each strength and none; `arrowSize(1.5)` is 9; `TYPE_LETTERS` and `FORM_GLYPHS` cover every type and form, and every glyph point lies in the 12 × 12 box; `placeGlyph` maps the box onto the square; `glyphPathData` rounds to two decimals; `markCentre` for both corners.
+- `src/store/uiStore.test.ts` (phase 67 additions): `display` starts as `DISPLAY_DEFAULTS`; `setDisplay` changes one key and writes all six; `readDisplay` takes stored booleans, ignores other values and falls back on null storage, a throwing storage and bad JSON.
+- `src/model/palette.test.ts` and `src/lib/theme.test.ts` (phase 67 additions): `positive` and `negative` match `--sign-positive` and `--sign-negative`; both have 3:1 or more against `--canvas` in both themes.
+- `src/lib/copy.test.ts` (phase 67 additions): every `DISPLAY_TIPS` text follows the tooltip rules.
+- `src/lib/imageScene.test.ts`, `imageExport.test.ts` and `pdfExport.test.ts` (phase 70 additions): with every display key false the scene and the outputs are unchanged; tones give the palette colours and Sign colors without Signs leaves `badges` empty; strength widths and head sizes; badges in the edge colour; a form and a type mark at the right rim points, in node order; dashed latent circles and their SVG, PDF and TikZ dash; legend rows in order, merged when their swatches match, the wider box and its placement; TikZ defines only the tone colours in use; new snapshots for a graph with every option on (light and dark, with and without legend).
+- `e2e/export.spec.ts` (phase 68): there is no Signs checkbox; with Signs on in the Display section, the SVG holds one `+` and two `±` badges for `simulation.dag.yaml` and TikZ follows; switching it off removes them.
+- `e2e/display.spec.ts` (phase 71):
+  - with nothing selected the Edit tab shows the six switches, all off; selecting a node hides them;
+  - each switch changes the canvas: Signs shows the badges, Sign colors sets `data-tone` on the edges, Strength widens a large edge and its arrowhead, Forms and Variable types add the marks with their accessible names, Dashed latent sets `data-dashed`;
+  - an untyped node with a form shows its warning dot at the top left;
+  - the switches survive a reload, and work on a locked graph;
+  - an exported SVG follows the switches, and with Legend on lists the rows for the options that are on.
+
 ## 10. Open issues
 
 - **Hosting and deployment:** the app is on GitHub Pages for now (6, CI). Open: whether to move to an EU host (GitHub logs visitors' IP addresses in the US) and whether to use a custom domain. A custom domain means building with `BASE_PATH=/`, and share links made on the `github.io` address stop working after a move.
@@ -3734,4 +4004,5 @@ Import and export (phases 31–40):
   - a lesson on simulation details;
   - simulation code generation and "Sample N datasets" stay in IDEAS.md.
 - **View after a reload:** the autosaved graph is not fitted to the view after a reload; it sits at its stored coordinates and can be partly hidden under the tool rail.
+- **Display options after a lesson:** a lesson leaves the display switches as they are, like the Analysis switches, so a practice graph can show the user's chosen display.
 - Everything in [IDEAS.md](IDEAS.md).
