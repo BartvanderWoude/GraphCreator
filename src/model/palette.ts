@@ -2,8 +2,9 @@ import type { Role } from './schema'
 
 /**
  * Colours for exported pictures and for the DOT and Mermaid writers (spec 4.11, 4.15): the
- * `:root` (light) and `.dark` values of `--background`, `--foreground`, `--border`, `--edge` and
- * `--role-<role>-fill|line|text` in `src/index.css`, checked by `palette.test.ts`.
+ * `:root` (light) and `.dark` values of `--background`, `--foreground`, `--border`, `--edge`,
+ * `--sign-positive`, `--sign-negative` (4.18) and `--role-<role>-fill|line|text` in
+ * `src/index.css`, checked by `palette.test.ts`.
  */
 
 export type ImageTheme = 'light' | 'dark'
@@ -13,6 +14,10 @@ export interface ExportPalette {
   foreground: string
   border: string
   edge: string
+  /** Edge tone for a positive sign with the Sign colors display option (spec 4.18). */
+  positive: string
+  /** Edge tone for a negative sign; the neutral tone is `foreground`. */
+  negative: string
   roles: Record<Role, { fill: string; line: string; text: string }>
 }
 
@@ -22,6 +27,8 @@ export const EXPORT_PALETTES: Record<ImageTheme, ExportPalette> = {
     foreground: '#0f172a',
     border: '#e2e8f0',
     edge: '#64748b',
+    positive: '#15803d',
+    negative: '#b91c1c',
     roles: {
       exposure: { fill: '#e3f1e8', line: '#4a946a', text: '#24563a' },
       outcome: { fill: '#e2eaf8', line: '#5b83cf', text: '#23407a' },
@@ -36,6 +43,8 @@ export const EXPORT_PALETTES: Record<ImageTheme, ExportPalette> = {
     foreground: '#e6eeec',
     border: '#24332f',
     edge: '#8a9aae',
+    positive: '#4ade80',
+    negative: '#f87171',
     roles: {
       exposure: { fill: '#1b3326', line: '#6fcf97', text: '#d7f5e3' },
       outcome: { fill: '#1c2740', line: '#8aaef0', text: '#dce6fb' },

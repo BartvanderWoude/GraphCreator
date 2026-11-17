@@ -35,6 +35,8 @@ describe('EXPORT_PALETTES', () => {
     expect(palette.foreground).toBe(t.get('--foreground'))
     expect(palette.border).toBe(t.get('--border'))
     expect(palette.edge).toBe(t.get('--edge'))
+    expect(palette.positive).toBe(t.get('--sign-positive'))
+    expect(palette.negative).toBe(t.get('--sign-negative'))
     for (const role of ROLES) {
       expect(palette.roles[role]).toEqual({
         fill: t.get(`--role-${role}-fill`),

@@ -1,5 +1,6 @@
 import type { Edge, EdgeTypes, Node, NodeTypes } from '@xyflow/react'
-import type { Role } from '@/model/schema'
+import type { Tone } from '@/lib/display'
+import type { Form, Role } from '@/model/schema'
 import { CircleNode } from './CircleNode'
 import { CircleConnectionLine, FloatingEdge } from './FloatingEdge'
 
@@ -19,6 +20,12 @@ export type CircleNodeData = {
   highlighted?: boolean
   /** The current lesson step's pointer label for this node (5.7.12); undefined outside a lesson. */
   pointer?: string
+  /** The node's functional form, for the form mark; only while Forms is on (spec 4.18). */
+  form?: Form
+  /** `TYPE_LETTERS[varType]`, for the type mark; only while Variable types is on (4.18). */
+  typeLetter?: string
+  /** The node is latent and Dashed latent is on: dashed outline. */
+  dashed?: boolean
 }
 
 /** Data of a React Flow edge of type `floating`. */
@@ -27,8 +34,15 @@ export type FloatingEdgeData = {
   evidenceCount: number
   /** On an open causal or biasing path; only while `analysisOn.paths` and the paths are not truncated. */
   path?: 'causal' | 'biasing'
-  /** The edge's sign badge (spec 5.9), from `signBadge(edge.sign)`; undefined when it has no sign. */
+  /**
+   * The edge's sign badge (spec 5.9), from `signBadge(edge.sign)`; undefined when it has no sign
+   * or the Signs display option is off (4.18).
+   */
   sign?: 'positive' | 'negative' | 'mixed'
+  /** Line and arrowhead colour, `signTone(edge.sign)`; only while Sign colors is on (4.18). */
+  tone?: Tone
+  /** Line width in px, `edgeWidth(edge.strength)`; only while Strength is on (4.18). */
+  width?: number
 }
 
 export type CircleFlowNode = Node<CircleNodeData, 'circle'>

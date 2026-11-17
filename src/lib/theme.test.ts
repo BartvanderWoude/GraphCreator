@@ -3,7 +3,8 @@ import { ROLES } from '@/model/schema'
 
 /**
  * Contrast checks for the Calm teal tokens (spec 5.7.2): text pairs at least 4.5:1; circle
- * outlines, edges and the selection border at least 3:1 against --canvas. Both themes.
+ * outlines, edges, the sign tones (4.18) and the selection border at least 3:1 against --canvas.
+ * Both themes.
  */
 
 // `node:fs` is loaded dynamically and typed by hand: the app tsconfig has no Node types, and
@@ -69,6 +70,9 @@ const PAIRS: [string, string, number][] = [
   // Edges and the selection border against the canvas.
   ['--edge', '--canvas', GRAPHIC],
   ['--primary', '--canvas', GRAPHIC],
+  // Edge tones of the Sign colors display option (spec 4.18).
+  ['--sign-positive', '--canvas', GRAPHIC],
+  ['--sign-negative', '--canvas', GRAPHIC],
 ]
 
 describe.each([

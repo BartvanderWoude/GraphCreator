@@ -3632,11 +3632,11 @@ Phases: 66. Parallel: single phase. Check after the wave: all checks.
 - **Tests:** section 9's phase 66 bullet, and the whole suite.
 - **Done when:** all checks pass and the walk-through of 4.16 can be reproduced in the app: a three-level cause signed on every level, saved and reopened unchanged.
 
-### Wave 31: Display contracts [ ]
+### Wave 31: Display contracts [x]
 
 Phases: 67. Parallel: single phase. Check after the wave: all checks. The app looks and works as before: nothing reads the new state yet.
 
-#### Phase 67: Display contracts [ ]
+#### Phase 67: Display contracts [x]
 
 - **Goal:** the types, helpers, colours, store state and texts of 4.18, so the panel, the canvas and the images can be built in parallel.
 - **Depends on:** phase 66.

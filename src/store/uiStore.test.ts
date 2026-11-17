@@ -1,16 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { DISPLAY_DEFAULTS, DISPLAY_KEYS } from '@/lib/display'
 import {
   ANALYSIS_DEFAULTS,
   ANALYSIS_KEY,
   ANALYSIS_KEYS,
   DAGITTY_DETAILS_KEY,
+  DISPLAY_STORAGE_KEY,
   readAnalysisOn,
   readDagittyDetails,
+  readDisplay,
   readSimulationOpen,
   SIMULATION_OPEN_KEY,
   useUiStore,
   writeAnalysisOn,
   writeDagittyDetails,
+  writeDisplay,
   writeSimulationOpen,
 } from './uiStore'
 
@@ -290,5 +294,76 @@ describe('Simulation section state (phase 49)', () => {
     expect(ui().namePreview).toEqual({ id: 'n1', name: 'Age' })
     ui().setNamePreview(null)
     expect(ui().namePreview).toBeNull()
+  })
+})
+
+describe('display options (phase 67)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('starts with every option off', () => {
+    expect(DISPLAY_STORAGE_KEY).toBe('graphcreator:display')
+    expect(ui().display).toEqual(DISPLAY_DEFAULTS)
+  })
+
+  it('setDisplay sets one option and writes all six', () => {
+    const storage = memoryStorage()
+    vi.stubGlobal('window', { localStorage: storage })
+    ui().setDisplay('signColors', true)
+    expect(ui().display).toEqual({ ...DISPLAY_DEFAULTS, signColors: true })
+    ui().setDisplay('dashedLatent', true)
+    ui().setDisplay('signColors', false)
+    const expected = { ...DISPLAY_DEFAULTS, dashedLatent: true }
+    expect(ui().display).toEqual(expected)
+    const written = JSON.parse(
+      storage.data.get(DISPLAY_STORAGE_KEY) ?? 'null',
+    ) as Record<string, boolean>
+    expect(written).toEqual(expected)
+    expect(Object.keys(written).sort()).toEqual([...DISPLAY_KEYS].sort())
+  })
+
+  it('setDisplay works without storage', () => {
+    ui().setDisplay('forms', true)
+    expect(ui().display.forms).toBe(true)
+  })
+
+  it('readDisplay gives the defaults for null, throwing, empty or malformed storage', () => {
+    expect(readDisplay(null)).toEqual(DISPLAY_DEFAULTS)
+    expect(readDisplay(throwing)).toEqual(DISPLAY_DEFAULTS)
+    expect(readDisplay(memoryStorage())).toEqual(DISPLAY_DEFAULTS)
+    for (const bad of ['{', 'null', '[true]', '"on"', '42']) {
+      expect(
+        readDisplay(memoryStorage({ [DISPLAY_STORAGE_KEY]: bad })),
+      ).toEqual(DISPLAY_DEFAULTS)
+    }
+  })
+
+  it('readDisplay takes stored booleans and ignores other values', () => {
+    const stored = JSON.stringify({
+      signs: true,
+      strength: 'yes',
+      types: 1,
+      dashedLatent: true,
+      colour: true,
+    })
+    expect(
+      readDisplay(memoryStorage({ [DISPLAY_STORAGE_KEY]: stored })),
+    ).toEqual({ ...DISPLAY_DEFAULTS, signs: true, dashedLatent: true })
+  })
+
+  it('readDisplay returns a fresh object, not the defaults themselves', () => {
+    const display = readDisplay(null)
+    display.signs = true
+    expect(DISPLAY_DEFAULTS.signs).toBe(false)
+  })
+
+  it('round-trips through writeDisplay and ignores null or throwing storage', () => {
+    const storage = memoryStorage()
+    const display = { ...DISPLAY_DEFAULTS, strength: true, types: true }
+    writeDisplay(storage, display)
+    expect(readDisplay(storage)).toEqual(display)
+    expect(() => writeDisplay(null, display)).not.toThrow()
+    expect(() => writeDisplay(throwing, display)).not.toThrow()
   })
 })

@@ -4,6 +4,7 @@
  * phase 31; `imageScene` is built in phase 37. Pure, no DOM.
  */
 import { ROLE_LABELS } from '@/lib/copy'
+import type { GlyphSegment } from '@/lib/display'
 import { edgeEndpoints, type Circle } from '@/lib/geometry'
 import type { ImageOptions } from '@/lib/imageExport'
 import type { GNode, Graph } from '@/model/graph'
@@ -36,6 +37,8 @@ export interface SceneCircle {
   fill: string
   stroke: string
   strokeWidth: number
+  /** Dash and gap lengths of a dashed outline (Dashed latent, spec 4.18); solid when absent. */
+  dash?: [number, number]
 }
 
 /** A line of text; `y` is its baseline. */
@@ -77,6 +80,20 @@ export interface SceneBadge {
   text: SceneText
 }
 
+/** A stroked, unfilled path in absolute image coordinates (a mark's glyph, spec 4.18). */
+export interface ScenePath {
+  segments: GlyphSegment[]
+  color: string
+  width: number
+}
+
+/** A rim mark (spec 4.18): a small circle holding a glyph (Forms) or a letter (Variable types). */
+export interface SceneMark {
+  circle: SceneCircle
+  path?: ScenePath
+  text?: SceneText
+}
+
 /** Everything a picture shows. The image's top-left is 0,0 and y grows downward. */
 export interface Scene {
   title: string
@@ -92,6 +109,8 @@ export interface Scene {
   texts: SceneText[]
   /** `circles[i]` belongs to graph node `nodeIds[i]`. */
   nodeIds: string[]
+  /** Rim marks (Forms, Variable types), drawn after the circles and names, before the legend. */
+  marks: SceneMark[]
   legend: SceneLegend | null
 }
 
@@ -271,6 +290,7 @@ export function imageScene(graph: Graph, opts: ImageOptions = {}): Scene {
     circles: [],
     texts: [],
     nodeIds: [],
+    marks: [],
     legend: null,
   }
   if (graph.nodes.length === 0) return scene

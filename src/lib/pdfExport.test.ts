@@ -47,6 +47,7 @@ function scene(over: Partial<Scene> = {}): Scene {
       text(240, 72.88, 'é β'),
     ],
     nodeIds: ['n1', 'n2'],
+    marks: [],
     legend: {
       x: 200,
       y: 120,

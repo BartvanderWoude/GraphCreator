@@ -4,6 +4,7 @@
  * captured from the DOM, so the result does not depend on zoom or selection. Everything but
  * `svgToPng` is pure.
  */
+import type { DisplayOptions } from '@/lib/display'
 import {
   EXPORT_MARGIN,
   imageScene,
@@ -21,14 +22,13 @@ export { EXPORT_MARGIN, EXPORT_PALETTES, type ImageTheme }
 export type ImageFormat = 'svg' | 'png' | 'pdf' | 'tikz'
 
 /**
- * Picture options (spec 4.11 "PDF, legend and dark theme", 4.16 "Images"). Defaults: light, no
- * legend, no sign badges.
+ * Picture options (spec 4.11 "PDF, legend and dark theme", 4.16 "Images", 4.18 "Images"): the
+ * theme, the legend and the display options. Defaults: light, no legend, every display option off.
  */
-export interface ImageOptions {
+export type ImageOptions = {
   theme?: ImageTheme
   legend?: boolean
-  signs?: boolean
-}
+} & Partial<DisplayOptions>
 
 /** TikZ is always drawn in the light theme's colours: LaTeX documents are printed on white. */
 const PALETTE = EXPORT_PALETTES.light
@@ -234,7 +234,7 @@ const TIKZ_GLYPHS: Record<string, string> = {
  */
 export function toTikz(
   graph: Graph,
-  opts: { legend?: boolean; signs?: boolean } = {},
+  opts: { legend?: boolean } & Partial<DisplayOptions> = {},
 ): string {
   const scene = imageScene(graph, {
     theme: 'light',
