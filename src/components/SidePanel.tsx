@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { AnalysisPanel } from '@/components/AnalysisPanel'
+import { DisplaySection } from '@/components/DisplaySection'
 import { EdgeEditor } from '@/components/EdgeEditor'
 import { NodeEditor } from '@/components/NodeEditor'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -9,7 +10,8 @@ import { useUiStore, type SidePanelTab } from '@/store/uiStore'
 
 /**
  * Right-hand panel (spec 5.1, 5.8): the Edit and Analysis tabs. Edit shows the editor for the
- * single selected node or edge, else the cheat sheet (`PANEL_HELP`, spec 5.7.8).
+ * single selected node or edge, else the Display section (5.11) and the cheat sheet (`PANEL_HELP`,
+ * spec 5.7.8).
  */
 export function SidePanel() {
   const tab = useUiStore((s) => s.sidePanelTab)
@@ -52,7 +54,10 @@ export function SidePanel() {
   )
 }
 
-/** The Edit tab: the selected node's or edge's editor, or the cheat sheet. */
+/**
+ * The Edit tab: the selected node's or edge's editor, or the Display section above the cheat
+ * sheet, split by a 1 px line (spec 5.11).
+ */
 function EditView() {
   const node = useGraphStore((s) =>
     s.selection?.kind === 'node'
@@ -69,7 +74,14 @@ function EditView() {
 
   if (node) return <NodeEditor key={`${node.id}:${revision}`} node={node} />
   if (edge) return <EdgeEditor key={`${edge.id}:${revision}`} edge={edge} />
-  return <PanelHelp />
+  return (
+    <div className="flex flex-col gap-4">
+      <DisplaySection />
+      <div className="border-t border-border pt-4">
+        <PanelHelp />
+      </div>
+    </div>
+  )
 }
 
 /** Cheat sheet shown when nothing is selected. */

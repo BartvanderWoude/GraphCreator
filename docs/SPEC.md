@@ -3663,11 +3663,11 @@ Phases: 67. Parallel: single phase. Check after the wave: all checks. The app lo
 - **Done when:** all checks pass and every image snapshot is unchanged.
 - **Out of scope:** drawing anything new, the panel and the dialog.
 
-### Wave 32: Display parts [ ]
+### Wave 32: Display parts [x]
 
 Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are disjoint. Land them in the order 70, 69, 68 (the dialog last, so it shows what the images can draw). Check after the wave: all checks; in the browser the six switches change the canvas, and an export matches it.
 
-#### Phase 68: Display section and Export dialog [ ]
+#### Phase 68: Display section and Export dialog [x]
 
 - **Goal:** the Display section and the slimmer Export dialog of 5.11.
 - **Depends on:** phase 67.
