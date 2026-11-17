@@ -45,7 +45,7 @@ edges:
     strength: small
   - from: Wound class
     to: SSI
-    sign: {clean-contaminated: positive, contaminated: positive}
+    sign: {clean: negative, clean-contaminated: positive, contaminated: positive}
     strength: large
 ```
 
@@ -151,10 +151,13 @@ A node has exactly one role. Any number of nodes may be exposures or outcomes.
 The order of `levels` matters for both categorical and ordinal variables:
 
 - For an ordinal variable, the levels go from lowest to highest.
-- For any variable with levels, a later level counts as higher when a sign is read (see [Sign](#sign)). For a variable with levels `["no", "yes"]`, "yes" is higher.
-- For a categorical variable with three or more levels, the first level is the **reference level** for signs on edges leaving it.
+- For an ordinal variable, and for a variable with levels on the effect side of an edge, a later level counts as higher when a sign is read (see [Sign](#sign)). For a variable with levels `["no", "yes"]`, "yes" is higher.
+- For a categorical cause, every level carries its own sign, the first level included. There is no reference level.
 
-A categorical variable with three or more levels is called **nominal** in this document. An ordinal variable is never nominal, because its levels are ordered.
+Two words for the two sides of an edge:
+
+- A categorical variable with three or more levels is called **nominal**. An ordinal variable is never nominal, because its levels are ordered. The **effect** side uses this word: an effect's levels are alternatives whose chances add up to 1, so an effect with two levels needs only one sign (if "yes" becomes more likely, "no" becomes less likely).
+- A categorical variable with two or more levels **has levels for signs**. The **cause** side uses this: a cause's levels are not alternatives in one sum, so each of them has its own answer to "does being in this level raise or lower the effect?".
 
 ### Shares
 
@@ -190,22 +193,24 @@ A reader may use other numbers, but these are the shared default. With a sign pe
 
 ### Sign
 
-`sign` says whether a cause raises or lowers its effect. What it looks like depends on whether the edge's ends are nominal (categorical with three or more levels):
+`sign` says whether a cause raises or lowers its effect. What it looks like depends on the two ends, in this order:
 
 | Cause (`from`) | Effect (`to`) | Sign | Meaning |
 |---|---|---|---|
-| not nominal | not nominal | one word | `positive`: a higher cause gives a higher effect. `negative`: a higher cause gives a lower effect. |
-| not nominal | nominal | a map from the effect's levels to words | `positive`: a higher cause makes that level of the effect more likely. `negative`: less likely. Levels left out are not specified. |
-| nominal | not nominal | a map from the cause's levels to words | The first level of the cause is the reference and has no key. `B: positive` means that moving from the reference level to level B raises the effect; `negative` lowers it. Levels left out are not specified. |
 | nominal | nominal | none | A sign is not available, because a level-by-level table would be needed. Strength is still allowed. |
+| any | nominal | a map from the effect's levels to words | `positive`: a higher cause, or being in that level of the cause, makes that level of the effect more likely. `negative`: less likely. Levels left out are not specified. |
+| has levels for signs | not nominal | a map from **all** the cause's levels to words | `B: positive` means that being in level B gives a higher effect than the average over the cause's levels; `negative` a lower one. There is no reference level. Levels left out are not specified. |
+| no levels for signs | not nominal | one word | `positive`: a higher cause gives a higher effect. `negative`: a higher cause gives a lower effect. |
 
-"Higher" follows the level order for categorical and ordinal variables, and the value for continuous and discrete ones. Untyped variables count as not nominal.
+- "Higher" follows the level order for an ordinal variable and for a leveled effect, and the value for continuous and discrete ones. An untyped variable is neither nominal nor leveled for signs.
+- **Any combination of signs is allowed** on a map over a cause's levels, every level `positive` included. The file may describe a sample that is not a representative population sample, so GraphCreator does not restrict or warn about the combination. If your model needs the level effects to cancel out, centre them yourself (for example by subtracting their share-weighted mean).
+- **One word instead of a map** on an edge whose cause has exactly two levels means a sign on the **second** level, the first unspecified: `positive` reads as "yes raises the effect". Files written before per-level signs use this form, and it keeps its meaning. With three or more levels a word does not fit; treat it as missing.
 
 In the example:
 
-- `Diabetes → SSI`: both ends have two levels, so one word. `positive`: having diabetes ("yes", the later level) raises the chance of SSI ("yes").
-- `Diabetes → Wound class`: the effect is nominal, so a map over its levels. Diabetes makes `clean` less likely and `contaminated` more likely; `clean-contaminated` is not specified.
-- `Wound class → SSI`: the cause is nominal, so a map over its levels except the first, `clean`, which is the reference. Both other wound classes raise the chance of SSI compared with a clean wound.
+- `Diabetes → SSI`: the cause has two levels and a word, so it signs the second level. `positive`: having diabetes ("yes") raises the chance of SSI ("yes"); the "no" level is not specified.
+- `Diabetes → Wound class`: the effect is nominal, so a map over the effect's levels. Diabetes makes `clean` less likely and `contaminated` more likely; `clean-contaminated` is not specified.
+- `Wound class → SSI`: the cause has levels for signs and the effect is not nominal, so a map over all the cause's levels. Compared with the average wound class, a `clean` wound lowers the chance of SSI, and `clean-contaminated` and `contaminated` wounds raise it.
 
 A sign map is written in flow style, with its keys in the order of the levels they name.
 
@@ -227,10 +232,10 @@ A reader that generates data from a file should follow these rules, so that ever
 - **Use names as given.** A name is any text, such as `Kidney disease` or `BMI (kg/m²)`. Use it as it is, or derive your own identifiers from it; do not expect it to be a valid variable name in R or Python.
 - **Sort the nodes yourself.** The order of `nodes` is the order in which they were drawn, not a topological order. Sort them by the edges before generating data (for example with Python's `graphlib.TopologicalSorter`).
 - **Level order is meaningful.** The position of a level in `levels` is its class index (0 for the first level), and it defines which level counts as higher for signs.
-- **The first level is the reference** for a sign map on an edge leaving a nominal node. A key for the reference level has no meaning: ignore it.
+- **A sign map over a cause's levels has no reference level.** Each sign is read against the average over that cause's levels, and the first level is an ordinary key. A map written before per-level signs may have no key for the first level; that level is then simply unspecified.
 - **Normalise shares.** Divide each share by their sum. Read them as decimal numbers: a share of `1` is written without a decimal point. When the sum is 0, treat the shares as missing.
 - **Ignore sign-map keys that are not levels** of the node the map is about.
-- **Treat a sign that does not fit the edge as missing:** a word where a map is expected, a map where a word is expected, or any sign between two nominal nodes. GraphCreator warns about each of these.
+- **Treat a sign that does not fit the edge as missing:** a map where a word is expected, any sign between two nominal nodes, or a word where a map is expected — except the one-word form on a cause with exactly two levels, which signs that cause's second level. GraphCreator warns about each of the others.
 - **Map the roles to your own concepts.** For example, `outcome` can become the target column and `latent` a hidden variable that is generated but not included in the output. `exposure`, `adjusted`, `selected` and `other` describe the causal question and carry no simulation meaning.
 - **Fill in what is missing.** Every simulation detail is optional. A node without a type, shares or form, and an edge without a sign or strength, leave the choice to the reader.
 
@@ -271,6 +276,10 @@ def is_nominal(node):
     return node.get("var_type") == "categorical" and len(node.get("levels", [])) >= 3
 
 
+def has_classes(node):
+    return node.get("var_type") == "categorical" and len(node.get("levels", [])) >= 2
+
+
 def shares(node):
     values = [float(s) for s in node.get("shares", [])]
     total = sum(values)
@@ -283,11 +292,17 @@ def sign(edge):
     value = edge.get("sign")
     if is_nominal(cause) and is_nominal(effect):
         return None
-    if not is_nominal(cause) and not is_nominal(effect):
+    if is_nominal(effect):
+        levels = effect["levels"]
+    elif has_classes(cause):
+        levels = cause["levels"]
+        if isinstance(value, str):
+            # One word on a two-level cause signs its second level.
+            return {levels[1]: value} if len(levels) == 2 else None
+    else:
         return value if isinstance(value, str) else None
     if not isinstance(value, dict):
         return None
-    levels = effect["levels"] if is_nominal(effect) else cause["levels"][1:]
     return {level: s for level, s in value.items() if level in levels}
 
 

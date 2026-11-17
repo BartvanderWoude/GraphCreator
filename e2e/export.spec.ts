@@ -252,8 +252,8 @@ test('Signs shows only when an edge has a sign, and adds the badges to the image
       )
     ).bytes.toString('utf8')
   const withSigns = await svg()
-  expect(withSigns.match(/>\+<\/text>/g)).toHaveLength(2)
-  expect(withSigns.match(/>±<\/text>/g)).toHaveLength(1)
+  expect(withSigns.match(/>\+<\/text>/g)).toHaveLength(1)
+  expect(withSigns.match(/>±<\/text>/g)).toHaveLength(2)
 
   await signs.click()
   await expect(signs).not.toBeChecked()

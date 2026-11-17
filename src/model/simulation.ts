@@ -9,9 +9,21 @@ import type { EdgeSign, Sign } from './schema'
 /** How an edge's sign is given, by which of its ends are nominal (spec 4.16 "Meaning"). */
 export type SignShape = 'single' | 'child-levels' | 'parent-levels' | 'none'
 
-/** A node is nominal when it is categorical with three or more levels. Ordinal nodes never are. */
+/**
+ * A node is nominal when it is categorical with three or more levels. Ordinal nodes never are. The
+ * effect side of an edge uses this: its levels are alternatives whose chances add up to 1, so a
+ * binary effect needs only one sign (spec 4.16 "Levels in signs").
+ */
 export function isNominal(node: GNode): boolean {
   return node.varType === 'categorical' && (node.levels?.length ?? 0) >= 3
+}
+
+/**
+ * A node has levels for signs when it is categorical with two or more levels. The cause side of an
+ * edge uses this: every level of a cause carries its own sign (spec 4.16 "Levels in signs").
+ */
+export function hasClasses(node: GNode): boolean {
+  return node.varType === 'categorical' && (node.levels?.length ?? 0) >= 2
 }
 
 function endpoints(
@@ -24,14 +36,17 @@ function endpoints(
   }
 }
 
-/** The shape of the edge's sign. A missing endpoint counts as not nominal. */
+/**
+ * The shape of the edge's sign. A missing endpoint counts as neither nominal nor leveled. The child
+ * wins over the parent, so an edge from a two-level cause into a nominal child is 'child-levels'.
+ */
 export function signShape(graph: Graph, edge: GEdge): SignShape {
   const { parent, child } = endpoints(graph, edge)
   const parentNominal = parent !== undefined && isNominal(parent)
   const childNominal = child !== undefined && isNominal(child)
   if (parentNominal && childNominal) return 'none'
   if (childNominal) return 'child-levels'
-  if (parentNominal) return 'parent-levels'
+  if (parent !== undefined && hasClasses(parent)) return 'parent-levels'
   return 'single'
 }
 
@@ -42,6 +57,41 @@ export function signLevelsNode(graph: Graph, edge: GEdge): GNode | undefined {
   if (shape === 'child-levels') return child
   if (shape === 'parent-levels') return parent
   return undefined
+}
+
+/**
+ * The edge's sign as a map over the levels of `signLevelsNode` (spec 4.16): a stored map gives
+ * itself, and on a 'parent-levels' edge whose parent has exactly two levels a single word gives a
+ * sign on the second level (the shorthand that files written before per-level signs use). No sign,
+ * another shape or a sign that does not fit gives `undefined`.
+ */
+export function signLevelMap(
+  graph: Graph,
+  edge: GEdge,
+): Record<string, Sign> | undefined {
+  const sign = edge.sign
+  if (sign === undefined) return undefined
+  const shape = signShape(graph, edge)
+  if (shape !== 'child-levels' && shape !== 'parent-levels') return undefined
+  if (typeof sign !== 'string') return sign
+  if (shape !== 'parent-levels') return undefined
+  const levels = signLevelsNode(graph, edge)?.levels ?? []
+  if (levels.length !== 2) return undefined
+  // fromEntries, not a literal, so a level named "__proto__" becomes a plain key.
+  return Object.fromEntries([[levels[1], sign]])
+}
+
+/**
+ * Whether the edge's stored sign fits its shape (spec 4.16): no sign always fits, 'single' wants a
+ * word, a level shape wants `signLevelMap` to be defined, and nothing fits 'none'.
+ */
+export function signFits(graph: Graph, edge: GEdge): boolean {
+  const sign = edge.sign
+  if (sign === undefined) return true
+  const shape = signShape(graph, edge)
+  if (shape === 'none') return false
+  if (shape === 'single') return typeof sign === 'string'
+  return signLevelMap(graph, edge) !== undefined
 }
 
 /**

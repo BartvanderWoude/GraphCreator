@@ -3,11 +3,14 @@ import type { GEdge, GNode, Graph } from './graph'
 import type { VarType } from './schema'
 import {
   equalShares,
+  hasClasses,
   hasSimulationDetails,
   isNominal,
   setLevels,
   sharesTotal,
   signBadge,
+  signFits,
+  signLevelMap,
   signLevelsNode,
   signShape,
   type SignShape,
@@ -52,6 +55,15 @@ const NOMINAL: Record<End, boolean> = {
   untyped: false,
   missing: false,
 }
+/** Which end kinds have levels for signs (spec 4.16): categorical with two or more levels. */
+const CLASSES: Record<End, boolean> = {
+  cat2: true,
+  cat3: true,
+  ord3: false,
+  continuous: false,
+  untyped: false,
+  missing: false,
+}
 
 /** A graph P → C built from two end kinds; a missing end has no node. */
 function pair(parent: End, child: End): { graph: Graph; edge: GEdge } {
@@ -78,6 +90,20 @@ describe('isNominal', () => {
   })
 })
 
+describe('hasClasses', () => {
+  it('is true only for categorical nodes with two or more levels', () => {
+    expect(hasClasses(node('a', 'categorical', ['no', 'yes']))).toBe(true)
+    expect(hasClasses(node('a', 'categorical', ['a', 'b', 'c']))).toBe(true)
+    expect(hasClasses(node('a', 'categorical', ['only']))).toBe(false)
+    expect(hasClasses(node('a', 'categorical', []))).toBe(false)
+    expect(hasClasses(node('a', 'categorical'))).toBe(false)
+    expect(hasClasses(node('a', 'ordinal', ['low', 'mid', 'high']))).toBe(false)
+    expect(hasClasses(node('a', 'continuous'))).toBe(false)
+    expect(hasClasses(node('a', 'discrete'))).toBe(false)
+    expect(hasClasses(node('a'))).toBe(false)
+  })
+})
+
 describe('signShape and signLevelsNode', () => {
   const ends = Object.keys(ENDS) as End[]
   const cases = ends.flatMap((p) => ends.map((c) => [p, c] as const))
@@ -89,7 +115,7 @@ describe('signShape and signLevelsNode', () => {
         ? 'none'
         : NOMINAL[child]
           ? 'child-levels'
-          : NOMINAL[parent]
+          : CLASSES[parent]
             ? 'parent-levels'
             : 'single'
     expect(signShape(graph, e)).toBe(expected)
@@ -115,6 +141,81 @@ describe('signBadge', () => {
     expect(signBadge({ a: 'positive', b: 'negative' })).toBe('mixed')
     expect(signBadge({})).toBeUndefined()
     expect(signBadge(undefined)).toBeUndefined()
+  })
+})
+
+/** A graph P → C of two end kinds with a sign on the edge. */
+function signed(parent: End, child: End, sign: GEdge['sign']) {
+  const { graph, edge: e } = pair(parent, child)
+  const withSign: GEdge = sign === undefined ? e : { ...e, sign }
+  return { graph: { ...graph, edges: [withSign] }, edge: withSign }
+}
+
+describe('signLevelMap', () => {
+  it('gives a stored map as it is', () => {
+    const { graph, edge: e } = signed('cat3', 'continuous', {
+      a: 'positive',
+      b: 'negative',
+    })
+    expect(signLevelMap(graph, e)).toEqual({ a: 'positive', b: 'negative' })
+    const child = signed('continuous', 'cat3', { a: 'positive' })
+    expect(signLevelMap(child.graph, child.edge)).toEqual({ a: 'positive' })
+    const empty = signed('cat3', 'continuous', {})
+    expect(signLevelMap(empty.graph, empty.edge)).toEqual({})
+  })
+
+  it('reads a word on a two-level cause as a sign on its second level', () => {
+    const { graph, edge: e } = signed('cat2', 'continuous', 'positive')
+    expect(signLevelMap(graph, e)).toEqual({ yes: 'positive' })
+    const neg = signed('cat2', 'cat2', 'negative')
+    expect(signLevelMap(neg.graph, neg.edge)).toEqual({ yes: 'negative' })
+  })
+
+  it('gives undefined for a word that does not fit, another shape or no sign', () => {
+    const three = signed('cat3', 'continuous', 'positive')
+    expect(signLevelMap(three.graph, three.edge)).toBeUndefined()
+    const child = signed('continuous', 'cat3', 'positive')
+    expect(signLevelMap(child.graph, child.edge)).toBeUndefined()
+    const single = signed('continuous', 'continuous', 'positive')
+    expect(signLevelMap(single.graph, single.edge)).toBeUndefined()
+    const none = signed('cat3', 'cat3', { a: 'positive' })
+    expect(signLevelMap(none.graph, none.edge)).toBeUndefined()
+    const unsigned = signed('cat3', 'continuous', undefined)
+    expect(signLevelMap(unsigned.graph, unsigned.edge)).toBeUndefined()
+  })
+})
+
+describe('signFits', () => {
+  it('accepts no sign on every shape', () => {
+    for (const parent of ['cat2', 'cat3', 'continuous'] as const) {
+      const { graph, edge: e } = signed(parent, 'cat3', undefined)
+      expect(signFits(graph, e)).toBe(true)
+    }
+  })
+
+  it('wants a word on single and a map on a level shape', () => {
+    const single = signed('continuous', 'continuous', 'positive')
+    expect(signFits(single.graph, single.edge)).toBe(true)
+    const singleMap = signed('continuous', 'continuous', { a: 'positive' })
+    expect(signFits(singleMap.graph, singleMap.edge)).toBe(false)
+    const parentMap = signed('cat3', 'continuous', { a: 'positive' })
+    expect(signFits(parentMap.graph, parentMap.edge)).toBe(true)
+    const childWord = signed('continuous', 'cat3', 'positive')
+    expect(signFits(childWord.graph, childWord.edge)).toBe(false)
+  })
+
+  it('accepts a word on a two-level cause but not on a three-level one', () => {
+    const two = signed('cat2', 'continuous', 'positive')
+    expect(signFits(two.graph, two.edge)).toBe(true)
+    const three = signed('cat3', 'continuous', 'positive')
+    expect(signFits(three.graph, three.edge)).toBe(false)
+  })
+
+  it('accepts nothing on none', () => {
+    const word = signed('cat3', 'cat3', 'positive')
+    expect(signFits(word.graph, word.edge)).toBe(false)
+    const map = signed('cat3', 'cat3', { a: 'positive' })
+    expect(signFits(map.graph, map.edge)).toBe(false)
   })
 })
 

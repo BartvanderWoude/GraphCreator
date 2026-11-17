@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Per-level edge signs on a categorical cause (4.16 and 5.9: every level of a cause carries its own sign, read against the average over its levels, with no reference level; waves 28–30, phases 63–66) were agreed on 2026-11-17 and are implemented (the model and the validator, the editor, the reader doc and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -1194,7 +1194,10 @@ sign?: EdgeSign         // a map is never empty (an empty map is stored as undef
 strength?: Strength
 ```
 
-**Nominal.** A node is *nominal* when its `varType` is `categorical` and it has three or more levels. An ordinal node is never nominal: its levels are ordered, so one sign has a meaning.
+**Levels in signs.** The two ends of an edge use different thresholds, because they ask different questions:
+
+- A node is *nominal* when its `varType` is `categorical` and it has three or more levels. An ordinal node is never nominal: its levels are ordered, so one sign has a meaning. The **effect** side and the `none` rule use this. An effect's levels are alternatives whose chances add up to 1, so a binary effect needs only one sign: if "yes" becomes more likely, "no" becomes less likely.
+- A node *has levels for signs* when its `varType` is `categorical` and it has two or more levels (`hasClasses`). The **cause** side uses this. A cause's levels are not alternatives in one sum, so every level, the first included, has its own answer to "does being in this level raise or lower the effect?" — a two-level cause as much as a three-level one.
 
 #### Meaning
 
@@ -1206,20 +1209,25 @@ strength?: Strength
   - Noise is left to the simulator. A form on a node without causes means nothing (warning).
 - **Strength** is the size of the effect, whatever its sign. The bands are named. As guidance on a standardised scale (a standardised coefficient or comparable), small is about 0.1–0.3, medium 0.3–0.6 and large 0.6–1.0. A reader may use other numbers, but these are the shared default. With per-level signs, the strength applies to each signed level.
 - **Sign**, by the shape of the edge (`signShape` below):
-  - `single`, when neither end is nominal: one word. `positive` means a higher cause gives a higher effect, and `negative` a lower one. For categorical and ordinal variables, a later level counts as higher. A binary `[no, yes]` variable therefore reads naturally ("yes" is higher).
-  - `child-levels`, when only the child is nominal: a map from child levels to signs. `positive` means the cause makes that level more likely, `negative` less likely. Levels left out are unspecified.
-  - `parent-levels`, when only the parent is nominal: a map from parent levels to signs. The first parent level is the *reference* and has no key. `B: negative` means that moving from the reference level to B lowers the child.
+  - `single`, when the child is not nominal and the parent has no levels for signs: one word. `positive` means a higher cause gives a higher effect, and `negative` a lower one. For an ordinal cause a later level counts as higher; for a binary child, `positive` means its later level ("yes") becomes more likely.
+  - `child-levels`, when the child is nominal: a map from child levels to signs. `positive` means the cause makes that level more likely, `negative` less likely. Levels left out are unspecified. The child wins over the parent, so an edge from a two-level cause into a nominal child is `child-levels`.
+  - `parent-levels`, when the child is not nominal and the parent has levels for signs: a map from **all** the parent's levels to signs. `B: positive` means that being in level B gives a higher child than the average over the parent's levels, and `negative` a lower one. There is no reference level: every level can be signed, and levels left out are unspecified. Any combination is allowed, every level positive included, because the graph may describe a sample that is not a representative population sample; GraphCreator neither restricts nor warns about the combination, and a reader whose model needs the level effects to cancel out centres them itself.
+    - **A single word** on a `parent-levels` edge is accepted when the parent has exactly two levels, and means a sign on the second level, the first unspecified ("yes raises it"). This is how a file written before per-level signs reads, and such a file keeps its meaning, its badge and its text. With three or more levels a word does not fit (warning below).
   - `none`, when both ends are nominal: no sign is allowed (a level × level table is too detailed to edit). A sign gives a warning; strength is still allowed.
 - `sign` and `strength` are independent; either can be set alone.
 
-#### Helpers (`src/model/simulation.ts`, pure, phase 49)
+#### Helpers (`src/model/simulation.ts`, pure, phases 49 and 63)
 
 ```ts
 export type SignShape = 'single' | 'child-levels' | 'parent-levels' | 'none'
-export function isNominal(node: GNode): boolean
-export function signShape(graph: Graph, edge: GEdge): SignShape     // missing endpoints count as not nominal
+export function isNominal(node: GNode): boolean                      // categorical with three or more levels
+export function hasClasses(node: GNode): boolean                     // categorical with two or more levels
+export function signShape(graph: Graph, edge: GEdge): SignShape     // missing endpoints count as neither
 /** The node whose levels key a sign map: the child for 'child-levels', the parent for 'parent-levels', else undefined. */
 export function signLevelsNode(graph: Graph, edge: GEdge): GNode | undefined
+/** The edge's sign as a map over the levels of `signLevelsNode`, or undefined when it has none or does not fit. */
+export function signLevelMap(graph: Graph, edge: GEdge): Record<string, Sign> | undefined
+export function signFits(graph: Graph, edge: GEdge): boolean         // whether the stored sign fits the shape
 export function signBadge(sign: EdgeSign | undefined): 'positive' | 'negative' | 'mixed' | undefined
 export function equalShares(n: number): number[]                     // n >= 1; each 1/n rounded to 4 decimals, the last takes the remainder
 export function sharesTotal(shares: number[]): number
@@ -1227,7 +1235,9 @@ export function setLevels(graph: Graph, nodeId: string, levels: string[], origin
 export function hasSimulationDetails(item: GNode | GEdge): boolean   // shares, form, sign or strength set
 ```
 
-- `signBadge`: a word gives itself. A map whose values are all the same gives that value, and a map with both values gives `'mixed'`. `undefined` and an empty map give `undefined`.
+- `signBadge`: a word gives itself. A map whose values are all the same gives that value, and a map with both values gives `'mixed'`. `undefined` and an empty map give `undefined`. A `parent-levels` map usually holds both values, so such an edge usually badges as `±`.
+- `signLevelMap`: on a `child-levels` or `parent-levels` edge, a stored map gives itself, and a word gives `{<second level>: word}` on a `parent-levels` edge whose parent has exactly two levels (the shorthand above). Everything else gives `undefined`: no sign, another shape, or a sign that does not fit. Keys that name no level are kept, so the editor and the validator see them.
+- `signFits`: `undefined` always fits; `single` wants a word; `child-levels` and `parent-levels` want `signLevelMap` to be defined; nothing fits `none`. The editor (5.9) and `validateGraph` (4.4) both use it, so they cannot drift apart.
 - `equalShares(3)` is `[0.3333, 0.3333, 0.3334]`; `equalShares(2)` is `[0.5, 0.5]`. The remainder is rounded to 4 decimals as well.
 - `setLevels` replaces the node's levels. `origin[i]` is the index in the old `levels` that new item `i` came from, or `null` for a new item, and `origin` has the same length as `levels`.
   - **Shares:** when the node has them, new item `i` gets the old share at `origin[i]`, or 0 for a new item.
@@ -1272,7 +1282,7 @@ edges:
     strength: small
   - from: Wound class
     to: SSI
-    sign: {clean-contaminated: positive, contaminated: positive}
+    sign: {clean: negative, clean-contaminated: positive, contaminated: positive}
     strength: large
 ```
 
@@ -1280,7 +1290,7 @@ edges:
 |---|---|---|---|
 | `nodes[].shares` | list of numbers | no | Only with `levels`; one per level, in level order; each ≥ 0. Flow style. |
 | `nodes[].form` | enum `FORMS` | no | |
-| `edges[].sign` | `positive` or `negative`, or a map from level names to `positive`/`negative` | no | A map is written in flow style, with its keys in the level order of `signLevelsNode` and any other keys after them in their original order. An empty map `{}` is read as absent. |
+| `edges[].sign` | `positive` or `negative`, or a map from level names to `positive`/`negative` | no | A map is written in flow style, with its keys in the level order of `signLevelsNode` and any other keys after them in their original order. An empty map `{}` is read as absent. A word on a `parent-levels` edge is only written when it was read that way; the editors write maps. |
 | `edges[].strength` | enum `STRENGTHS` | no | |
 
 - **Key order** when writing: node `name, role, var_type, levels, shares, description, unit, form, pos`; edge `from, to, sign, strength, evidence, note`.
@@ -1305,11 +1315,10 @@ Warnings, after the existing ones: node warnings in node order, then edge warnin
 - Shares that do not add up to 1 within 0.001: `The shares of "SES" add up to 90%, not 100%.` The percentage is rounded to one decimal, without trailing zeros (`99.5%`, `90%`).
 - `Node "SES" has a functional form but no causes.`
 - A sign on a `none` edge (a word or a map): `The edge from "A" to "B" has a sign, but "A" and "B" are both categorical with more than two levels, so a sign has no clear meaning.`
-- A word on a `child-levels` or `parent-levels` edge: `The edge from "A" to "B" has one sign, but "B" is categorical with more than two levels. Give a sign per level instead.` (the name is that of the nominal end).
+- A word where `signLevelMap` gives `undefined`, that is on a `child-levels` edge or on a `parent-levels` edge whose parent has three or more levels: `The edge from "A" to "B" has one sign, but "B" is categorical with more than two levels. Give a sign per level instead.` (the name is that of the node whose levels key the map). A word on a `parent-levels` edge whose parent has exactly two levels is the shorthand above and gives no warning.
 - A map on a `single` edge: `The edge from "A" to "B" has a sign per level, but neither "A" nor "B" is categorical with more than two levels. Give one sign instead.`
 - A map key that is not a level of the nominal end: `The edge from "A" to "B" has a sign for level "X", but "B" has no such level.` (one warning per key).
-- A map key equal to the reference level on a `parent-levels` edge: `The edge from "A" to "B" has a sign for "O", but "O" is the reference level of "A" and cannot have a sign.`
-- A `child-levels` map that covers every child level with the same sign: `The edge from "A" to "B" makes every level of "B" more likely, but their chances add up to 100%, so at least one must become less likely.` For `negative`, the warning reads `less likely` … `more likely`.
+- A `child-levels` map that covers every child level with the same sign: `The edge from "A" to "B" makes every level of "B" more likely, but their chances add up to 100%, so at least one must become less likely.` For `negative`, the warning reads `less likely` … `more likely`. There is deliberately **no** matching warning for a `parent-levels` map whose levels all share a sign: a cause's levels are not one sum, and the graph may describe a sample that is not representative.
 
 **3.3 addition (phase 49):** `Issue` gains `edgeId?: string`, set on issues about one edge. `IssueList` and `IssuesDialog` show such issues as buttons that select the edge (5.9).
 
@@ -1857,10 +1866,10 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 - **Sign** (`SignEditor.tsx`). Its control is a segmented group (`role="radiogroup"`) of three toggle buttons, `—`, `Positive` (with a `+` glyph) and `Negative` (with a `−` glyph), labelled by its row. What it shows depends on `signShape`:
   - **`single`:** one control, labelled "Sign".
   - **`child-levels`:** the intro line `Effect on each level of <child>:`, then one row per child level with that control, labelled `Sign for <level>`.
-  - **`parent-levels`:** the intro line `Each level of <parent> compared with <first level>:`, then one row per parent level except the first.
+  - **`parent-levels`:** the intro line `Each level of <parent> compared with the average:`, then one row per parent level, the first included. A stored word (the two-level shorthand of 4.16) shows as the second level's row; the first edit writes a map, so the shown signs are kept.
   - **`none`:** the muted line `A sign is not available, because both variables are categorical with more than two levels.`
-  - **Stored sign that does not fit the shape** (a word on a level shape, a map on `single` or `none`): the muted line `This sign does not fit the variable types any more.` and a ghost button **Clear sign**, in place of the controls.
-  - **Committing:** a click on a map row updates that key (`—` removes it); a map left empty is stored as no sign.
+  - **Stored sign that does not fit the shape** (`signFits` is false: a map on `single` or `none`, or a word on a level shape that is not the two-level shorthand): the muted line `This sign does not fit the variable types any more.` and a ghost button **Clear sign**, in place of the controls.
+  - **Committing:** a click on a map row updates that key of `signLevelMap` (`—` removes it); a map left empty is stored as no sign.
 - **Strength:** a select (`aria-label="Strength"`) with `—`, Small, Medium and Large, each with its `STRENGTH_DESCRIPTIONS` line.
 
 **`ListEditor` addition (phase 52).** `onCommit(items, origin)` gains a second argument: `origin[i]` is the index in the `items` prop of the row that became item `i`, or `null` for a row added since mount. Rows keep their origin through moves and edits. Existing callers ignore the argument.
@@ -1897,7 +1906,7 @@ The fields of 4.16 are edited in a **Simulation** section at the bottom of both 
 | `FIELD_TIPS.simulation` | "Simulation: optional details for generating synthetic data from this DAG. Other tools read them from the GraphCreator file." |
 | `FIELD_TIPS.shares` | "Shares: how common each level is in the population, such as 12% with diabetes. For a variable with causes, the overall shares you expect." |
 | `FIELD_TIPS.form` | "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs." |
-| `FIELD_TIPS.sign` | "Sign: whether the cause raises (positive) or lowers (negative) the effect. For categorical and ordinal variables, later levels count as higher." |
+| `FIELD_TIPS.sign` | "Sign: whether the cause raises (positive) or lowers (negative) the effect. A categorical cause gets one sign per level, compared with the average over its levels." |
 | `FIELD_TIPS.strength` | "Strength: how large the effect is, from small to large. A simulator turns these bands into effect sizes." |
 
 Shares, Form, Sign and Strength carry info tips (`About shares`, `About functional form`, `About sign`, `About strength`) as in 5.3.
@@ -2097,7 +2106,10 @@ Everything that only looks at the graph still works: selecting, hovering, pannin
 | Shares on nodes with causes | Allowed, meaning the target overall proportions | Root nodes only | Recommended option; outcome prevalence is useful. |
 | Sign words | `positive` / `negative` | Quoted `"+"` / `"-"` | Recommended option. A bare `-` starts a YAML list. |
 | Functional form values | `linear` / `smooth` / `threshold` | `linear` / `nonlinear`; the other project's `linear` / `mlp` / `tree` | Recommended option. Clinician-friendly, and it maps one-to-one onto common mechanism families. |
-| Signs on nominal variables | A sign per level: per child level ("raises or lowers the chance of this level"), or per parent level compared with the first level | A warning; disabling the sign | User's choice: a cause can raise one level and lower another. |
+| Signs on nominal variables | A sign per level: per child level ("raises or lowers the chance of this level"), or per parent level (phases 49–56: compared with the first level; phases 63–66: compared with the average) | A warning; disabling the sign | User's choice: a cause can raise one level and lower another. |
+| Signs on a categorical cause (2026-11-17) | One sign per level, each compared with the average over the cause's levels | The first level as a reference, the others compared with it (phases 49–56); each level against all the others combined; an explicit, chosen reference level | User's choice. A reference level hides one level's answer and makes the others depend on it, while the question being recorded ("does this level raise or lower the effect?") is asked of every level on its own. |
+| Signs on a two-level cause | A sign per level, like any categorical cause | One sign, per-level from three levels on | User's choice: one way of editing every categorical cause. The redundancy (the second level is usually the opposite of the first) is accepted, and a word in an older file is read as a sign on the second level so those files keep working. |
+| All levels of a cause with the same sign | Allowed, no warning | A warning, as for a nominal effect | User's choice: the graph may describe a sample that is not a representative population sample, so people keep the freedom to sign every level alike. |
 | Both ends nominal | No sign (warning); strength allowed | A nested level × level map | Recommended option; too detailed to edit. |
 | Schema version | Stays `graphcreator/0.1`; the new fields are added to it | `0.2` only when needed; always `0.2` | User's choice. Versioning is decided after the first version is final. |
 | Simulation details in other formats | YAML only; the notes of the other formats say so | Also networkx JSON; all rich formats | Recommended option. |
@@ -2192,6 +2204,10 @@ General rules for every phase:
 | 60 | Rail lock toggle and locked top bar | 57 | 26 | `src/components/ToolRail.tsx`, `useToolShortcuts.ts`, `TopBar.tsx` |
 | 61 | Images with equal circles | 57 | 26 | `src/lib/imageScene.ts` (+ test), `src/lib/imageExport.ts` (+ test), `src/lib/pdfExport.ts` (+ test), `src/lib/__snapshots__/imageExport/*`, `src/model/nodeSize.ts` and its test (tuned constants only), section 5.7.6 of this spec |
 | 62 | Equal circles, preview and lock: integration and end-to-end tests | 58, 59, 60, 61 | 27 | `e2e/graph-lock.spec.ts` (new), additions to `e2e/canvas.spec.ts` and `e2e/files.spec.ts`, fixes in any file of phases 57–61 and in e2e specs that depend on circle sizes, this spec's Status line and Open issues |
+| 63 | Per-level sign contracts | 62 | 28 | `src/model/simulation.ts` (+ test), `src/model/validate.ts` (+ test), `src/lib/copy.ts` (+ `copy.test.ts`), `src/model/__fixtures__/simulation.dag.yaml`, `src/model/yaml.test.ts` |
+| 64 | Sign editor per level | 63 | 29 | `src/components/SignEditor.tsx` |
+| 65 | Per-level signs in the reader doc | 63 | 29 | `docs/FORMAT.md` |
+| 66 | Per-level signs: integration and end-to-end tests | 64, 65 | 30 | `e2e/simulation.spec.ts`, `e2e/export.spec.ts` (the badge counts), fixes in any file of phases 63–65, this spec's Status line and Open issues |
 
 Wave 12 has one exception to disjoint ownership: phases 22 and 23 each add one button to `TopBar.tsx`. Phase 22 places Export… directly after the Save split button and phase 23 places Share directly after Export… (or after the Save split button when Export… is not there yet); neither changes anything else in the file. The small conflict is resolved when the second of them lands.
 
@@ -3371,6 +3387,65 @@ Phases: 62. Parallel: single phase. Check after the wave: all checks; the browse
   - `e2e/graph-lock.spec.ts` seeds `locked.dag.yaml` through the autosave key for the tests that start locked. Dragging a locked circle pans the canvas, so the test reads the stored positions instead of the circle's place on screen, and a read-only field takes `page.keyboard.type`, not `fill`.
   - `e2e/simulation.spec.ts`'s sign-badge test failed twice under a full parallel run and passed every time on its own and on retry; it is flaky, not broken.
 
+### Wave 28: Per-level sign contracts [x]
+
+Phases: 63. Parallel: single phase. Check after the wave: all checks. In the app the editor still hides the parent's first level (phase 64 fixes that), but a sign on it no longer warns.
+
+#### Phase 63: Per-level sign contracts [x]
+
+- **Goal:** the sign meaning of 4.16 ("Levels in signs", `parent-levels`) for real in the model, the validator and the texts, so the editor and the reader doc can follow in parallel.
+- **Depends on:** phase 62.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `GNode`/`GEdge` and `updateEdge` (3.2), `Issue` (3.3), the sign helpers (4.16 "Helpers"), the warnings of 4.4 and 4.16, the tooltip rules (5.3, 5.7.8).
+- **Work:**
+  - **`simulation.ts`:** add `hasClasses`; `signShape` uses it for the parent and keeps `isNominal` for the child and for `none`, with the child's precedence unchanged; add `signLevelMap` and `signFits` (4.16 "Helpers"). `isNominal`, `signLevelsNode`, `signBadge`, `equalShares`, `sharesTotal`, `setLevels` and `hasSimulationDetails` keep their behaviour.
+  - **`validate.ts`:** in `signWarnings`, drop the reference-level warning, and warn about a word on a level shape only when `signLevelMap` is `undefined`. The `none`, map-on-`single`, unknown-key and `child-levels` all-same warnings stay as they are, and the first level is now a valid key.
+  - **`copy.ts`:** the new `FIELD_TIPS.sign` (5.9 "Copy").
+  - **`simulation.dag.yaml`:** sign all three wound classes, as the 4.16 example now does. `yaml.ts` needs no change: `writeSign` already orders keys by `signLevelsNode`'s levels.
+- **Tests:** the phase 63 additions to `simulation.test.ts`, `validate.test.ts`, `yaml.test.ts` and `copy.test.ts` (section 9).
+- **Done when:** all checks pass. Existing e2e sign tests may need the new shapes; fix them here only as far as the suite needs, and leave new e2e tests to phase 66.
+- **Out of scope:** the editor rows, `docs/FORMAT.md`, and any change to the badge, the images or the exchange formats.
+
+### Wave 29: Per-level sign parts [x]
+
+Phases: 64, 65. Parallel: both, one sub agent each; their files are disjoint. Land them in the order 64, 65. Check after the wave: all checks.
+
+#### Phase 64: Sign editor per level [x]
+
+- **Goal:** the edge editor asks for a sign on every level of a categorical cause (5.9 "Edge editor").
+- **Depends on:** phase 63.
+- **Owns files:** see the task graph row.
+- **Contracts used:** `signShape`, `signLevelsNode`, `signLevelMap`, `signFits` (4.16), the editor rules of 5.9 and the lock (5.10).
+- **Work:** replace the component's local `signFits` and map reading with the model's `signFits` and `signLevelMap`, read from the live store as `shape` and `levelsNode` already are; show one row per level for `parent-levels` (no more `slice(1)`) under the new intro line; commit each row against `signLevelMap`, so a shorthand word is kept when the first row is set. `SignControl`, the info tip, the `none` line, the mismatch branch and the `disabled` wiring are unchanged.
+- **Tests:** none of its own; covered by phase 66.
+- **Done when:** all checks pass, and in the app a three-level cause shows three rows and a two-level cause two.
+- **Out of scope:** the Strength field, `NodeEditor` and the canvas.
+- **Details fixed in phase 64:** the component reads `s.graph` once and calls the helpers in render, instead of one store selector per helper. `signLevelMap` builds a fresh object for the two-level shorthand, which a Zustand selector compares by identity and so sees as a new value on every render, which loops the editor.
+
+#### Phase 65: Per-level signs in the reader doc [x]
+
+- **Goal:** [FORMAT.md](FORMAT.md) describes the new sign meaning, so simulators read it correctly.
+- **Depends on:** phase 63.
+- **Owns files:** see the task graph row.
+- **Contracts used:** 4.16 in full.
+- **Work:** in "Types and levels" replace the reference-level rule with the two thresholds of 4.16; in "Sign" rewrite the shape table's `parent-levels` row and the `Wound class → SSI` walk-through, document the two-level word shorthand, and say that any combination of signs is allowed and that a reader needing the level effects to cancel out centres them itself; in "Reading rules" replace "The first level is the reference" with the new reading, noting that a map written before this change may lack the first level, which simply counts as unspecified; update the Python example's `sign()` (the two-or-more-levels test, all the cause's levels, and the shorthand).
+- **Tests:** none; prose only.
+- **Done when:** the doc matches 4.16, and the example script runs on `simulation.dag.yaml`.
+- **Out of scope:** code, and a JSON Schema (section 10).
+
+### Wave 30: Per-level signs integration [x]
+
+Phases: 66. Parallel: single phase. Check after the wave: all checks.
+
+#### Phase 66: Per-level signs: integration and end-to-end tests [x]
+
+- **Goal:** the whole change works in the browser and is covered end to end.
+- **Depends on:** phases 64 and 65.
+- **Owns files:** see the task graph row.
+- **Work:** the `e2e/simulation.spec.ts` tests of section 9, the badge counts in `e2e/export.spec.ts` (the fixture's `Wound class → SSI` edge is mixed now that its first level is signed), fixes anywhere in phases 63–65, and this spec's Status line and Open issues.
+- **Tests:** section 9's phase 66 bullet, and the whole suite.
+- **Done when:** all checks pass and the walk-through of 4.16 can be reproduced in the app: a three-level cause signed on every level, saved and reopened unchanged.
+
 ## 9. Tests
 
 - `src/model/graph.test.ts`: `newId` and `defaultNodeName` pick the smallest unused value; `addNode` returns a new graph and leaves the input unchanged; `renameNode` trims, refuses empty and duplicate names (case-sensitive: `Age` vs `age` allowed) and keeps edges; `updateNode` clears `levels`/`unit` when the type changes; `removeNodes` removes incident edges; `canAddEdge` returns `self`, `duplicate` and `cycle` with the exact messages, including the cycle path text; `addEdge` creates an edge with `evidence: []`.
@@ -3628,6 +3703,10 @@ Import and export (phases 31–40):
   The editors' disabled fields, the Analysis tab's disabled "Use this set", the lesson round trip and the Save → Open round trip were checked in the browser (phase 62's "Done when") and by `e2e/files.spec.ts` below.
 - `e2e/canvas.spec.ts` (phase 62 additions): typing in the Name field changes the circle's text and font size before Enter while the autosaved file keeps the old name; Escape restores it; after Enter, one undo restores the old name; a refused rename leaves the circle on its stored name with the error in the field. The equal size of a short and a long name's circles is checked in the rename test above.
 - `e2e/files.spec.ts` (phase 62 addition): opening `locked.dag.yaml` locks the graph and disables Add node, saving writes the file back unchanged, and saving after unlocking drops the key.
+- `src/model/simulation.test.ts` (phase 63 additions): `hasClasses` for a categorical node with one, two and three levels, and for ordinal, continuous and untyped nodes; `signShape` for a two-level categorical cause (now `parent-levels`), and the unchanged `none`, `child-levels` (a two-level cause into a nominal child included) and `single` cases; `signLevelMap` for a stored map, the two-level word shorthand, a word on a three-level cause, a word on a `child-levels` edge, an empty map and `undefined`; `signFits` per shape.
+- `src/model/validate.test.ts` (phase 63 additions): a sign on the parent's first level gives no warning; a word on a two-level cause gives none; a word on a three-level cause still gives the "Give a sign per level instead" warning; a `parent-levels` map whose levels all share a sign gives no warning, while the `child-levels` one still does.
+- `src/model/yaml.test.ts` (phase 63 addition): the amended `simulation.dag.yaml` round-trips canonically, with the parent's first level written first in the map.
+- `e2e/simulation.spec.ts` (phase 66): every level of a three-level cause can be signed, the first included, and the saved file holds all three keys; the same signs on every level raise no issue; a two-level cause shows one row per level, not a single control; opening `simulation.dag.yaml` shows `yes` signed on the `Diabetes → SSI` edge with a `+` badge and saves the file back unchanged. The earlier sign tests are adjusted to the new shapes: the `Clear sign` case needs an end that gives a real mismatch, such as a continuous cause.
 
 ## 10. Open issues
 
@@ -3650,6 +3729,7 @@ Import and export (phases 31–40):
   - the schema version: decide how to version the format (for example `graphcreator/0.2`) once the first version is final;
   - using signs in the analysis, such as the expected direction of bias;
   - simulation details in the exchange formats (networkx JSON first);
+  - per-level signs on a categorical cause (phases 63–66) changed what a sign map on such an edge means: it is now read against the average over the cause's levels, not against its first level. A file written before them is reinterpreted, not migrated: its keys stay as they are and its first level simply counts as unspecified, and a single word on a two-level cause keeps its meaning. If the format is versioned later, this is the change that version marks;
   - a JSON Schema for readers;
   - a lesson on simulation details;
   - simulation code generation and "Sample N datasets" stay in IDEAS.md.

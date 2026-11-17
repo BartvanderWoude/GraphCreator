@@ -454,27 +454,41 @@ describe('validateGraph: simulation details (spec 4.16)', () => {
       ])
     })
 
-    it('warns about a sign per level on an edge without a nominal end', () => {
+    it('warns about a sign per level on an edge with no levels for signs', () => {
       expect(
         warningsFor(
-          edge('Y', 'Z', 'e1', { sign: { yes: 'positive' } }),
-          edge('Y', 'O', 'e2', {
-            sign: { high: 'negative', nope: 'positive' },
+          edge('O', 'Z', 'e1', { sign: { high: 'positive' } }),
+          edge('O', 'Y', 'e2', {
+            sign: { low: 'negative', nope: 'positive' },
           }),
+          // One sign is what these edges want.
           edge('O', 'Z', 'e3', { sign: 'positive' }),
         ),
       ).toEqual([
         {
           message:
-            'The edge from "Y" to "Z" has a sign per level, but neither "Y" nor "Z" is categorical with more than two levels. Give one sign instead.',
+            'The edge from "O" to "Z" has a sign per level, but neither "O" nor "Z" is categorical with more than two levels. Give one sign instead.',
           edgeId: 'e1',
         },
         {
           message:
-            'The edge from "Y" to "O" has a sign per level, but neither "Y" nor "O" is categorical with more than two levels. Give one sign instead.',
+            'The edge from "O" to "Y" has a sign per level, but neither "O" nor "Y" is categorical with more than two levels. Give one sign instead.',
           edgeId: 'e2',
         },
       ])
+    })
+
+    it('accepts one sign and a sign per level on a two-level cause', () => {
+      expect(
+        warningsFor(
+          // The shorthand of 4.16: the word signs "yes".
+          edge('Y', 'Z', 'e1', { sign: 'positive' }),
+          edge('Y', 'O', 'e2', { sign: 'negative' }),
+          edge('Z', 'Y', 'e3', { sign: { no: 'negative', yes: 'positive' } }),
+          // Every level of a cause may carry the same sign (4.16).
+          edge('Y', 'Z', 'e4', { sign: { no: 'positive', yes: 'positive' } }),
+        ),
+      ).toEqual([])
     })
 
     it('warns once per map key that is not a level of the nominal end', () => {
@@ -504,24 +518,19 @@ describe('validateGraph: simulation details (spec 4.16)', () => {
       ])
     })
 
-    it('warns about a sign for the reference level of a nominal parent', () => {
+    it('takes the first level of a cause as an ordinary level', () => {
       expect(
         warningsFor(
           edge('B', 'Y', 'e1', {
             sign: { O: 'positive', b2: 'negative', nope: 'positive' },
           }),
-          // On a child-levels edge the first level is an ordinary level.
+          // On a child-levels edge the first level was always an ordinary level.
           edge('Z', 'B', 'e2', { sign: { O: 'positive', b2: 'negative' } }),
         ),
       ).toEqual([
         {
           message:
             'The edge from "B" to "Y" has a sign for level "nope", but "B" has no such level.',
-          edgeId: 'e1',
-        },
-        {
-          message:
-            'The edge from "B" to "Y" has a sign for "O", but "O" is the reference level of "B" and cannot have a sign.',
           edgeId: 'e1',
         },
       ])
@@ -546,8 +555,10 @@ describe('validateGraph: simulation details (spec 4.16)', () => {
           edge('Y', 'B', 'e4', {
             sign: { O: 'positive', b2: 'positive', b3: 'negative' },
           }),
-          // Every compared parent level with one sign is fine.
-          edge('A', 'Z', 'e5', { sign: { a2: 'positive', a3: 'positive' } }),
+          // Every level of a cause with the same sign is fine (4.16).
+          edge('A', 'Z', 'e5', {
+            sign: { a1: 'positive', a2: 'positive', a3: 'positive' },
+          }),
         ),
       ).toEqual([
         {

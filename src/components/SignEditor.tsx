@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button'
 import { FIELD_TIPS, SIGN_LABELS } from '@/lib/copy'
 import type { GEdge } from '@/model/graph'
 import type { EdgeSign, Sign } from '@/model/schema'
-import { signLevelsNode, signShape, type SignShape } from '@/model/simulation'
+import {
+  signFits,
+  signLevelMap,
+  signLevelsNode,
+  signShape,
+} from '@/model/simulation'
 import { useGraphStore } from '@/store/graphStore'
 
 /** The three choices of a sign control, in order: none, positive, negative. */
@@ -21,39 +26,33 @@ const OPTIONS: readonly {
 
 const HINT = 'text-[13px] leading-[1.4] text-muted-foreground'
 
-/** Whether a stored sign fits the edge's shape (spec 5.9): `undefined` always fits. */
-function signFits(shape: SignShape, sign: EdgeSign | undefined): boolean {
-  if (sign === undefined) return true
-  if (shape === 'none') return false
-  return shape === 'single'
-    ? typeof sign === 'string'
-    : typeof sign !== 'string'
-}
-
 /** The map's sign for `level`; own keys only, so a level such as `constructor` reads safely. */
-function mapSign(sign: EdgeSign | undefined, level: string): Sign | undefined {
-  if (sign === undefined || typeof sign === 'string') return undefined
-  return Object.hasOwn(sign, level) ? sign[level] : undefined
+function mapSign(
+  map: Record<string, Sign> | undefined,
+  level: string,
+): Sign | undefined {
+  if (map === undefined) return undefined
+  return Object.hasOwn(map, level) ? map[level] : undefined
 }
 
 /** The map with `level` set to `value`, or removed for `undefined`. Other keys keep their order. */
 function withMapSign(
-  sign: EdgeSign | undefined,
+  map: Record<string, Sign> | undefined,
   level: string,
   value: Sign | undefined,
 ): Record<string, Sign> {
-  const map = new Map<string, Sign>(
-    sign !== undefined && typeof sign !== 'string' ? Object.entries(sign) : [],
+  const next = new Map<string, Sign>(
+    map !== undefined ? Object.entries(map) : [],
   )
-  if (value === undefined) map.delete(level)
-  else map.set(level, value)
-  return Object.fromEntries(map)
+  if (value === undefined) next.delete(level)
+  else next.set(level, value)
+  return Object.fromEntries(next)
 }
 
 /**
  * The Sign field of the edge editor's Simulation section (spec 5.9). What it shows depends on
- * `signShape`: one control, one control per level of the nominal end, or a line saying no sign is
- * available. A stored sign that does not fit the shape can only be cleared.
+ * `signShape`: one control, one control per level of the end whose levels key the map, or a line
+ * saying no sign is available. A stored sign that does not fit the shape can only be cleared.
  */
 export function SignEditor({
   edge,
@@ -65,9 +64,16 @@ export function SignEditor({
 }) {
   const id = useId()
   const updateEdge = useGraphStore((s) => s.updateEdge)
-  // Read from the live graph, so a type or level change on an end (or an undo) shows at once.
-  const shape = useGraphStore((s) => signShape(s.graph, edge))
-  const levelsNode = useGraphStore((s) => signLevelsNode(s.graph, edge))
+  // Read from the live graph, so a type or level change on an end (or an undo) shows at once. The
+  // whole graph, not a selector per helper: `signLevelMap` builds a fresh object for the two-level
+  // shorthand, which a Zustand selector would see as a new value on every render.
+  const graph = useGraphStore((s) => s.graph)
+  const shape = signShape(graph, edge)
+  const levelsNode = signLevelsNode(graph, edge)
+  const fits = signFits(graph, edge)
+  // A word on a two-level cause reads as a sign on its second level (spec 4.16), so editing one
+  // row of such an edge keeps it.
+  const levelMap = signLevelMap(graph, edge)
   const sign = edge.sign
   const labelId = `${id}-sign`
 
@@ -76,7 +82,7 @@ export function SignEditor({
 
   let body
   let perLevel = false
-  if (!signFits(shape, sign)) {
+  if (!fits) {
     body = (
       <>
         <p className={HINT}>
@@ -110,15 +116,14 @@ export function SignEditor({
       />
     )
   } else {
-    const levels = levelsNode.levels ?? []
-    const rows = shape === 'parent-levels' ? levels.slice(1) : levels
+    const rows = levelsNode.levels ?? []
     perLevel = true
     body = (
       <>
         <p className={HINT}>
           {shape === 'child-levels'
             ? `Effect on each level of ${levelsNode.name}:`
-            : `Each level of ${levelsNode.name} compared with ${levels[0]}:`}
+            : `Each level of ${levelsNode.name} compared with the average:`}
         </p>
         <ul className="flex flex-col gap-3">
           {rows.map((level, i) => (
@@ -128,9 +133,11 @@ export function SignEditor({
               </span>
               <SignControl
                 label={`Sign for ${level}`}
-                value={mapSign(sign, level)}
+                value={mapSign(levelMap, level)}
                 disabled={disabled}
-                onChange={(value) => setSign(withMapSign(sign, level, value))}
+                onChange={(value) =>
+                  setSign(withMapSign(levelMap, level, value))
+                }
               />
             </li>
           ))}

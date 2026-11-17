@@ -48,7 +48,7 @@ export const FIELD_TIPS = {
   shares:
     'Shares: how common each level is in the population, such as 12% with diabetes. For a variable with causes, the overall shares you expect.',
   form: "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs.",
-  sign: 'Sign: whether the cause raises (positive) or lowers (negative) the effect. For categorical and ordinal variables, later levels count as higher.',
+  sign: 'Sign: whether the cause raises (positive) or lowers (negative) the effect. A categorical cause gets one sign per level, compared with the average over its levels.',
   strength:
     'Strength: how large the effect is, from small to large. A simulator turns these bands into effect sizes.',
 } as const satisfies Record<string, string>

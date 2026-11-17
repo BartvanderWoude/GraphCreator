@@ -2,7 +2,12 @@ import { findCycle } from './cycle'
 import type { GEdge, GNode, Graph } from './graph'
 import type { Issue } from './result'
 import { isLeveledType, isNumericType } from './schema'
-import { sharesTotal, signLevelsNode, signShape } from './simulation'
+import {
+  sharesTotal,
+  signLevelMap,
+  signLevelsNode,
+  signShape,
+} from './simulation'
 
 /**
  * Checks a whole graph. Errors are invalid states (what `parseYaml` rejects); warnings are
@@ -208,7 +213,9 @@ function signWarnings(graph: Graph, edge: GEdge): Issue[] {
   // A level shape: the sign should be a map keyed by the levels of the nominal end.
   const levelsNode = signLevelsNode(graph, edge)!
   const levels = levelsNode.levels ?? []
-  if (typeof sign === 'string') {
+  // A word is the two-level shorthand of 4.16, or it does not fit at all.
+  const map = signLevelMap(graph, edge)
+  if (map === undefined) {
     return [
       warn(
         `has one sign, but "${levelsNode.name}" is categorical with more than two levels. Give a sign per level instead.`,
@@ -216,7 +223,7 @@ function signWarnings(graph: Graph, edge: GEdge): Issue[] {
     ]
   }
   const warnings: Issue[] = []
-  const entries = Object.entries(sign)
+  const entries = Object.entries(map)
   for (const [key] of entries) {
     if (!levels.includes(key)) {
       warnings.push(
@@ -226,14 +233,8 @@ function signWarnings(graph: Graph, edge: GEdge): Issue[] {
       )
     }
   }
-  const reference = levels[0]
-  if (shape === 'parent-levels' && entries.some(([key]) => key === reference)) {
-    warnings.push(
-      warn(
-        `has a sign for "${reference}", but "${reference}" is the reference level of "${levelsNode.name}" and cannot have a sign.`,
-      ),
-    )
-  }
+  // A 'parent-levels' map may sign every level alike: a cause's levels are not one sum, and the
+  // graph may describe a sample that is not representative (4.16).
   if (shape === 'child-levels') {
     const values = new Map(entries)
     const levelSigns = new Set(levels.map((level) => values.get(level)))
