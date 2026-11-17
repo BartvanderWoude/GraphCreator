@@ -275,6 +275,8 @@ function lessonPointers(
   return pointers.size > 0 ? pointers : NO_POINTERS
 }
 
+const FIT_ON_LOAD = { maxZoom: 1 }
+
 /** The React Flow canvas (spec 5.2). Must be rendered inside a `<ReactFlowProvider>`. */
 export function Canvas() {
   const graph = useGraphStore((s) => s.graph)
@@ -314,6 +316,11 @@ export function Canvas() {
   // React Flow's colour mode follows the theme (spec 7, "Dark theme mechanism").
   const colorMode: ColorMode = useThemeStore((s) => s.theme)
   const { screenToFlowPosition } = useReactFlow()
+  // A graph restored on start-up is fitted into view once, at 100 % at most (spec 5.5). Read
+  // only at mount: an empty start must not queue a fit that fires on the first added node.
+  const [fitOnLoad] = useState(
+    () => useGraphStore.getState().graph.nodes.length > 0,
+  )
   const [flow, setFlow] = useState<Flow>(() =>
     syncFlow(
       {
@@ -503,6 +510,8 @@ export function Canvas() {
         deleteKeyCode={locked ? null : ['Delete', 'Backspace']}
         multiSelectionKeyCode={['Shift', 'Meta', 'Control']}
         proOptions={{ hideAttribution: true }}
+        fitView={fitOnLoad}
+        fitViewOptions={FIT_ON_LOAD}
       />
     </div>
   )

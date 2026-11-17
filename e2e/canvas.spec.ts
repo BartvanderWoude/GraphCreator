@@ -372,12 +372,15 @@ test('dragging a node moves it and the move is kept', async ({ page }) => {
   expect(after.x - before.x).toBeGreaterThan(90)
   expect(after.y - before.y).toBeGreaterThan(50)
 
-  // The move was committed to the store (and autosaved), so it survives a reload.
+  // The move was committed to the store (and autosaved), so it survives a reload. The reload
+  // fits the restored graph into view (spec 5.5), so compare flow positions, not screen points.
   await expect.poll(() => stored(page)).not.toBe(savedBefore)
+  // The node's style holds its flow position as `transform: translate(x, y)`.
+  const flowPosition = async () =>
+    (await box.getAttribute('style'))?.match(/translate\([^)]*\)/)?.[0]
+  const moved = await flowPosition()
   await page.reload()
-  const reloaded = await centre(box)
-  expect(reloaded.x).toBeCloseTo(after.x, 0)
-  expect(reloaded.y).toBeCloseTo(after.y, 0)
+  await expect.poll(flowPosition).toBe(moved)
 })
 
 test('reload restores the graph from autosave', async ({ page }) => {
