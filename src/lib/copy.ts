@@ -1,3 +1,4 @@
+import type { DisplayKey } from '@/lib/display'
 import { MAX_SETS, PATH_LIMIT, type PathKind } from '@/model/analysis/types'
 import type { Form, Role, Sign, Strength, VarType } from '@/model/schema'
 import type { AnalysisKey } from '@/store/uiStore'
@@ -48,7 +49,7 @@ export const FIELD_TIPS = {
   shares:
     'Shares: how common each level is in the population, such as 12% with diabetes. For a variable with causes, the overall shares you expect.',
   form: "Functional form: how this variable's causes combine. Linear effects add up, smooth effects curve, threshold effects switch at cut-offs.",
-  sign: 'Sign: whether the cause raises (positive) or lowers (negative) the effect. For categorical and ordinal variables, later levels count as higher.',
+  sign: 'Sign: whether the cause raises (positive) or lowers (negative) the effect. A categorical cause gets one sign per level, compared with the average over its levels.',
   strength:
     'Strength: how large the effect is, from small to large. A simulator turns these bands into effect sizes.',
 } as const satisfies Record<string, string>
@@ -194,4 +195,67 @@ export const GRAPH_LOCK = {
   tip: 'Lock graph: nothing in the graph can be changed. Variables, arrows and their positions stay as they are.',
   note: 'This graph is locked. Unlock it in the tool rail to make changes.',
   reason: 'Not available while the graph is locked.',
+} as const
+
+/** Heading of the Display section of the Edit tab (spec 4.18 "Copy", 5.11). */
+export const DISPLAY_TITLE = 'Display'
+
+/** Switch labels of the Display section, by display option (spec 4.18 "Copy"). */
+export const DISPLAY_LABELS: Record<DisplayKey, string> = {
+  signs: 'Signs',
+  signColors: 'Sign colors',
+  strength: 'Strength',
+  forms: 'Forms',
+  types: 'Variable types',
+  dashedLatent: 'Dashed latent',
+}
+
+/**
+ * Info tips of the Display section (spec 4.18 "Copy"): `title` for the heading, one per display
+ * option for its switch.
+ */
+export const DISPLAY_TIPS: Record<'title' | DisplayKey, string> = {
+  title:
+    'Display: what the canvas and exported images show besides names, roles and arrows. These settings are kept in this browser, not in the graph.',
+  signs: 'Signs: a +, − or ± badge in the middle of each arrow with a sign.',
+  signColors:
+    'Sign colors: arrows with a positive sign turn green, negative ones red, and mixed or unsigned ones black.',
+  strength: 'Strength: arrows with a medium or large effect are drawn thicker.',
+  forms:
+    'Forms: a small badge on each variable with a functional form: a line for linear, a curve for smooth, a step for threshold.',
+  types:
+    'Variable types: a small letter on each typed variable: C categorical, O ordinal, N continuous, D discrete.',
+  dashedLatent:
+    'Dashed latent: latent variables get a dashed outline, a common way to mark unmeasured variables.',
+}
+
+/**
+ * Labels of the legend rows the display options add to exported images (spec 4.18 "Images"). The
+ * keys are the `signBadge` values, the strengths, and `noSign` and `noStrength` for edges without
+ * one; merged rows join their labels with ` or `.
+ */
+export const LEGEND_LABELS: Record<
+  'positive' | 'negative' | 'mixed' | 'noSign' | Strength | 'noStrength',
+  string
+> = {
+  positive: 'Positive effect',
+  negative: 'Negative effect',
+  mixed: 'Mixed effects',
+  noSign: 'No sign',
+  small: 'Small effect',
+  medium: 'Medium effect',
+  large: 'Large effect',
+  noStrength: 'No strength',
+}
+
+/** Description of the Export dialog (spec 4.18 "Copy", 5.11 "Export dialog"). */
+export const EXPORT_DESCRIPTION =
+  'The image shows the graph as on the canvas, with the Display options of the Edit panel, and an optional legend.'
+
+/** Accessible names and titles of the canvas rim marks (spec 4.18 "Copy", 5.11 "Canvas"). */
+export const MARK_LABELS = {
+  /** `Functional form: Linear`. */
+  form: (form: Form) => `Functional form: ${FORM_LABELS[form]}`,
+  /** `Variable type: Categorical`. */
+  type: (varType: VarType) => `Variable type: ${VAR_TYPE_LABELS[varType]}`,
 } as const

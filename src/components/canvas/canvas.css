@@ -84,9 +84,15 @@
   --gc-rim-ring: 0 0 0 7px var(--rim);
 }
 
-/* Selected: the outline becomes a 3.5 px teal border. */
+/* Dashed latent on (4.18): a latent circle's outline is dashed, in its role line colour. */
+.react-flow .gc-circle[data-dashed] {
+  border-style: dashed;
+}
+
+/* Selected: the outline becomes a 3.5 px teal border (solid, also on a dashed circle). */
 .react-flow .gc-node.gc-selected .gc-circle {
   border-width: 3.5px;
+  border-style: solid;
   border-color: var(--primary);
 }
 
@@ -112,6 +118,46 @@
   border: 1.5px solid var(--background);
   background: var(--warning-bg);
   color: var(--warning-fg);
+}
+
+/* Rim marks (Forms and Variable types on, 4.18): 20 px circles on the rim at 45 degrees, form
+   top right, type top left (position set inline). Decorative to the pointer, so a click lands on
+   the circle underneath. */
+.react-flow .gc-mark {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--edge);
+  background: var(--background);
+  color: var(--edge);
+  pointer-events: none;
+}
+
+/* The type letter: Plex Sans 11 px / 500. */
+.react-flow .gc-type-mark {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+/* The form glyph: a 10 px stroked path, round caps and joins. */
+.react-flow .gc-form-mark svg {
+  display: block;
+  overflow: visible;
+}
+.react-flow .gc-form-mark path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 /* ---- Handles (easy connect) -------------------------------------------------------------- */
@@ -174,9 +220,12 @@
 
 /* ---- Floating edge ----------------------------------------------------------------------- */
 
+/* --gc-edge-width is the Strength width (4.18), set inline on the line while Strength is on.
+   Rules of equal specificity follow the precedence of 5.11 "Canvas", weakest first: tone and
+   width, hover, an open path, selection. */
 .react-flow .react-flow__edge-floating .react-flow__edge-path.gc-edge-path {
   stroke: var(--edge);
-  stroke-width: 1.5;
+  stroke-width: var(--gc-edge-width, 1.5px);
   transition:
     stroke 120ms,
     stroke-width 120ms;
@@ -186,11 +235,37 @@
   transition: fill 120ms;
 }
 
+/* Sign colors on (4.18): line and arrowhead in the edge's tone. */
+.react-flow
+  .react-flow__edge-floating
+  .react-flow__edge-path.gc-edge-path[data-tone='positive'] {
+  stroke: var(--sign-positive);
+}
+.react-flow
+  .react-flow__edge-floating
+  .react-flow__edge-path.gc-edge-path[data-tone='negative'] {
+  stroke: var(--sign-negative);
+}
+.react-flow
+  .react-flow__edge-floating
+  .react-flow__edge-path.gc-edge-path[data-tone='neutral'] {
+  stroke: var(--foreground);
+}
+.react-flow .react-flow__edge-floating .gc-edge-arrow[data-tone='positive'] {
+  fill: var(--sign-positive);
+}
+.react-flow .react-flow__edge-floating .gc-edge-arrow[data-tone='negative'] {
+  fill: var(--sign-negative);
+}
+.react-flow .react-flow__edge-floating .gc-edge-arrow[data-tone='neutral'] {
+  fill: var(--foreground);
+}
+
 .react-flow
   .react-flow__edge-floating:hover
   .react-flow__edge-path.gc-edge-path {
   stroke: var(--edge-hover);
-  stroke-width: 2;
+  stroke-width: max(2px, var(--gc-edge-width, 1.5px));
 }
 .react-flow .react-flow__edge-floating:hover .gc-edge-arrow {
   fill: var(--edge-hover);
@@ -223,7 +298,7 @@
   .react-flow__edge-floating:focus-visible
   .react-flow__edge-path.gc-edge-path {
   stroke: var(--primary);
-  stroke-width: 2.5;
+  stroke-width: max(2.5px, var(--gc-edge-width, 1.5px));
 }
 .react-flow .react-flow__edge-floating.selected .gc-edge-arrow,
 .react-flow .react-flow__edge-floating:focus-visible .gc-edge-arrow {
@@ -357,6 +432,20 @@
 }
 .react-flow .gc-sign-badge:hover {
   background: var(--muted);
+}
+
+/* Sign colors on (4.18): border and glyph in the edge's tone. */
+.react-flow .gc-sign-badge[data-tone='positive'] {
+  border-color: var(--sign-positive);
+  color: var(--sign-positive);
+}
+.react-flow .gc-sign-badge[data-tone='negative'] {
+  border-color: var(--sign-negative);
+  color: var(--sign-negative);
+}
+.react-flow .gc-sign-badge[data-tone='neutral'] {
+  border-color: var(--foreground);
+  color: var(--foreground);
 }
 
 /* The edge is selected: teal border and glyph, like its line. */

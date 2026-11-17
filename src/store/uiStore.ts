@@ -1,4 +1,10 @@
 import { create } from 'zustand'
+import {
+  DISPLAY_DEFAULTS,
+  DISPLAY_KEYS,
+  type DisplayKey,
+  type DisplayOptions,
+} from '@/lib/display'
 import { safeLocalStorage } from '@/lib/welcome'
 
 /** Canvas tool (spec 5.2). */
@@ -75,6 +81,53 @@ export function writeAnalysisOn(
     storage.setItem(ANALYSIS_KEY, JSON.stringify(on))
   } catch {
     // Storage full or blocked: the switches reset to the defaults on the next visit.
+  }
+}
+
+/** localStorage key holding the display options (spec 4.18; a viewer preference). */
+export const DISPLAY_STORAGE_KEY = 'graphcreator:display'
+
+/**
+ * The stored display options (spec 4.18): each key's stored boolean, else its default. Null or
+ * failing storage and malformed JSON give the defaults.
+ */
+export function readDisplay(
+  storage: Pick<Storage, 'getItem'> | null,
+): DisplayOptions {
+  const display = { ...DISPLAY_DEFAULTS }
+  if (storage === null) return display
+  try {
+    const text = storage.getItem(DISPLAY_STORAGE_KEY)
+    if (text === null) return display
+    const stored: unknown = JSON.parse(text)
+    if (
+      typeof stored !== 'object' ||
+      stored === null ||
+      Array.isArray(stored)
+    ) {
+      return display
+    }
+    const record = stored as Record<string, unknown>
+    for (const key of DISPLAY_KEYS) {
+      const value = record[key]
+      if (typeof value === 'boolean') display[key] = value
+    }
+    return display
+  } catch {
+    return { ...DISPLAY_DEFAULTS }
+  }
+}
+
+/** Stores the display options. A null or failing storage only means they are not remembered. */
+export function writeDisplay(
+  storage: Pick<Storage, 'setItem'> | null,
+  display: DisplayOptions,
+): void {
+  if (storage === null) return
+  try {
+    storage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify(display))
+  } catch {
+    // Storage full or blocked: the options reset to the defaults on the next visit.
   }
 }
 
@@ -186,6 +239,13 @@ export interface UiState {
    */
   namePreview: { id: string; name: string } | null
   setNamePreview(preview: { id: string; name: string } | null): void
+  /**
+   * What the canvas and exported images show (spec 4.18); a viewer preference, not part of the
+   * graph. Initial value from `readDisplay(safeLocalStorage())`.
+   */
+  display: DisplayOptions
+  /** Also writes all options with `writeDisplay`. */
+  setDisplay(key: DisplayKey, on: boolean): void
 }
 
 export const useUiStore = create<UiState>()((set, get) => ({
@@ -201,6 +261,7 @@ export const useUiStore = create<UiState>()((set, get) => ({
   simulationOpen: readSimulationOpen(safeLocalStorage()),
   lessonsOpen: false,
   namePreview: null,
+  display: readDisplay(safeLocalStorage()),
 
   setTool(tool) {
     set({ tool, connectFrom: null })
@@ -262,5 +323,11 @@ export const useUiStore = create<UiState>()((set, get) => ({
 
   setNamePreview(preview) {
     set({ namePreview: preview })
+  },
+
+  setDisplay(key, on) {
+    const display = { ...get().display, [key]: on }
+    writeDisplay(safeLocalStorage(), display)
+    set({ display })
   },
 }))

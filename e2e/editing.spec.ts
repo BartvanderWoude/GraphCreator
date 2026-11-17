@@ -154,7 +154,9 @@ test('role and type options show labels; role options carry their description', 
 test('the side panel shows the cheat sheet when nothing is selected', async ({
   page,
 }) => {
-  await expect(panel(page).getByRole('heading')).toHaveText('Nothing selected.')
+  await expect(
+    panel(page).getByRole('heading', { name: 'Nothing selected.' }),
+  ).toHaveText('Nothing selected.')
   for (const [action, how] of [
     ['Add a node', 'Double-click the canvas or press N'],
     ['Connect', 'Drag from the rim of a circle, or press C'],

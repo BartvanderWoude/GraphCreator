@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import type { Download, Page } from '@playwright/test'
+import type { BrowserContext, Download, Page } from '@playwright/test'
 import {
   addNodeAt,
   circle,
@@ -55,6 +55,31 @@ edges:
     to: C
   - from: C
     to: D
+`
+
+/**
+ * A graph for signs on a categorical cause (spec 4.16): Diet → Body weight is `parent-levels` with
+ * three levels, Diabetes → Body weight `parent-levels` with two.
+ */
+const CAUSES_YAML = `schema: graphcreator/0.1
+name: Causes
+nodes:
+  - name: Diet
+    var_type: categorical
+    levels: [A, B, C]
+    pos: [200, 150]
+  - name: Body weight
+    var_type: continuous
+    pos: [520, 150]
+  - name: Diabetes
+    var_type: categorical
+    levels: ["no", "yes"]
+    pos: [200, 390]
+edges:
+  - from: Diet
+    to: Body weight
+  - from: Diabetes
+    to: Body weight
 `
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
@@ -163,7 +188,33 @@ const share = (page: Page, level: string) =>
     exact: true,
   })
 
+/** localStorage key of the display options (spec 4.18, `DISPLAY_STORAGE_KEY`). */
+const DISPLAY_KEY = 'graphcreator:display'
+
+/**
+ * Switches the Signs display option on before the app loads, as the Display section would
+ * (4.18): the canvas shows sign badges only while it is on. The other options stay off.
+ */
+async function signsOn(target: Page | BrowserContext) {
+  await target.addInitScript(
+    (key) =>
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          signs: true,
+          signColors: false,
+          strength: false,
+          forms: false,
+          types: false,
+          dashedLatent: false,
+        }),
+      ),
+    DISPLAY_KEY,
+  )
+}
+
 test.beforeEach(async ({ page }) => {
+  await signsOn(page)
   await page.goto('/')
   await expect(pane(page)).toBeVisible()
 })
@@ -325,7 +376,7 @@ test('adding, moving and removing a level keeps the shares and signs on their le
     '  - from: Diabetes\n    to: Wound class\n    sign: {clean: negative}\n',
   )
   expect(text).toContain(
-    '  - from: Wound class\n    to: SSI\n    sign: {clean-contaminated: positive}\n',
+    '  - from: Wound class\n    to: SSI\n    sign: {clean-contaminated: positive, clean: negative}\n',
   )
 })
 
@@ -461,6 +512,99 @@ test('a sign that no longer fits shows Clear sign, and its warning selects the e
   await expect.poll(() => stored(page)).not.toContain('sign:')
 })
 
+test('a categorical cause gets a sign per level, the first included', async ({
+  page,
+}) => {
+  await pasteAndOpen(page, CAUSES_YAML)
+  await expect(nodes(page)).toHaveCount(3)
+
+  // Three levels: one row each, including the first.
+  await selectEdge(page, 'Diet', 'Body weight')
+  await openSection(page)
+  const diet = panel(page).getByRole('group', { name: 'Sign' })
+  await expect(diet).toContainText(
+    'Each level of Diet compared with the average:',
+  )
+  await expect(diet.getByRole('radiogroup')).toHaveCount(3)
+  for (const level of ['A', 'B', 'C']) {
+    await diet
+      .getByRole('radiogroup', { name: `Sign for ${level}` })
+      .getByRole('radio', { name: 'Positive' })
+      .click()
+  }
+  // Every level may carry the same sign (4.16): no warning, and the badge is +.
+  await expect(
+    topBar(page).getByRole('button', { name: /warning/ }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('img', { name: 'Positive effect' })).toHaveText(
+    '+',
+  )
+  await expect
+    .poll(() => stored(page))
+    .toContain(
+      '  - from: Diet\n    to: Body weight\n    sign: {A: positive, B: positive, C: positive}\n',
+    )
+
+  // The first level can be set on its own, and the map keeps the level order.
+  await diet
+    .getByRole('radiogroup', { name: 'Sign for A' })
+    .getByRole('radio', { name: 'Negative' })
+    .click()
+  await expect(
+    page.getByRole('img', { name: 'Mixed effects per level' }),
+  ).toHaveText('±')
+  await expect
+    .poll(() => stored(page))
+    .toContain('    sign: {A: negative, B: positive, C: positive}\n')
+
+  // Two levels: one row each as well, not a single control.
+  await selectEdge(page, 'Diabetes', 'Body weight')
+  await expect(
+    panel(page).getByRole('radiogroup', { name: 'Sign', exact: true }),
+  ).toHaveCount(0)
+  const diabetes = panel(page).getByRole('group', { name: 'Sign' })
+  await expect(diabetes).toContainText(
+    'Each level of Diabetes compared with the average:',
+  )
+  await expect(diabetes.getByRole('radiogroup')).toHaveCount(2)
+  await expect(
+    diabetes.getByRole('radiogroup', { name: 'Sign for no' }),
+  ).toBeVisible()
+  await expect(
+    diabetes.getByRole('radiogroup', { name: 'Sign for yes' }),
+  ).toBeVisible()
+})
+
+test('one sign on a two-level cause signs its later level and survives an edit', async ({
+  page,
+}) => {
+  await openSimulation(page)
+  await selectEdge(page, 'Diabetes', 'SSI')
+  await openSection(page)
+  const sign = panel(page).getByRole('group', { name: 'Sign' })
+  await expect(
+    sign
+      .getByRole('radiogroup', { name: 'Sign for yes' })
+      .getByRole('radio', { name: 'Positive' }),
+  ).toHaveAttribute('aria-checked', 'true')
+  await expect(
+    sign
+      .getByRole('radiogroup', { name: 'Sign for no' })
+      .getByRole('radio', { name: 'No sign' }),
+  ).toHaveAttribute('aria-checked', 'true')
+
+  // Setting the other level keeps the one the word stood for.
+  await sign
+    .getByRole('radiogroup', { name: 'Sign for no' })
+    .getByRole('radio', { name: 'Negative' })
+    .click()
+  await expect
+    .poll(() => stored(page))
+    .toContain(
+      '  - from: Diabetes\n    to: SSI\n    sign: {"no": negative, "yes": positive}\n',
+    )
+})
+
 test('opening simulation.dag.yaml and saving it gives the same text', async ({
   page,
 }) => {
@@ -470,11 +614,11 @@ test('opening simulation.dag.yaml and saving it gives the same text', async ({
     topBar(page).getByRole('button', { name: /warning/ }),
   ).toHaveCount(0)
   await expect(page.getByRole('img', { name: 'Positive effect' })).toHaveCount(
-    2,
+    1,
   )
   await expect(
     page.getByRole('img', { name: 'Mixed effects per level' }),
-  ).toHaveCount(1)
+  ).toHaveCount(2)
   expect(await saveText(page)).toBe(SIMULATION_TEXT)
 })
 
@@ -493,6 +637,8 @@ test('a share link keeps the simulation details', async ({ page, browser }) => {
   )
 
   const context = await browser.newContext()
+  // The display options are this browser's preference, not part of the link (4.18).
+  await signsOn(context)
   try {
     const fresh = await context.newPage()
     await fresh.goto(link)
@@ -500,7 +646,7 @@ test('a share link keeps the simulation details', async ({ page, browser }) => {
     await expect(nodes(fresh)).toHaveCount(3)
     await expect(
       fresh.getByRole('img', { name: 'Mixed effects per level' }),
-    ).toHaveCount(1)
+    ).toHaveCount(2)
     await expect.poll(() => stored(fresh)).toBe(SIMULATION_TEXT)
   } finally {
     await context.close()
@@ -518,7 +664,7 @@ test('undo reverts a share edit and a sign edit', async ({ page }) => {
 
   await selectEdge(page, 'Diabetes', 'SSI')
   await panel(page)
-    .getByRole('radiogroup', { name: 'Sign' })
+    .getByRole('radiogroup', { name: 'Sign for yes' })
     .getByRole('radio', { name: 'Negative' })
     .click()
   await expect(page.getByRole('img', { name: 'Negative effect' })).toHaveText(
@@ -531,7 +677,7 @@ test('undo reverts a share edit and a sign edit', async ({ page }) => {
   )
   await expect(
     panel(page)
-      .getByRole('radiogroup', { name: 'Sign' })
+      .getByRole('radiogroup', { name: 'Sign for yes' })
       .getByRole('radio', { name: 'Positive' }),
   ).toHaveAttribute('aria-checked', 'true')
 

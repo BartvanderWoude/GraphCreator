@@ -49,6 +49,8 @@
   --color-canvas: var(--canvas);
   --color-edge: var(--edge);
   --color-edge-hover: var(--edge-hover);
+  --color-sign-positive: var(--sign-positive);
+  --color-sign-negative: var(--sign-negative);
   --color-primary-hover: var(--primary-hover);
   --color-rim: var(--rim);
   --color-warning-bg: var(--warning-bg);
@@ -127,6 +129,9 @@
   --canvas: #f3f8f7;
   --edge: #64748b;
   --edge-hover: #334155;
+  /* Edge tones of the Sign colors display option (spec 4.18). */
+  --sign-positive: #15803d;
+  --sign-negative: #b91c1c;
   --primary-hover: #115e59;
   --rim: rgb(15 118 110 / 0.25);
   --warning-bg: #fef9c3;
@@ -194,6 +199,8 @@
   --canvas: #111a18;
   --edge: #8a9aae;
   --edge-hover: #c2ceda;
+  --sign-positive: #4ade80;
+  --sign-negative: #f87171;
   --primary-hover: #5eead4;
   --rim: rgb(45 212 191 / 0.3);
   --warning-bg: #3a2e0a;

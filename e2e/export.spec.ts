@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Download, Page } from '@playwright/test'
-import { expect, nodes, pane, test, topBar } from './fixtures.ts'
+import { expect, nodes, pane, panel, test, topBar } from './fixtures.ts'
 
 const FIXTURES = path.join(import.meta.dirname, '../src/model/__fixtures__')
 const fixture = (name: string) => path.join(FIXTURES, name)
 
 const SLUG = 'smoking-and-birth-weight'
+
+/** spec 4.18 "Copy": `EXPORT_DESCRIPTION`. */
+const EXPORT_DESCRIPTION =
+  'The image shows the graph as on the canvas, with the Display options of the Edit panel, and an optional legend.'
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
@@ -64,9 +68,7 @@ test.beforeEach(async ({ page }) => {
 test('with no nodes there is nothing to export', async ({ page }) => {
   await button(page, 'Export…').click()
   const dialog = exportDialog(page)
-  await expect(dialog).toContainText(
-    'The image shows names, roles (by color) and arrows, with an optional legend. Types, levels and evidence are not included.',
-  )
+  await expect(dialog).toContainText(EXPORT_DESCRIPTION)
   await expect(dialog.getByRole('combobox', { name: 'Format' })).toHaveText(
     'SVG',
   )
@@ -226,49 +228,56 @@ test('Theme and Legend change the image, and are kept when the dialog reopens', 
   await expect(dialog.getByRole('checkbox', { name: 'Legend' })).toBeChecked()
 })
 
-test('Signs shows only when an edge has a sign, and adds the badges to the image', async ({
+test('Signs comes from the Display section, not the dialog, and adds the badges to the image', async ({
   page,
 }) => {
-  // smoking.dag.yaml has no signs: no checkbox.
-  await openFile(page, fixture('smoking.dag.yaml'))
-  await button(page, 'Export…').click()
+  // simulation.dag.yaml has two positive edges and one mixed one.
+  await openFile(page, fixture('simulation.dag.yaml'), 3)
   const dialog = exportDialog(page)
+  const signs = panel(page).locator('#display-signs')
+  await expect(signs).not.toBeChecked()
+
+  // The dialog has Legend but no Signs checkbox.
+  await button(page, 'Export…').click()
   await expect(dialog.getByRole('checkbox', { name: 'Legend' })).toBeVisible()
   await expect(dialog.getByRole('checkbox', { name: 'Signs' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(dialog).toHaveCount(0)
 
-  // simulation.dag.yaml has two positive edges and one mixed one.
-  await openFile(page, fixture('simulation.dag.yaml'), 3)
-  await button(page, 'Export…').click()
-  const signs = dialog.getByRole('checkbox', { name: 'Signs' })
-  await expect(signs).toBeChecked()
-  const preview = dialog.getByRole('img', { name: 'Preview of the image' })
-  await expect(preview).toBeVisible()
   const svg = async () =>
     (
       await download(page, () =>
         dialog.getByRole('button', { name: 'Download' }).click(),
       )
     ).bytes.toString('utf8')
-  const withSigns = await svg()
-  expect(withSigns.match(/>\+<\/text>/g)).toHaveLength(2)
-  expect(withSigns.match(/>±<\/text>/g)).toHaveLength(1)
+  const tikz = dialog.getByRole('textbox', { name: 'TikZ code' })
 
+  // Signs on in the Display section (nothing is selected): the SVG and TikZ have the badges.
+  await signs.click()
+  await expect(signs).toBeChecked()
+  await button(page, 'Export…').click()
+  await expect(
+    dialog.getByRole('img', { name: 'Preview of the image' }),
+  ).toBeVisible()
+  const withSigns = await svg()
+  expect(withSigns.match(/>\+<\/text>/g)).toHaveLength(1)
+  expect(withSigns.match(/>±<\/text>/g)).toHaveLength(2)
+  await choose(page, 'Format', 'TikZ')
+  await expect(tikz).toHaveValue(/\{\$\\pm\$\}/)
+  await page.keyboard.press('Escape')
+  await expect(dialog).toHaveCount(0)
+
+  // Signs off: no badges.
   await signs.click()
   await expect(signs).not.toBeChecked()
+  await button(page, 'Export…').click()
+  await expect(tikz).not.toHaveValue(/\{\$\\pm\$\}/)
+  await choose(page, 'Format', 'SVG')
+  await expect(
+    dialog.getByRole('img', { name: 'Preview of the image' }),
+  ).toBeVisible()
   const without = await svg()
   expect(without).not.toContain('>+</text>')
   expect(without).not.toContain('>±</text>')
   expect(without.length).toBeLessThan(withSigns.length)
-
-  // TikZ follows the same choice, and the choice is kept when the dialog reopens.
-  await choose(page, 'Format', 'TikZ')
-  const code = dialog.getByRole('textbox', { name: 'TikZ code' })
-  await expect(code).not.toHaveValue(/\{\$\\pm\$\}/)
-  await signs.click()
-  await expect(code).toHaveValue(/\{\$\\pm\$\}/)
-  await page.keyboard.press('Escape')
-  await button(page, 'Export…').click()
-  await expect(signs).toBeChecked()
 })

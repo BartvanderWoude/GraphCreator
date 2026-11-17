@@ -30,5 +30,5 @@ edges:
     strength: small
   - from: Wound class
     to: SSI
-    sign: {clean-contaminated: positive, contaminated: positive}
+    sign: {clean: negative, clean-contaminated: positive, contaminated: positive}
     strength: large

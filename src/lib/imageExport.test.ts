@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { parseGraphText } from '@/model/fileFormat'
+import {
+  DISPLAY_DEFAULTS,
+  glyphPathData,
+  type DisplayOptions,
+} from '@/lib/display'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
 import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { parseYaml } from '@/model/yaml'
@@ -427,6 +432,279 @@ describe('sign badges', () => {
       toTikz(smoking(), { legend: true }),
     )
   })
+})
+
+describe('display options', () => {
+  const simulation: Record<string, string> = import.meta.glob(
+    '../model/__fixtures__/simulation.dag.yaml',
+    { query: '?raw', import: 'default', eager: true },
+  )
+
+  /**
+   * simulation.dag.yaml (signs, strengths, types and forms) plus a latent, continuous, smooth
+   * Frailty → SSI negative, Diabetes → Frailty unsigned and a discrete Visits → SSI small.
+   */
+  function display(): Graph {
+    const result = parseYaml(
+      simulation['../model/__fixtures__/simulation.dag.yaml'],
+    )
+    if (!result.ok) throw new Error('simulation.dag.yaml does not parse.')
+    const g = result.value
+    const id = (name: string) => g.nodes.find((n) => n.name === name)!.id
+    g.nodes.push(
+      {
+        id: 'frailty',
+        name: 'Frailty',
+        role: 'latent',
+        varType: 'continuous',
+        form: 'smooth',
+        pos: { x: 300, y: 260 },
+      },
+      {
+        id: 'visits',
+        name: 'Visits',
+        role: 'other',
+        varType: 'discrete',
+        pos: { x: 560, y: 160 },
+      },
+    )
+    g.edges.push(
+      {
+        id: 'x1',
+        source: 'frailty',
+        target: id('SSI'),
+        sign: 'negative',
+        evidence: [],
+      },
+      { id: 'x2', source: id('Diabetes'), target: 'frailty', evidence: [] },
+      {
+        id: 'x3',
+        source: 'visits',
+        target: id('SSI'),
+        strength: 'small',
+        evidence: [],
+      },
+    )
+    return g
+  }
+
+  const ALL: DisplayOptions = {
+    signs: true,
+    signColors: true,
+    strength: true,
+    forms: true,
+    types: true,
+    dashedLatent: true,
+  }
+  const light = EXPORT_PALETTES.light
+
+  it('leaves every writer unchanged with every display key false', () => {
+    for (const g of [smoking(), display()]) {
+      for (const legend of [false, true]) {
+        for (const theme of ['light', 'dark'] as const) {
+          expect(toSvg(g, { ...DISPLAY_DEFAULTS, legend, theme })).toBe(
+            toSvg(g, { legend, theme }),
+          )
+        }
+        expect(toTikz(g, { ...DISPLAY_DEFAULTS, legend })).toBe(
+          toTikz(g, { legend }),
+        )
+      }
+    }
+    expect(toSvg(display())).not.toContain('stroke-dasharray')
+  })
+
+  it('draws the edges in their tones and widths in SVG', () => {
+    const svg = toSvg(display(), { signColors: true, strength: true })
+    expect(svg).toContain(`stroke="${light.positive}" stroke-width="3"/>`)
+    expect(svg).toContain(`fill="${light.positive}"/>`)
+    expect(svg).toContain(`stroke="${light.negative}" stroke-width="1.5"/>`)
+    expect(svg).toContain(`stroke="${light.foreground}" stroke-width="4.5"/>`)
+    expect(svg).not.toContain(`stroke="${light.edge}"`)
+  })
+
+  it('dashes latent circles in SVG', () => {
+    const svg = toSvg(display(), { dashedLatent: true, legend: true })
+    expect(
+      count(svg, /<circle [^>]* stroke-width="2" stroke-dasharray="5 3"\/>/g),
+    ).toBe(1)
+    expect(svg).toContain(
+      `fill="${light.roles.latent.fill}" stroke="${light.roles.latent.line}" stroke-width="1.5" stroke-dasharray="2 1.5"/>`,
+    )
+    expect(balanced(svg)).toBe(true)
+  })
+
+  it('draws the marks after the names and before the legend in SVG', () => {
+    const g = display()
+    const svg = toSvg(g, { forms: true, types: true, legend: true })
+    const scene = imageScene(g, { forms: true, types: true })
+    // Diabetes C; Wound class C, threshold; SSI C, linear; Frailty N, smooth; Visits D.
+    expect(scene.marks).toHaveLength(8)
+    const glyphs = scene.marks.filter((m) => m.path)
+    expect(glyphs).toHaveLength(3)
+    for (const { path } of glyphs) {
+      expect(svg).toContain(
+        `<path d="${glyphPathData(path!.segments)}" fill="none" stroke="${light.edge}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+      )
+    }
+    expect(
+      count(
+        svg,
+        /<g font-family="[^"]+" font-size="11" font-weight="500" text-anchor="middle">\n<text [^>]+>[CND]<\/text>\n<\/g>/g,
+      ),
+    ).toBe(5)
+    expect(
+      count(
+        svg,
+        new RegExp(
+          `<circle [^>]* r="9.5" fill="${light.background}" stroke="${light.edge}" stroke-width="1"/>`,
+          'g',
+        ),
+      ),
+    ).toBe(8)
+    const first = svg.indexOf('r="9.5"')
+    expect(first).toBeGreaterThan(svg.lastIndexOf('>Visits</text>'))
+    expect(svg.lastIndexOf('r="9.5"')).toBeLessThan(svg.indexOf('<rect x='))
+    expect(balanced(svg)).toBe(true)
+  })
+
+  it('draws the legend rows in SVG: line samples, badges, marks and labels', () => {
+    const svg = toSvg(display(), { ...ALL, legend: true })
+    for (const label of [
+      'Positive effect',
+      'Negative effect',
+      'Mixed effects',
+      'No sign',
+      'Small effect or No strength',
+      'Medium effect',
+      'Large effect',
+      'Linear',
+      'Smooth',
+      'Threshold',
+      'Categorical',
+      'Continuous',
+      'Discrete',
+    ]) {
+      expect(svg).toContain(`fill="${light.foreground}">${label}</text>`)
+    }
+    // Legend badges at 16/20 of the size: radius 5.9, glyph 9.6 px.
+    expect(count(svg, /r="5.9"/g)).toBe(3)
+    expect(svg).toContain('font-size="9.6" font-weight="500"')
+    expect(count(svg, /r="7.5" fill="#ffffff" stroke="#64748b"/g)).toBe(6)
+    expect(svg).toContain('font-size="8.8" font-weight="500"')
+    expect(balanced(svg)).toBe(true)
+  })
+
+  it('draws the TikZ edges in their tones and widths, and defines only the tones in use', () => {
+    const g = display()
+    const tikz = toTikz(g, { signColors: true, strength: true })
+    expect(tikz).toContain(
+      '\\draw[-{Stealth[length=9pt,width=9pt]}, line width=2.25pt, draw=gcPositive, shorten >=1.5pt] (v1) -- (v3);',
+    )
+    expect(tikz).toContain(
+      '\\draw[-{Stealth[length=11.25pt,width=11.25pt]}, line width=3.375pt, draw=gcNeutral, shorten >=1.5pt] (v2) -- (v3);',
+    )
+    expect(tikz).toContain(
+      '\\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcNegative, shorten >=1.5pt] (v4) -- (v3);',
+    )
+    const defined = (text: string) =>
+      [...text.matchAll(/^\\definecolor\{(gc\w+)\}\{HTML\}\{(\w+)\}$/gm)]
+        .map((m) => `${m[1]}=${m[2]}`)
+        .filter((c) => /Positive|Negative|Neutral/.test(c))
+    expect(defined(tikz)).toEqual([
+      'gcPositive=15803D',
+      'gcNegative=B91C1C',
+      'gcNeutral=0F172A',
+    ])
+    // Only positive edges: only gcPositive.
+    const positive = display()
+    positive.edges = positive.edges.filter((e) => e.sign === 'positive')
+    expect(defined(toTikz(positive, { signColors: true }))).toEqual([
+      'gcPositive=15803D',
+    ])
+    expect(defined(toTikz(g, { signs: true, strength: true }))).toEqual([])
+    // The definitions follow gcEdge and come before the legend's.
+    const withLegend = toTikz(g, { signColors: true, legend: true })
+    expect(withLegend.indexOf('{gcEdge}')).toBeLessThan(
+      withLegend.indexOf('{gcPositive}'),
+    )
+    expect(withLegend.indexOf('{gcNeutral}')).toBeLessThan(
+      withLegend.indexOf('{gcBorder}'),
+    )
+  })
+
+  it('draws TikZ badges in their edge colour, dashed latent nodes and marks', () => {
+    const g = display()
+    const tikz = toTikz(g, { signs: true, signColors: true })
+    expect(tikz).toContain(
+      '\\node[circle, draw=gcPositive, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\\sffamily\\scriptsize, text=gcPositive] at (',
+    )
+    expect(count(tikz, /draw=gcNeutral, fill=white/g)).toBe(2)
+    const dashed = toTikz(g, { dashedLatent: true })
+    expect(
+      count(
+        dashed,
+        /^\\node\[circle, draw=gcLatentLine, [^\n]*line width=1\.5pt, dashed, minimum size=72pt/gm,
+      ),
+    ).toBe(1)
+    expect(count(dashed, /dashed/g)).toBe(1)
+    // Marks, in canvas coordinates: Diabetes at (0, 0) has its type mark at 48 − 48/√2.
+    const marks = toTikz(g, { forms: true, types: true })
+    expect(marks).toContain(
+      '\\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\\sffamily\\scriptsize, text=gcEdge] at (14.06,14.06) {C};',
+    )
+    expect(marks).toContain(
+      '\\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (381.94,94.06) {};\n\\draw[gcEdge, line width=1.125pt, line cap=round, line join=round] (377.77,98.23) -- (386.11,89.89);',
+    )
+    expect(marks).toMatch(
+      /\\draw\[gcEdge, line width=1\.125pt, line cap=round, line join=round\] \([\d.]+,[\d.]+\) \.\. controls \([\d.]+,[\d.]+\) and \([\d.]+,[\d.]+\) \.\. \([\d.]+,[\d.]+\);/,
+    )
+    expect(count(marks, /minimum size=15pt/g)).toBe(8)
+    // A graph without edges still defines gcEdge for its marks.
+    const lone = { nodes: [g.nodes[1]], edges: [] }
+    expect(toTikz(lone, { forms: true })).toContain(
+      '\\definecolor{gcEdge}{HTML}{64748B}',
+    )
+    expect(toTikz(lone)).not.toContain('gcEdge')
+  })
+
+  it('draws the TikZ legend rows at the scene positions', () => {
+    const tikz = toTikz(display(), { ...ALL, legend: true })
+    expect(tikz).toContain(
+      ', dash pattern=on 1.5pt off 1.125pt, minimum size=7.5pt, inner sep=0pt] at (',
+    )
+    expect(
+      count(
+        tikz,
+        /^\\draw\[-\{Stealth\[length=[\d.]+pt,width=[\d.]+pt\]\}, line width=[\d.]+pt, draw=gc\w+\] \([\d.]+,[\d.]+\) -- \([\d.]+,[\d.]+\);$/gm,
+      ),
+    ).toBe(7)
+    expect(tikz).toContain('minimum size=9.6pt')
+    // Six 16 px legend marks and four 16 px badges on the edges.
+    expect(count(tikz, /minimum size=12pt, inner sep=0pt/g)).toBe(10)
+    for (const label of ['No sign', 'Small effect or No strength', 'Discrete'])
+      expect(tikz).toContain(`) {${label}};`)
+    expect(tikz).toMatch(/at \(712,158\) \{Small effect or No strength\};/)
+  })
+  // Stored in phase 70: every display option on, in both themes, with and without the legend.
+  for (const theme of ['light', 'dark'] as const) {
+    for (const legend of [false, true]) {
+      const name = `display-all.${theme}${legend ? '.legend' : ''}`
+      it(`draws ${name} as stored`, async () => {
+        await expect(
+          toSvg(display(), { ...ALL, theme, legend }),
+        ).toMatchFileSnapshot(`./__snapshots__/imageExport/${name}.svg`)
+      })
+    }
+  }
+  for (const legend of [false, true]) {
+    const name = `display-all${legend ? '.legend' : ''}`
+    it(`writes the TikZ of ${name} as stored`, async () => {
+      await expect(toTikz(display(), { ...ALL, legend })).toMatchFileSnapshot(
+        `./__snapshots__/imageExport/${name}.tex`,
+      )
+    })
+  }
 })
 
 const allFixtures: Record<string, string> = import.meta.glob(

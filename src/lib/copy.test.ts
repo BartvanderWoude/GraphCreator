@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { DISPLAY_KEYS } from '@/lib/display'
 import { ANALYSIS_KEYS } from '@/store/uiStore'
-import { FORMS, SIGNS, STRENGTHS } from '@/model/schema'
+import { FORMS, SIGNS, STRENGTHS, VAR_TYPES } from '@/model/schema'
 import {
   ANALYSIS_TEXT,
   ANALYSIS_TITLES,
+  DISPLAY_LABELS,
+  DISPLAY_TIPS,
+  DISPLAY_TITLE,
+  EXPORT_DESCRIPTION,
   FIELD_TIPS,
   FORM_DESCRIPTIONS,
   FORM_LABELS,
@@ -12,6 +17,8 @@ import {
   STRENGTH_DESCRIPTIONS,
   STRENGTH_LABELS,
   GRAPH_LOCK,
+  LEGEND_LABELS,
+  MARK_LABELS,
 } from './copy'
 
 describe('joinNames', () => {
@@ -171,5 +178,67 @@ describe('GRAPH_LOCK (spec 4.17)', () => {
     }
     // A button label is not a sentence.
     expect(GRAPH_LOCK.label).toBe('Lock graph')
+  })
+})
+
+describe('display texts (spec 4.18)', () => {
+  it('labels every display option in switch order', () => {
+    expect(DISPLAY_TITLE).toBe('Display')
+    expect(DISPLAY_KEYS.map((k) => DISPLAY_LABELS[k])).toEqual([
+      'Signs',
+      'Sign colors',
+      'Strength',
+      'Forms',
+      'Variable types',
+      'Dashed latent',
+    ])
+  })
+
+  it.each([
+    ['title', DISPLAY_TITLE],
+    ...DISPLAY_KEYS.map((k) => [k, DISPLAY_LABELS[k]] as const),
+  ] as const)(
+    'the %s tip starts with its term and follows the tooltip rules',
+    (key, term) => {
+      const tip = DISPLAY_TIPS[key]
+      expect(tip.startsWith(`${term}: `)).toBe(true)
+      expect(tip.split(/\s+/).length).toBeLessThanOrEqual(30)
+      expect(tip.endsWith('.')).toBe(true)
+      expect(tip).not.toMatch(/n't|'re|'s /)
+    },
+  )
+
+  it('has the 4.18 texts', () => {
+    expect(DISPLAY_TIPS.signs).toBe(
+      'Signs: a +, \u2212 or \u00b1 badge in the middle of each arrow with a sign.',
+    )
+    expect(EXPORT_DESCRIPTION).toBe(
+      'The image shows the graph as on the canvas, with the Display options of the Edit panel, and an optional legend.',
+    )
+    expect(Object.values(LEGEND_LABELS)).toEqual([
+      'Positive effect',
+      'Negative effect',
+      'Mixed effects',
+      'No sign',
+      'Small effect',
+      'Medium effect',
+      'Large effect',
+      'No strength',
+    ])
+    for (const s of STRENGTHS) expect(LEGEND_LABELS[s]).toMatch(/ effect$/)
+  })
+
+  it('names the canvas marks', () => {
+    expect(FORMS.map((f) => MARK_LABELS.form(f))).toEqual([
+      'Functional form: Linear',
+      'Functional form: Smooth',
+      'Functional form: Threshold',
+    ])
+    expect(VAR_TYPES.map((t) => MARK_LABELS.type(t))).toEqual([
+      'Variable type: Categorical',
+      'Variable type: Ordinal',
+      'Variable type: Continuous',
+      'Variable type: Discrete',
+    ])
   })
 })

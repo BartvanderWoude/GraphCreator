@@ -1,9 +1,18 @@
 import { describe, expect, it } from 'vitest'
 import { ROLE_LABELS } from '@/lib/copy'
+import {
+  arrowSize,
+  DISPLAY_DEFAULTS,
+  FORM_GLYPHS,
+  markCentre,
+  placeGlyph,
+  type DisplayOptions,
+  type MarkCorner,
+} from '@/lib/display'
 import { emptyGraph, type GNode, type Graph } from '@/model/graph'
 import { lineHeight, NODE_DIAMETER, nodeLabel } from '@/model/nodeSize'
 import { EXPORT_PALETTES } from '@/model/palette'
-import type { Role } from '@/model/schema'
+import type { Form, Role } from '@/model/schema'
 import { parseYaml } from '@/model/yaml'
 import { svgSize } from './imageExport'
 import { EXPORT_MARGIN, imageScene, LEGEND, type Scene } from './imageScene'
@@ -388,9 +397,18 @@ describe('imageScene', () => {
     })
 
     it('changes nothing else, and nothing at all for a graph without signs', () => {
-      const plain = imageScene(signed(), { legend: true })
-      const scene = imageScene(signed(), { legend: true, signs: true })
+      const plain = imageScene(signed())
+      const scene = imageScene(signed(), { signs: true })
       expect({ ...scene, badges: [] }).toEqual(plain)
+      // With the legend, the sign rows (phase 70) come after the unchanged role rows.
+      const legend = imageScene(signed(), { legend: true, signs: true }).legend!
+      expect(legend.items).toEqual(
+        imageScene(signed(), { legend: true }).legend!.items.map((item) => ({
+          ...item,
+          swatch: { ...item.swatch, cx: item.swatch.cx + 7 },
+          text: { ...item.text, x: item.text.x + 14 },
+        })),
+      )
       expect(imageScene(smoking(), { legend: true, signs: true })).toEqual(
         imageScene(smoking(), { legend: true }),
       )
@@ -402,6 +420,321 @@ describe('imageScene', () => {
       expect(
         imageScene(g, { signs: true }).badges.map((b) => b.text.text),
       ).toEqual(['\u2212', '\u00b1'])
+    })
+  })
+  describe('display options', () => {
+    /**
+     * A (categorical, linear) → B (outcome, smooth) positive medium, L (latent, ordinal) → B
+     * negative, A → L mixed large, D → B unsigned small.
+     */
+    function display(): Graph {
+      const g = graph(
+        [
+          { ...node('A', 0, 0), varType: 'categorical', form: 'linear' },
+          { ...node('B', 300, 0, 'outcome'), form: 'smooth' },
+          { ...node('L', 0, 300, 'latent'), varType: 'ordinal' },
+          node('D', 300, 300),
+        ],
+        [
+          ['A', 'B'],
+          ['L', 'B'],
+          ['A', 'L'],
+          ['D', 'B'],
+        ],
+      )
+      const [ab, lb, al, db] = g.edges
+      Object.assign(ab, { sign: 'positive', strength: 'medium' })
+      Object.assign(lb, { sign: 'negative' })
+      Object.assign(al, {
+        sign: { x: 'positive', y: 'negative' },
+        strength: 'large',
+      })
+      Object.assign(db, { strength: 'small' })
+      return g
+    }
+
+    const ALL: DisplayOptions = {
+      signs: true,
+      signColors: true,
+      strength: true,
+      forms: true,
+      types: true,
+      dashedLatent: true,
+    }
+    const light = EXPORT_PALETTES.light
+
+    it('changes nothing with every display key false', () => {
+      for (const g of [smoking(), display(), corners()]) {
+        for (const legend of [false, true]) {
+          const scene = imageScene(g, { ...DISPLAY_DEFAULTS, legend })
+          expect(scene).toEqual(imageScene(g, { legend }))
+          expect(scene.marks).toEqual([])
+          expect(scene.circles.some((c) => 'dash' in c)).toBe(false)
+          expect(scene.legend?.rows ?? []).toEqual([])
+        }
+      }
+    })
+
+    it('colours each edge by its tone, without badges unless Signs is on', () => {
+      const scene = imageScene(display(), { signColors: true })
+      expect(scene.edges.map((e) => e.color)).toEqual([
+        light.positive,
+        light.negative,
+        light.foreground,
+        light.foreground,
+      ])
+      expect(scene.badges).toEqual([])
+      const dark = imageScene(display(), { signColors: true, theme: 'dark' })
+      const palette = EXPORT_PALETTES.dark
+      expect(dark.edges.map((e) => e.color)).toEqual([
+        palette.positive,
+        palette.negative,
+        palette.foreground,
+        palette.foreground,
+      ])
+    })
+
+    it('draws strength widths with heads of arrowSize, the line 1 px into them', () => {
+      const scene = imageScene(display(), { strength: true })
+      expect(scene.edges.map((e) => e.width)).toEqual([3, 1.5, 4.5, 1.5])
+      for (const e of scene.edges) {
+        const [tip, a, b] = e.head
+        const size = arrowSize(e.width)
+        expect(Math.hypot(a[0] - b[0], a[1] - b[1])).toBeCloseTo(size)
+        const base = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]
+        expect(Math.hypot(tip[0] - base[0], tip[1] - base[1])).toBeCloseTo(size)
+        expect(Math.hypot(tip[0] - e.x2, tip[1] - e.y2)).toBeCloseTo(size - 1)
+      }
+      // Ends and colours stay as without the option.
+      const plain = imageScene(display())
+      scene.edges.forEach((e, i) => {
+        expect(e.head[0]).toEqual(plain.edges[i].head[0])
+        expect([e.x1, e.y1, e.color]).toEqual([
+          plain.edges[i].x1,
+          plain.edges[i].y1,
+          plain.edges[i].color,
+        ])
+      })
+    })
+
+    it('draws the badges in their edge’s colour with Sign colors', () => {
+      const scene = imageScene(display(), { signs: true, signColors: true })
+      expect(scene.badges).toHaveLength(3)
+      scene.badges.forEach((badge, i) => {
+        expect(badge.circle.stroke).toBe(scene.edges[i].color)
+        expect(badge.text.color).toBe(scene.edges[i].color)
+        expect(badge.circle.fill).toBe(light.background)
+      })
+      expect(scene.badges.map((b) => b.text.color)).toEqual([
+        light.positive,
+        light.negative,
+        light.foreground,
+      ])
+    })
+
+    it('puts the type mark top left and the form mark top right on the rim, in node order', () => {
+      const scene = imageScene(display(), { forms: true, types: true })
+      const r = NODE_DIAMETER / 2
+      const at = (i: number, corner: MarkCorner) =>
+        markCentre(scene.circles[i].cx, scene.circles[i].cy, r, corner)
+      // On the canvas circle at 45°: r/√2 left of and above the centre.
+      expect(at(0, 'top-left').x).toBeCloseTo(
+        EXPORT_MARGIN + r - r / Math.SQRT2,
+      )
+      const expected: [{ x: number; y: number }, string][] = [
+        [at(0, 'top-left'), 'C'],
+        [at(0, 'top-right'), 'linear'],
+        [at(1, 'top-right'), 'smooth'],
+        [at(2, 'top-left'), 'O'],
+      ]
+      expect(scene.marks).toHaveLength(4)
+      scene.marks.forEach((mark, i) => {
+        const [{ x, y }, content] = expected[i]
+        expect(mark.circle).toEqual({
+          cx: x,
+          cy: y,
+          r: 9.5,
+          fill: light.background,
+          stroke: light.edge,
+          strokeWidth: 1,
+        })
+        if (content.length === 1) {
+          expect(mark.path).toBeUndefined()
+          expect(mark.text).toEqual({
+            x,
+            y: y + 11 * 0.375,
+            text: content,
+            size: 11,
+            weight: 500,
+            color: light.edge,
+            anchor: 'middle',
+          })
+        } else {
+          expect(mark.text).toBeUndefined()
+          expect(mark.path).toEqual({
+            segments: placeGlyph(FORM_GLYPHS[content as Form], x, y, 10),
+            color: light.edge,
+            width: 1.5,
+          })
+        }
+      })
+      expect(imageScene(display(), { forms: true }).marks).toHaveLength(2)
+      expect(
+        imageScene(display(), { types: true }).marks.map((m) => m.text!.text),
+      ).toEqual(['C', 'O'])
+      // The marks lie inside the node squares, so the size is unchanged.
+      expect(scene.width).toBe(imageScene(display()).width)
+    })
+
+    it('dashes latent outlines and the Latent swatch', () => {
+      const scene = imageScene(display(), { dashedLatent: true, legend: true })
+      expect(scene.circles.map((c) => c.dash)).toEqual([
+        undefined,
+        undefined,
+        [5, 3],
+        undefined,
+      ])
+      const legend = scene.legend!
+      expect(legend.items.map((i) => i.swatch.dash)).toEqual([
+        undefined,
+        [2, 1.5],
+        undefined,
+      ])
+      // No rows of its own: the box keeps its size and swatch column.
+      expect(legend.rows).toEqual([])
+      expect(legend.width).toBe(LEGEND.width)
+      expect(legend.items[0].swatch.cx).toBe(
+        legend.x + LEGEND.padding + LEGEND.swatch / 2,
+      )
+    })
+
+    it('lists a legend row per look in use, in order, in a wider box', () => {
+      const legend = imageScene(display(), { ...ALL, legend: true }).legend!
+      expect(legend.items.map((i) => i.label)).toEqual([
+        'Outcome',
+        'Latent',
+        'Other',
+      ])
+      expect(legend.rows.map((row) => row.label)).toEqual([
+        'Positive effect',
+        'Negative effect',
+        'Mixed effects',
+        'No sign',
+        'Small effect or No strength',
+        'Medium effect',
+        'Large effect',
+        'Linear',
+        'Smooth',
+        'Categorical',
+        'Ordinal',
+      ])
+      expect(legend.height).toBe(2 * LEGEND.padding + 14 * LEGEND.row)
+      // 8 + 24 + 8 + 27 characters × 7.2 + 8.
+      expect(legend.width).toBeCloseTo(242.4)
+      const column = legend.x + LEGEND.padding
+      const middle = (i: number) =>
+        legend.y + LEGEND.padding + (i + 0.5) * LEGEND.row
+      // Role swatches and every label move to the 24 px column.
+      expect(legend.items[1].swatch).toMatchObject({
+        cx: column + 12,
+        cy: middle(1),
+      })
+      for (const row of [...legend.items, ...legend.rows])
+        expect(row.text.x).toBe(column + 24 + LEGEND.gap)
+      // A sign row: a 24 px line sample with a 6 px head and a badge on the line before it.
+      const [positive, , , noSign, small, , large, linear, , categorical] =
+        legend.rows
+      expect(positive.line).toMatchObject({
+        x1: column,
+        y1: middle(3),
+        color: light.positive,
+        width: 1.5,
+      })
+      expect(positive.line!.head[0]).toEqual([column + 24, middle(3)])
+      expect(positive.line!.head[1][0]).toBeCloseTo(column + 18)
+      expect(positive.badge!.circle).toMatchObject({
+        cx: column + 9,
+        cy: middle(3),
+        stroke: light.positive,
+        strokeWidth: 1,
+      })
+      expect(positive.badge!.circle.r).toBeCloseTo(5.9)
+      expect(positive.badge!.text).toMatchObject({ text: '+' })
+      expect(positive.badge!.text.size).toBeCloseTo(9.6)
+      expect(noSign.badge).toBeUndefined()
+      expect(noSign.line!.color).toBe(light.foreground)
+      expect(small.line).toMatchObject({ color: light.edge, width: 1.5 })
+      expect(large.line!.width).toBe(4.5)
+      expect(large.line!.head[1][0]).toBeCloseTo(column + 14)
+      // Marks at 16 px, centred in the column.
+      expect(linear.mark!.circle).toMatchObject({
+        cx: column + 12,
+        cy: middle(10),
+        r: 7.5,
+        strokeWidth: 1,
+      })
+      expect(linear.mark!.path!.segments).toEqual(
+        placeGlyph(FORM_GLYPHS.linear, column + 12, middle(10), 8),
+      )
+      expect(categorical.mark!.text).toMatchObject({ text: 'C' })
+      expect(categorical.mark!.text!.size).toBeCloseTo(8.8)
+    })
+
+    it('merges rows that look the same', () => {
+      const labels = (opts: Partial<DisplayOptions>) =>
+        imageScene(display(), { ...opts, legend: true }).legend!.rows.map(
+          (row) => row.label,
+        )
+      // Without Signs, mixed and unsigned edges are both plain foreground lines.
+      expect(labels({ signColors: true })).toEqual([
+        'Positive effect',
+        'Negative effect',
+        'Mixed effects or No sign',
+      ])
+      // Without Sign colors only signed edges have a row, each with its badge in the edge colour.
+      const signs = imageScene(display(), { signs: true, legend: true }).legend!
+      expect(signs.rows.map((row) => row.label)).toEqual([
+        'Positive effect',
+        'Negative effect',
+        'Mixed effects',
+      ])
+      for (const row of signs.rows) {
+        expect(row.line!.color).toBe(light.edge)
+        expect(row.badge!.circle.stroke).toBe(light.edge)
+      }
+      expect(labels({ strength: true })).toEqual([
+        'Small effect or No strength',
+        'Medium effect',
+        'Large effect',
+      ])
+    })
+
+    it('has no rows for options that show nothing in this graph', () => {
+      const g = corners()
+      const plain = imageScene(g, { legend: true })
+      expect(imageScene(g, { ...ALL, legend: true })).toEqual(plain)
+      // Edges without signs or strengths: Sign colors and Strength add no rows.
+      const unsigned = graph([node('A', 0, 0), node('B', 300, 0)], [['A', 'B']])
+      const legend = imageScene(unsigned, { ...ALL, legend: true }).legend!
+      expect(legend.rows).toEqual([])
+      expect(legend.width).toBe(LEGEND.width)
+    })
+
+    it('places the bigger box by the same rules, rounding the widened image up', () => {
+      const g = corners('TR')
+      g.nodes[0].form = 'threshold'
+      const scene = imageScene(g, { forms: true, legend: true })
+      expect(scene.legend!.corner).toBe('top-right')
+      expect(scene.legend!.x + scene.legend!.width).toBe(EXPORT_MARGIN + 496)
+      // A one-node graph puts it beside, the image widened by 16 px plus the box, rounded up.
+      const one = graph([{ ...node('A', 0, 0), form: 'threshold' }])
+      const beside = imageScene(one, { forms: true, legend: true })
+      const width = beside.legend!.width
+      expect(width).toBeCloseTo(8 + 24 + 8 + 9 * 7.2 + 8)
+      expect(beside.legend!.corner).toBe('beside')
+      expect(beside.width).toBe(
+        Math.ceil(NODE_DIAMETER + 2 * EXPORT_MARGIN + LEGEND.beside + width),
+      )
     })
   })
 })

@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { EXPORT_DESCRIPTION } from '@/lib/copy'
+import type { DisplayOptions } from '@/lib/display'
 import { downloadBlob, downloadText } from '@/lib/download'
 import {
   EXPORT_PALETTES,
@@ -33,9 +35,9 @@ import {
 } from '@/lib/imageExport'
 import { toPdf } from '@/lib/pdfExport'
 import type { Graph } from '@/model/graph'
-import { signBadge } from '@/model/simulation'
 import { useGraphStore } from '@/store/graphStore'
 import { lessonEvent } from '@/store/lessonEvents'
+import { useUiStore } from '@/store/uiStore'
 
 const FORMATS: { value: ImageFormat; label: string }[] = [
   { value: 'svg', label: 'SVG' },
@@ -56,8 +58,8 @@ type Scale = (typeof SCALES)[number]
 const POINTS_PER_PIXEL = 0.75
 
 /**
- * What the dialog shows for the graph read when it opened and the current Theme, Legend and
- * Signs.
+ * What the dialog shows for the graph and display options read when it opened, and the current
+ * Theme and Legend.
  */
 interface Picture {
   svg: string
@@ -68,22 +70,23 @@ interface Picture {
 
 function picture(
   graph: Graph,
+  display: DisplayOptions,
   theme: ImageTheme,
   legend: boolean,
-  signs: boolean,
 ): Picture {
-  const { width, height } = svgSize(graph, { theme, legend, signs })
+  const { width, height } = svgSize(graph, { ...display, theme, legend })
   return {
-    svg: toSvg(graph, { theme, legend, signs, fontDataUrl: plexSans500 }),
-    tikz: toTikz(graph, { legend, signs }),
+    svg: toSvg(graph, { ...display, theme, legend, fontDataUrl: plexSans500 }),
+    tikz: toTikz(graph, { ...display, legend }),
     width,
     height,
   }
 }
 
-/** True when at least one edge would show a sign badge (5.9 "Export dialog"). */
-function hasSigns(graph: Graph): boolean {
-  return graph.edges.some((edge) => signBadge(edge.sign) !== undefined)
+/** The graph and the display options, both read when the dialog opens (spec 5.11). */
+interface Snapshot {
+  graph: Graph
+  display: DisplayOptions
 }
 
 function errorMessage(e: unknown): string {
@@ -91,12 +94,13 @@ function errorMessage(e: unknown): string {
 }
 
 /**
- * Exports the graph as an SVG, PNG, PDF or TikZ image (spec 4.11, 5.4 "Export…"). The picture is
- * drawn from the graph data in the chosen theme (TikZ is always light), optionally with a legend
- * of the roles in use and the edges' sign badges, and with the IBM Plex Sans font embedded in SVG
- * and PNG. Format, Theme, Scale, Legend and Signs keep their choice while the page is open; Signs
- * shows only when an edge has a sign. While a lesson runs, a successful
- * Copy or Download records `export-copied` or `export-downloaded` with the format (spec 4.8).
+ * Exports the graph as an SVG, PNG, PDF or TikZ image (spec 4.11, 5.4 "Export…", 5.11). The
+ * picture is drawn from the graph data in the chosen theme (TikZ is always light), with the
+ * Display options of the Edit panel (`uiStore.display`, 4.18), optionally a legend, and the IBM
+ * Plex Sans font embedded in SVG and PNG. The graph and the display options are read when the
+ * dialog opens, not on every change while it is open. Format, Theme, Scale and Legend keep their
+ * choice while the page is open. While a lesson runs, a successful Copy or Download records
+ * `export-copied` or `export-downloaded` with the format (spec 4.8).
  */
 export function ExportDialog({
   open,
@@ -108,22 +112,30 @@ export function ExportDialog({
   const [format, setFormat] = useState<ImageFormat>('svg')
   const [theme, setTheme] = useState<ImageTheme>('light')
   const [legend, setLegend] = useState(false)
-  const [signs, setSigns] = useState(true)
   const [scale, setScale] = useState<Scale>(2)
-  const [graph, setGraph] = useState<Graph | null>(null)
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [wasOpen, setWasOpen] = useState(false)
 
-  // Read the graph each time the dialog opens, not on every change while it is open.
+  // Read the graph and the display options each time the dialog opens, not on every change
+  // while it is open.
   if (open !== wasOpen) {
     setWasOpen(open)
-    if (open) setGraph(useGraphStore.getState().graph)
+    if (open)
+      setSnapshot({
+        graph: useGraphStore.getState().graph,
+        display: useUiStore.getState().display,
+      })
   }
 
+  const graph = snapshot?.graph ?? null
+  const display = snapshot?.display ?? null
   const empty = !graph || graph.nodes.length === 0
-  const signed = graph !== null && hasSigns(graph)
   const data = useMemo(
-    () => (graph && !empty ? picture(graph, theme, legend, signs) : null),
-    [graph, empty, theme, legend, signs],
+    () =>
+      graph && display && !empty
+        ? picture(graph, display, theme, legend)
+        : null,
+    [graph, display, empty, theme, legend],
   )
   const disabled = data === null
 
@@ -143,7 +155,7 @@ export function ExportDialog({
   }
 
   async function download() {
-    if (!graph || !data) return
+    if (!graph || !display || !data) return
     const filename = imageFileName(graph.name, format)
     try {
       if (format === 'svg') downloadText(filename, data.svg, 'image/svg+xml')
@@ -153,7 +165,13 @@ export function ExportDialog({
         downloadBlob(
           filename,
           new Blob(
-            [toPdf(graph, { theme, legend, signs }) as Uint8Array<ArrayBuffer>],
+            [
+              toPdf(graph, {
+                ...display,
+                theme,
+                legend,
+              }) as Uint8Array<ArrayBuffer>,
+            ],
             {
               type: 'application/pdf',
             },
@@ -175,10 +193,7 @@ export function ExportDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Export image</DialogTitle>
-          <DialogDescription>
-            The image shows names, roles (by color) and arrows, with an optional
-            legend. Types, levels and evidence are not included.
-          </DialogDescription>
+          <DialogDescription>{EXPORT_DESCRIPTION}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-end gap-4">
@@ -260,16 +275,6 @@ export function ExportDialog({
             />
             <Label htmlFor="export-legend">Legend</Label>
           </div>
-          {signed && (
-            <div className="flex h-8 items-center gap-2">
-              <Checkbox
-                id="export-signs"
-                checked={signs}
-                onCheckedChange={(checked) => setSigns(checked === true)}
-              />
-              <Label htmlFor="export-signs">Signs</Label>
-            </div>
-          )}
           {data && format === 'png' && (
             <p className="pb-1.5 text-[13px] text-muted-foreground">
               {data.width * scale} × {data.height * scale} pixels
