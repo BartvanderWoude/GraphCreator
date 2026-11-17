@@ -1648,7 +1648,7 @@ Scene.marks: SceneMark[]                // drawn after the circles and names, be
 
 ### 5.5 Autosave
 
-`src/store/autosave.ts` persists the store's current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave.
+`src/store/autosave.ts` persists the store's current graph to `localStorage` key `graphcreator:current` as the `toYaml` text, written at most every 500 ms after a change. On start-up the text is read and parsed with `parseYaml`; if it fails (corrupt or old), the app starts with `emptyGraph()` and shows the toast `Could not restore the previous graph.` All storage access is wrapped in try/catch so a blocked localStorage only disables autosave. When the restored graph has nodes, the canvas fits it into view once on start-up (React Flow's `fitView` prop, `maxZoom: 1`, no animation); an empty graph keeps the default view.
 
 Details fixed in phase 9: writes are a trailing debounce (each graph change restarts the 500 ms timer), so a burst of changes is written once, 500 ms after the last one. Only changes to `graph` trigger a write; selection changes and the restore itself do not. After a failed restore the bad text stays in storage until the next change overwrites it. `main.tsx` starts autosave before the first render; the restore toast still shows because sonner replays toasts raised before `<Toaster />` mounts.
 
