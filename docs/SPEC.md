@@ -1,6 +1,6 @@
 # GraphCreator spec
 
-**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Per-level edge signs on a categorical cause (4.16 and 5.9: every level of a cause carries its own sign, read against the average over its levels, with no reference level; waves 28–30, phases 63–66) were agreed on 2026-11-17 and are implemented (the model and the validator, the editor, the reader doc and the end-to-end tests). Display options (4.18 and 5.11: signs, sign colours, strength widths, form and type marks and dashed latent nodes, switched in a Display section of the Edit tab and shown on the canvas and in exported images; waves 31–33, phases 67–71) were agreed on 2026-11-17 and are to be built. Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
+**Status:** spec agreed 2026-11-08; v1 implemented (waves 1–5, phases 1–9 done). The "Calm teal" redesign (5.7), agreed on 2026-11-08, is implemented (waves 6–8, phases 10–16 done). The light/dark toggle (wave 9, phase 17) is implemented. The top bar rework and double-click renaming (wave 10, phase 18) are implemented, as are the own theme store that replaced `next-themes` and Save opening the GraphCreator dialog (wave 11, phases 19–20). Undo/redo, image export and share links (wave 12, phases 21–23, agreed 2026-11-08; 4.10–4.12) are implemented. Causal analysis (4.13–4.14, 5.8; waves 13–15, phases 24–30) was agreed on 2026-11-09; it is implemented (waves 13–15, phases 24–30: contracts, the four analyses, canvas marking, the Analysis tab, integration and end-to-end tests). Import and export (dagitty details in 4.2, PDF, legend and dark theme in 4.11, the exchange formats in 4.15, the dialogs in 5.4; waves 16–18, phases 31–40) was agreed on 2026-11-09; waves 16–17 (phases 31–39: contracts, the six formats, dagitty details, the image scene with legend and theme, the PDF writer and the dialogs) are done, and so is wave 18 (phase 40: the real-tool reference and end-to-end tests); import and export is implemented. Lessons (the engine additions in 4.8 and 5.7.10, the Help menu and Lessons dialog in 5.7.11, the canvas pointer in 5.7.12, and the 14 lessons in [LESSONS.md](LESSONS.md); waves 19–21, phases 41–48) were agreed on 2026-11-09; they are implemented (waves 19–21, phases 41–48: the engine, the panel additions, the canvas pointer, the Help menu and Lessons dialog, the 13 lessons, and the end-to-end tests). Simulation details (4.16 and 5.9: level shares, functional form, edge sign and strength in the YAML file, read directly by synthetic-data tools, with the reader doc [FORMAT.md](FORMAT.md); waves 22–24, phases 49–56) were agreed on 2026-11-11 and are implemented (waves 22–24, phases 49–56: contracts, YAML, validation, the node and edge editors, canvas badges, image signs and FORMAT.md, and the end-to-end tests). Equal circles, the live name preview and the graph lock (4.17, 5.3, 5.7.6 and 5.10, for GitHub issues #3–#5; waves 25–27, phases 57–62) were agreed on 2026-11-13 and are implemented (waves 25–27, phases 57–62: the contracts, the canvas, the editors, the rail toggle, the images, and the end-to-end tests). Per-level edge signs on a categorical cause (4.16 and 5.9: every level of a cause carries its own sign, read against the average over its levels, with no reference level; waves 28–30, phases 63–66) were agreed on 2026-11-17 and are implemented (the model and the validator, the editor, the reader doc and the end-to-end tests). Display options (4.18 and 5.11: signs, sign colours, strength widths, form and type marks and dashed latent nodes, switched in a Display section of the Edit tab and shown on the canvas and in exported images; waves 31–33, phases 67–71) were agreed on 2026-11-17 and are implemented (waves 31–33, phases 67–71: contracts, the Display section and Export dialog, the canvas, the images, and the end-to-end tests). Sections 4.5–5.3 and 5.7 describe the app as it is now; 5.6 records the v1 look. This document is the brief for the implementation sessions: phases are grouped into waves (section 8); a wave can be built by parallel sub agents, one commit per phase. Deferred features are in [IDEAS.md](IDEAS.md). [research.md](research.md) is background reading only; where it disagrees with this spec, this spec wins.
 
 ## 1. Purpose
 
@@ -2299,7 +2299,7 @@ The display options of 4.18 are switched in the side panel, so the canvas shows 
 | Form on root nodes | Editable only with causes; a leftover form gives a warning | Always editable | Recommended option. |
 | Sign on the canvas | A small `+`/`−`/`±` badge at the edge's midpoint | Editor only; badge plus width by strength; a text label | User's choice, picked from four drawn options. |
 | Shares input | Percent fields with a stacked-bar preview and a total | Percent fields only; a draggable stacked bar | User's choice, picked from three drawn options. |
-| Signs in images | A Signs checkbox in the Export dialog | Always when set; not now | User's choice. |
+| Signs in images | A Signs checkbox in the Export dialog (phases 55–67; replaced by the Signs display option in phase 68) | Always when set; not now | User's choice. |
 | YAML 1.1 safety | `toYaml` quotes text that YAML 1.1 (PyYAML) would read as a boolean, null, number or date | Leave it to readers | Python readers get the names as text, such as a level called `yes`. |
 | Circle size (GitHub #5) | One size for every circle; long names get a smaller font | Circles sized by their names (phases 10–56); a switch between the two | User's choice (2026-11-13): equal circles look more even, and they are the only style. |
 | Name while typing (GitHub #3) | The circle previews the draft; the rename is still committed on Enter or blur | Rename on every keystroke; no change | Recommended option. One undo step per rename, and no invalid intermediate names in the graph. |
@@ -2316,6 +2316,7 @@ The display options of 4.18 are switched in the side panel, so the canvas shows 
 | Form and type marks | Rim marks: form top right, type top left | Bottom rim; inside the circle under or above the name | User's choice, picked from three drawn options. The untyped dot moves to the top left when a form mark needs its place. |
 | Display switches | All six always shown | Only those whose data the graph has | User's choice. |
 | Legend for the options | The legend gains rows for the options that are on, values in use only | The legend lists roles only | User's choice. |
+| Sign rows in the legend (phase 70) | The Signs and Sign colors group appears only when a drawn edge has a sign, so Sign colors on an unsigned graph adds no row | A `No sign` row whenever Sign colors is on | Every edge of an unsigned graph has the foreground colour, so a lone `No sign` row explains nothing; it follows the Strength group, which also needs a set value. |
 
 ## 8. Implementation phases
 
@@ -3667,7 +3668,7 @@ Phases: 67. Parallel: single phase. Check after the wave: all checks. The app lo
 
 Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are disjoint. Land them in the order 70, 69, 68 (the dialog last, so it shows what the images can draw). Check after the wave: all checks; in the browser the six switches change the canvas, and an export matches it.
 
-#### Phase 68: Display section and Export dialog [x]
+#### Phase 68: Display section and Export dialog [x] (d06189d)
 
 - **Goal:** the Display section and the slimmer Export dialog of 5.11.
 - **Depends on:** phase 67.
@@ -3678,7 +3679,7 @@ Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are dis
 - **Done when:** all checks pass.
 - **Out of scope:** the canvas, the scene and the writers.
 
-#### Phase 69: Canvas display [x]
+#### Phase 69: Canvas display [x] (ae4b0e4)
 
 - **Goal:** the canvas shows the display options (5.11 "Canvas").
 - **Depends on:** phase 67.
@@ -3689,7 +3690,7 @@ Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are dis
 - **Done when:** all checks pass, and in the browser each option changes the canvas in both themes while path marking, hover and selection still win.
 - **Out of scope:** the side panel, the Export dialog and the images.
 
-#### Phase 70: Images with display options [x]
+#### Phase 70: Images with display options [x] (f56f2ac)
 
 - **Goal:** SVG, PNG, PDF and TikZ draw the display options and the legend rows (4.18 "Images").
 - **Depends on:** phase 67.
@@ -3700,11 +3701,11 @@ Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are dis
 - **Done when:** all checks pass, the existing snapshots are unchanged, and the new SVG, PDF (checked with `pdftoppm`) and TikZ look like the canvas.
 - **Out of scope:** the dialog and the canvas.
 
-### Wave 33: Display integration [ ]
+### Wave 33: Display integration [x]
 
 Phases: 71. Parallel: single phase. Check after the wave: all checks.
 
-#### Phase 71: Display integration and end-to-end tests [ ]
+#### Phase 71: Display integration and end-to-end tests [x]
 
 - **Goal:** the whole change works in the browser and is covered end to end.
 - **Depends on:** phases 68, 69 and 70.
@@ -4014,5 +4015,6 @@ Import and export (phases 31–40):
   - a lesson on simulation details;
   - simulation code generation and "Sample N datasets" stay in IDEAS.md.
 - **View after a reload:** the autosaved graph is not fitted to the view after a reload; it sits at its stored coordinates and can be partly hidden under the tool rail.
+- **Rim marks over arrowheads:** a rim mark can cover the tip of an arrow that arrives exactly where the mark sits on the rim (marks are drawn after edges).
 - **Display options after a lesson:** a lesson leaves the display switches as they are, like the Analysis switches, so a practice graph can show the user's chosen display.
 - Everything in [IDEAS.md](IDEAS.md).

@@ -29,6 +29,7 @@ Adjustment sets, implied independencies, path highlighting, instrumental variabl
 - Keyboard-accessible list view of nodes and edges, for screen readers and bulk metadata editing.
 - A local library of several named graphs in the browser.
 - Optional LLM-suggested edges: opt-in, labelled by provenance, citations verified.
+- Display settings stored per graph in the file (the six display options of [SPEC.md](SPEC.md) 4.18 are a preference in this browser for now), so share links and colleagues opening the file see the same look.
 
 ## Lessons
 
