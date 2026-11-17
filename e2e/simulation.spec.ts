@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
-import type { Download, Page } from '@playwright/test'
+import type { BrowserContext, Download, Page } from '@playwright/test'
 import {
   addNodeAt,
   circle,
@@ -188,7 +188,33 @@ const share = (page: Page, level: string) =>
     exact: true,
   })
 
+/** localStorage key of the display options (spec 4.18, `DISPLAY_STORAGE_KEY`). */
+const DISPLAY_KEY = 'graphcreator:display'
+
+/**
+ * Switches the Signs display option on before the app loads, as the Display section would
+ * (4.18): the canvas shows sign badges only while it is on. The other options stay off.
+ */
+async function signsOn(target: Page | BrowserContext) {
+  await target.addInitScript(
+    (key) =>
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          signs: true,
+          signColors: false,
+          strength: false,
+          forms: false,
+          types: false,
+          dashedLatent: false,
+        }),
+      ),
+    DISPLAY_KEY,
+  )
+}
+
 test.beforeEach(async ({ page }) => {
+  await signsOn(page)
   await page.goto('/')
   await expect(pane(page)).toBeVisible()
 })
@@ -611,6 +637,8 @@ test('a share link keeps the simulation details', async ({ page, browser }) => {
   )
 
   const context = await browser.newContext()
+  // The display options are this browser's preference, not part of the link (4.18).
+  await signsOn(context)
   try {
     const fresh = await context.newPage()
     await fresh.goto(link)

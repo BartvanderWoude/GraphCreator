@@ -26,6 +26,12 @@ import {
   type FloatingFlowEdge,
 } from '@/components/canvas/types'
 import { useAnalysis } from '@/components/useAnalysis'
+import {
+  TYPE_LETTERS,
+  edgeWidth,
+  signTone,
+  type DisplayOptions,
+} from '@/lib/display'
 import { findLesson } from '@/lessons'
 import { nodeNamed } from '@/lessons/helpers'
 import { cn } from '@/lib/utils'
@@ -61,6 +67,8 @@ interface Overlay {
   pointers: Pointers
   /** The name being typed in the node editor (`uiStore.namePreview`, spec 5.3). */
   namePreview: { id: string; name: string } | null
+  /** The display options (`uiStore.display`, spec 4.18): which annotations the canvas shows. */
+  display: DisplayOptions
 }
 
 /**
@@ -117,7 +125,7 @@ function syncFlow(
   selection: Selection,
   overlay: Overlay,
 ): Flow {
-  const { connectFrom, pathMarks, pointers, namePreview } = overlay
+  const { connectFrom, pathMarks, pointers, namePreview, display } = overlay
   const hovered = new Set(overlay.hoverNodeIds)
   const oldNodes = new Map(prev.nodes.map((n) => [n.id, n]))
   const oldEdges = new Map(prev.edges.map((e) => [e.id, e]))
@@ -131,6 +139,13 @@ function syncFlow(
     const pointer = pointers.get(g.id)
     // The circle follows the name being typed, so the comparison is on the shown name (5.3).
     const name = shownName(g, namePreview)
+    // Display options (4.18): each field only while its option is on.
+    const form = display.forms ? g.form : undefined
+    const typeLetter =
+      display.types && g.varType !== undefined
+        ? TYPE_LETTERS[g.varType]
+        : undefined
+    const dashed = display.dashedLatent && g.role === 'latent'
     if (
       old &&
       old.position.x === position.x &&
@@ -140,7 +155,10 @@ function syncFlow(
       old.data.untyped === untyped &&
       old.data.connectSource === connectSource &&
       !!old.data.highlighted === highlighted &&
-      old.data.pointer === pointer
+      old.data.pointer === pointer &&
+      old.data.form === form &&
+      old.data.typeLetter === typeLetter &&
+      !!old.data.dashed === dashed
     ) {
       return old
     }
@@ -157,6 +175,9 @@ function syncFlow(
         connectSource,
         highlighted,
         ...(pointer !== undefined && { pointer }),
+        ...(form !== undefined && { form }),
+        ...(typeLetter !== undefined && { typeLetter }),
+        ...(dashed && { dashed }),
       },
       // Every circle is the same size, so a measured node stays measured.
       measured: old?.measured,
@@ -168,14 +189,19 @@ function syncFlow(
     const old = oldEdges.get(g.id)
     const evidenceCount = g.evidence.length
     const path = pathMarks.get(g.id)
-    const sign = signBadge(g.sign)
+    // Display options (4.18): the badge, the tone and the width only while their option is on.
+    const sign = display.signs ? signBadge(g.sign) : undefined
+    const tone = display.signColors ? signTone(g.sign) : undefined
+    const width = display.strength ? edgeWidth(g.strength) : undefined
     if (
       old &&
       old.source === g.source &&
       old.target === g.target &&
       old.data?.evidenceCount === evidenceCount &&
       old.data?.path === path &&
-      old.data?.sign === sign
+      old.data?.sign === sign &&
+      old.data?.tone === tone &&
+      old.data?.width === width
     ) {
       return old
     }
@@ -188,6 +214,8 @@ function syncFlow(
         evidenceCount,
         ...(path !== undefined && { path }),
         ...(sign !== undefined && { sign }),
+        ...(tone !== undefined && { tone }),
+        ...(width !== undefined && { width }),
       },
       selected: old?.selected ?? false,
     }
@@ -256,6 +284,8 @@ export function Canvas() {
   const pathsOn = useUiStore((s) => s.analysisOn.paths)
   const hoverNodeIds = useUiStore((s) => s.hoverNodeIds)
   const namePreview = useUiStore((s) => s.namePreview)
+  // The stored object itself: setDisplay replaces it, so it changes only when an option does.
+  const display = useUiStore((s) => s.display)
   const lesson = useLessonStore((s) => s.active)
   const paths = useAnalysis().paths
   // Open paths are marked only while the Paths switch is on and they are not truncated (4.14).
@@ -268,8 +298,15 @@ export function Canvas() {
   }, [pathsOn, paths])
   const pointers = useMemo(() => lessonPointers(lesson, graph), [lesson, graph])
   const overlay = useMemo<Overlay>(
-    () => ({ connectFrom, pathMarks, hoverNodeIds, pointers, namePreview }),
-    [connectFrom, pathMarks, hoverNodeIds, pointers, namePreview],
+    () => ({
+      connectFrom,
+      pathMarks,
+      hoverNodeIds,
+      pointers,
+      namePreview,
+      display,
+    }),
+    [connectFrom, pathMarks, hoverNodeIds, pointers, namePreview, display],
   )
   // A locked graph is read-only: the canvas stops the interactions, the store guards are the
   // backstop (spec 5.10).

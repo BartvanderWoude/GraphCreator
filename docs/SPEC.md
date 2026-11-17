@@ -3678,7 +3678,7 @@ Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are dis
 - **Done when:** all checks pass.
 - **Out of scope:** the canvas, the scene and the writers.
 
-#### Phase 69: Canvas display [ ]
+#### Phase 69: Canvas display [x]
 
 - **Goal:** the canvas shows the display options (5.11 "Canvas").
 - **Depends on:** phase 67.

@@ -7,13 +7,12 @@ import {
   type InternalNode,
 } from '@xyflow/react'
 import { Bookmark } from 'lucide-react'
+import type { CSSProperties } from 'react'
+import { EDGE_WIDTH, arrowSize } from '@/lib/display'
 import { edgeEndpoints, type Circle } from '@/lib/geometry'
 import { useGraphStore } from '@/store/graphStore'
 import type { CircleFlowNode, FloatingFlowEdge } from './types'
 
-/** Length and width of the closed arrowhead, in px (spec 5.7.7). */
-const ARROW_LENGTH = 9
-const ARROW_WIDTH = 9
 /** How far the line runs into the arrowhead, so no seam shows between them. */
 const ARROW_OVERLAP = 1
 /** Width of the invisible line that picks up hover and clicks. */
@@ -59,6 +58,12 @@ function circleOf(node: InternalNode | undefined): Circle | null {
  * An edge on an open causal or biasing path carries `data-path` on its line and arrowhead, and
  * canvas.css draws the path look from it. A signed edge shows its sign badge at the midpoint,
  * next to the evidence chip when it has one (spec 5.9 "Canvas").
+ *
+ * Display options (4.18, 5.11 "Canvas"): a `tone` puts `data-tone` on the line, the arrowhead and
+ * the badge, and a `width` sets `--gc-edge-width` on the line, from which canvas.css draws them.
+ * The CSS keeps the precedence: path marking, then selection, then hover, then tone and width.
+ * The arrowhead is `arrowSize(width)` long and wide; on an open path it keeps the default 9 px,
+ * as the path look replaces the width.
  */
 export function FloatingEdge({
   id,
@@ -73,17 +78,22 @@ export function FloatingEdge({
   const ends = edgeEndpoints(sourceCircle, targetCircle)
   if (!ends) return null
   const { sx, sy, tx, ty } = ends
+  const pathKind = data?.path
+  const tone = data?.tone
+  const width = data?.width
+  const arrow = arrowSize(
+    pathKind === undefined ? (width ?? EDGE_WIDTH) : EDGE_WIDTH,
+  )
 
   // The line stops at the arrowhead's base; the marker draws the head up to the tip (tx, ty).
   const length = Math.hypot(tx - sx, ty - sy)
-  const back = Math.min(ARROW_LENGTH - ARROW_OVERLAP, length)
+  const back = Math.min(arrow - ARROW_OVERLAP, length)
   const ux = length > 0 ? (tx - sx) / length : 0
   const uy = length > 0 ? (ty - sy) / length : 0
   const path = `M ${sx},${sy} L ${tx - back * ux},${ty - back * uy}`
 
   const markerId = `gc-arrow-${id}`
   const evidenceCount = data?.evidenceCount ?? 0
-  const pathKind = data?.path
   const sign = data?.sign ? SIGN_BADGES[data.sign] : undefined
 
   return (
@@ -93,18 +103,19 @@ export function FloatingEdge({
         <marker
           id={markerId}
           className="gc-edge-marker"
-          viewBox={`0 0 ${ARROW_LENGTH} ${ARROW_WIDTH}`}
+          viewBox={`0 0 ${arrow} ${arrow}`}
           refX={ARROW_OVERLAP}
-          refY={ARROW_WIDTH / 2}
-          markerWidth={ARROW_LENGTH}
-          markerHeight={ARROW_WIDTH}
+          refY={arrow / 2}
+          markerWidth={arrow}
+          markerHeight={arrow}
           markerUnits="userSpaceOnUse"
           orient="auto"
         >
           <path
             className="gc-edge-arrow"
             data-path={pathKind}
-            d={`M 0,0 L ${ARROW_LENGTH},${ARROW_WIDTH / 2} L 0,${ARROW_WIDTH} Z`}
+            data-tone={tone}
+            d={`M 0,0 L ${arrow},${arrow / 2} L 0,${arrow} Z`}
           />
         </marker>
       </defs>
@@ -113,6 +124,12 @@ export function FloatingEdge({
         path={path}
         className="gc-edge-path"
         data-path={pathKind}
+        data-tone={tone}
+        style={
+          width === undefined
+            ? undefined
+            : ({ '--gc-edge-width': `${width}px` } as CSSProperties)
+        }
         markerEnd={`url(#${markerId})`}
         interactionWidth={INTERACTION_WIDTH}
       />
@@ -130,6 +147,7 @@ export function FloatingEdge({
                 role="img"
                 className="gc-sign-badge nodrag nopan"
                 data-sign={data?.sign}
+                data-tone={tone}
                 data-selected={selected ? '' : undefined}
                 style={{ pointerEvents: 'all' }}
                 aria-label={sign.label}
