@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { DISPLAY_DEFAULTS, type DisplayOptions } from '@/lib/display'
 import type { Graph } from '@/model/graph'
 import { nodeLabel } from '@/model/nodeSize'
 import type { Scene, SceneCircle, SceneText } from './imageScene'
@@ -56,6 +57,7 @@ function scene(over: Partial<Scene> = {}): Scene {
       corner: 'bottom-right',
       background: '#ffffff',
       border: '#e2e8f0',
+      rows: [],
       items: [
         {
           role: 'exposure',
@@ -283,5 +285,149 @@ describe('toPdf', () => {
     const body = stream(latin1(toPdf(graph)))
     expect(body).toContain(`BT /F1 ${short} Tf`)
     expect(count(body, new RegExp(`BT /F1 ${long} Tf`, 'g'))).toBe(4)
+  })
+})
+
+describe('display options', () => {
+  const ALL: DisplayOptions = {
+    signs: true,
+    signColors: true,
+    strength: true,
+    forms: true,
+    types: true,
+    dashedLatent: true,
+  }
+
+  /** A (latent, categorical, linear) → B (smooth) positive and large, B → Cough unsigned. */
+  function display(): Graph {
+    return {
+      name: 'Display',
+      nodes: [
+        {
+          id: 'a',
+          name: 'A',
+          role: 'latent',
+          varType: 'categorical',
+          form: 'linear',
+          pos: { x: 0, y: 0 },
+        },
+        {
+          id: 'b',
+          name: 'B',
+          role: 'other',
+          form: 'smooth',
+          pos: { x: 300, y: 0 },
+        },
+        { id: 'c', name: 'Cough', role: 'other', pos: { x: 300, y: 300 } },
+      ],
+      edges: [
+        {
+          id: 'e1',
+          source: 'a',
+          target: 'b',
+          sign: 'positive',
+          strength: 'large',
+          evidence: [],
+        },
+        { id: 'e2', source: 'b', target: 'c', evidence: [] },
+      ],
+    }
+  }
+
+  it('leaves the PDF unchanged with every display key false', () => {
+    for (const legend of [false, true]) {
+      expect(toPdf(display(), { ...DISPLAY_DEFAULTS, legend })).toEqual(
+        toPdf(display(), { legend }),
+      )
+    }
+  })
+
+  it('strokes a dashed circle after [5 3] 0 d and resets the dash after it', () => {
+    const body = stream(
+      latin1(
+        sceneToPdf(
+          scene({
+            circles: [
+              { ...circle(60, 60, 29), dash: [5, 3] },
+              circle(240, 60, 29),
+            ],
+          }),
+        ),
+      ),
+    )
+    const on = body.indexOf('[5 3] 0 d')
+    expect(on).toBeGreaterThan(-1)
+    const off = body.indexOf('[] 0 d', on)
+    expect(off).toBeGreaterThan(on)
+    expect(body.slice(on, off)).toContain('89 60 m')
+    expect(body.slice(on, off)).toMatch(/h B\n$/)
+    // The second circle is solid.
+    expect(body.slice(off)).toContain('269 60 m')
+    expect(count(body, /\] 0 d/g)).toBe(2)
+  })
+
+  it('draws a mark’s glyph with m, l and c, round caps and joins, reset after', () => {
+    const body = stream(
+      latin1(
+        sceneToPdf(
+          scene({
+            marks: [
+              {
+                circle: { ...circle(80, 40, 9.5), strokeWidth: 1 },
+                path: {
+                  segments: [
+                    ['M', 75, 45],
+                    ['C', 80, 45, 80, 35, 85, 35],
+                    ['L', 86, 35],
+                  ],
+                  color: '#64748b',
+                  width: 1.5,
+                },
+              },
+              {
+                circle: { ...circle(40, 40, 9.5), strokeWidth: 1 },
+                text: { ...text(40, 44.13, 'C'), size: 11 },
+              },
+            ],
+          }),
+        ),
+      ),
+    )
+    expect(body).toContain(
+      '0.392 0.455 0.545 RG 1.5 w 1 J 1 j\n75 45 m 80 45 80 35 85 35 c 86 35 l S\n0 J 0 j\n',
+    )
+    expect(body).toMatch(/BT \/F1 11 Tf 1 0 0 -1 [\d.]+ 44.13 Tm \(C\) Tj ET/)
+    // After the names, before the legend.
+    expect(body.indexOf('89.5 40 m')).toBeGreaterThan(body.indexOf('(AV) Tj'))
+    expect(body.indexOf('1 J 1 j')).toBeLessThan(body.indexOf('(Exposure) Tj'))
+  })
+
+  it('draws the marks, dashed latent nodes, tones and legend rows of a graph', () => {
+    const body = stream(latin1(toPdf(display(), { ...ALL, legend: true })))
+    // One dashed node, one dashed Latent swatch.
+    expect(count(body, /\[5 3\] 0 d/g)).toBe(1)
+    expect(count(body, /\[2 1.5\] 0 d/g)).toBe(1)
+    expect(count(body, /\[\] 0 d/g)).toBe(2)
+    // Two form marks on the nodes and two in the legend; a letter on A and in the legend.
+    expect(count(body, /1 J 1 j/g)).toBe(4)
+    expect(count(body, /\(C\) Tj/g)).toBe(2)
+    // The positive edge in green at 4.5 px; the unsigned one in the foreground colour.
+    expect(body).toContain('0.082 0.502 0.239 RG 4.5 w')
+    expect(body).toContain('0.059 0.09 0.165 RG 1.5 w')
+    for (const label of [
+      'Positive effect',
+      'No sign',
+      'Large effect',
+      'No strength',
+      'Linear',
+      'Smooth',
+      'Categorical',
+    ]) {
+      expect(body).toContain(`(${label}) Tj`)
+    }
+    // The badges' minus sign is not used here; the + is drawn in the edge's green.
+    expect(body).toMatch(
+      /0.082 0.502 0.239 rg\nBT \/F1 12 Tf [^\n]*\(\+\) Tj ET/,
+    )
   })
 })

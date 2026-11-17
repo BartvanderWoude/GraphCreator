@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="963" height="404" viewBox="0 0 963 404">
+<title>Surgical site infection</title>
+<rect width="963" height="404" fill="#0e1513"/>
+<line x1="118.38" y1="84.37" x2="313.06" y2="136.28" stroke="#4ade80" stroke-width="3"/>
+<path d="M323.69,139.12 L310.55,141.82 L313.64,130.23 Z" fill="#4ade80"/>
+<line x1="72" y1="120" x2="72" y2="174" stroke="#e6eeec" stroke-width="1.5"/>
+<path d="M72,182 L67.5,173 L76.5,173 Z" fill="#e6eeec"/>
+<line x1="118.38" y1="219.63" x2="310.16" y2="168.49" stroke="#e6eeec" stroke-width="4.5"/>
+<path d="M323.69,164.88 L311.13,175.99 L307.26,161.5 Z" fill="#e6eeec"/>
+<line x1="372" y1="284" x2="372" y2="210" stroke="#f87171" stroke-width="1.5"/>
+<path d="M372,202 L376.5,211 L367.5,211 Z" fill="#f87171"/>
+<line x1="108.27" y1="103.44" x2="328.17" y2="294.01" stroke="#e6eeec" stroke-width="1.5"/>
+<path d="M334.22,299.25 L324.47,296.76 L330.36,289.96 Z" fill="#e6eeec"/>
+<line x1="586.12" y1="217.88" x2="427.44" y2="169.06" stroke="#e6eeec" stroke-width="1.5"/>
+<path d="M419.79,166.7 L429.71,165.05 L427.07,173.65 Z" fill="#e6eeec"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="12" font-weight="500" text-anchor="middle">
+<circle cx="221.03" cy="111.74" r="7.5" fill="#0e1513" stroke="#4ade80" stroke-width="1"/>
+<text x="221.03" y="116.24" fill="#4ade80">+</text>
+<circle cx="72" cy="151" r="7.5" fill="#0e1513" stroke="#e6eeec" stroke-width="1"/>
+<text x="72" y="155.5" fill="#e6eeec">±</text>
+<circle cx="221.03" cy="192.26" r="7.5" fill="#0e1513" stroke="#e6eeec" stroke-width="1"/>
+<text x="221.03" y="196.76" fill="#e6eeec">±</text>
+<circle cx="372" cy="243" r="7.5" fill="#0e1513" stroke="#f87171" stroke-width="1"/>
+<text x="372" y="247.5" fill="#f87171">−</text>
+</g>
+<circle cx="72" cy="72" r="47" fill="#15201e" stroke="#8a9aae" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="77.25" fill="#e6eeec">Diabetes</text>
+</g>
+<circle cx="72" cy="232" r="47" fill="#15201e" stroke="#8a9aae" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="72" y="228.5" fill="#e6eeec">Wound</text>
+<text x="72" y="246" fill="#e6eeec">class</text>
+</g>
+<circle cx="372" cy="152" r="47" fill="#1c2740" stroke="#8aaef0" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="157.25" fill="#dce6fb">SSI</text>
+</g>
+<circle cx="372" cy="332" r="47" fill="#1f2429" stroke="#9ca3af" stroke-width="2" stroke-dasharray="5 3"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="372" y="337.25" fill="#e5e7eb">Frailty</text>
+</g>
+<circle cx="632" cy="232" r="47" fill="#15201e" stroke="#8a9aae" stroke-width="2"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="14" font-weight="500" text-anchor="middle">
+<text x="632" y="237.25" fill="#e6eeec">Visits</text>
+</g>
+<circle cx="38.06" cy="38.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="11" font-weight="500" text-anchor="middle">
+<text x="38.06" y="42.18" fill="#8a9aae">C</text>
+</g>
+<circle cx="38.06" cy="198.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="11" font-weight="500" text-anchor="middle">
+<text x="38.06" y="202.18" fill="#8a9aae">C</text>
+</g>
+<circle cx="105.94" cy="198.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 101.77 201.39 L 105.94 201.39 L 105.94 194.73 L 110.11 194.73" fill="none" stroke="#8a9aae" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="338.06" cy="118.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="11" font-weight="500" text-anchor="middle">
+<text x="338.06" y="122.18" fill="#8a9aae">C</text>
+</g>
+<circle cx="405.94" cy="118.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 401.77 122.23 L 410.11 113.89" fill="none" stroke="#8a9aae" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="338.06" cy="298.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="11" font-weight="500" text-anchor="middle">
+<text x="338.06" y="302.18" fill="#8a9aae">N</text>
+</g>
+<circle cx="405.94" cy="298.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 401.77 302.23 C 405.94 302.23 405.94 293.89 410.11 293.89" fill="none" stroke="#8a9aae" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="598.06" cy="198.06" r="9.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="11" font-weight="500" text-anchor="middle">
+<text x="598.06" y="202.18" fill="#8a9aae">D</text>
+</g>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="12" font-weight="400">
+<rect x="696" y="24" width="242.4" height="336" rx="4" fill="#0e1513" stroke="#24332f" stroke-width="1"/>
+<circle cx="716" cy="42" r="4.25" fill="#1c2740" stroke="#8aaef0" stroke-width="1.5"/>
+<text x="736" y="46.5" fill="#e6eeec">Outcome</text>
+<circle cx="716" cy="62" r="4.25" fill="#1f2429" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="2 1.5"/>
+<text x="736" y="66.5" fill="#e6eeec">Latent</text>
+<circle cx="716" cy="82" r="4.25" fill="#15201e" stroke="#8a9aae" stroke-width="1.5"/>
+<text x="736" y="86.5" fill="#e6eeec">Other</text>
+<line x1="704" y1="102" x2="723" y2="102" stroke="#4ade80" stroke-width="1.5"/>
+<path d="M728,102 L722,105 L722,99 Z" fill="#4ade80"/>
+<circle cx="713" cy="102" r="5.9" fill="#0e1513" stroke="#4ade80" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="9.6" font-weight="500" text-anchor="middle">
+<text x="713" y="105.6" fill="#4ade80">+</text>
+</g>
+<text x="736" y="106.5" fill="#e6eeec">Positive effect</text>
+<line x1="704" y1="122" x2="723" y2="122" stroke="#f87171" stroke-width="1.5"/>
+<path d="M728,122 L722,125 L722,119 Z" fill="#f87171"/>
+<circle cx="713" cy="122" r="5.9" fill="#0e1513" stroke="#f87171" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="9.6" font-weight="500" text-anchor="middle">
+<text x="713" y="125.6" fill="#f87171">−</text>
+</g>
+<text x="736" y="126.5" fill="#e6eeec">Negative effect</text>
+<line x1="704" y1="142" x2="723" y2="142" stroke="#e6eeec" stroke-width="1.5"/>
+<path d="M728,142 L722,145 L722,139 Z" fill="#e6eeec"/>
+<circle cx="713" cy="142" r="5.9" fill="#0e1513" stroke="#e6eeec" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="9.6" font-weight="500" text-anchor="middle">
+<text x="713" y="145.6" fill="#e6eeec">±</text>
+</g>
+<text x="736" y="146.5" fill="#e6eeec">Mixed effects</text>
+<line x1="704" y1="162" x2="723" y2="162" stroke="#e6eeec" stroke-width="1.5"/>
+<path d="M728,162 L722,165 L722,159 Z" fill="#e6eeec"/>
+<text x="736" y="166.5" fill="#e6eeec">No sign</text>
+<line x1="704" y1="182" x2="723" y2="182" stroke="#8a9aae" stroke-width="1.5"/>
+<path d="M728,182 L722,185 L722,179 Z" fill="#8a9aae"/>
+<text x="736" y="186.5" fill="#e6eeec">Small effect or No strength</text>
+<line x1="704" y1="202" x2="721" y2="202" stroke="#8a9aae" stroke-width="3"/>
+<path d="M728,202 L720,206 L720,198 Z" fill="#8a9aae"/>
+<text x="736" y="206.5" fill="#e6eeec">Medium effect</text>
+<line x1="704" y1="222" x2="719" y2="222" stroke="#8a9aae" stroke-width="4.5"/>
+<path d="M728,222 L718,227 L718,217 Z" fill="#8a9aae"/>
+<text x="736" y="226.5" fill="#e6eeec">Large effect</text>
+<circle cx="716" cy="242" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 712.67 245.33 L 719.33 238.67" fill="none" stroke="#8a9aae" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="736" y="246.5" fill="#e6eeec">Linear</text>
+<circle cx="716" cy="262" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 712.67 265.33 C 716 265.33 716 258.67 719.33 258.67" fill="none" stroke="#8a9aae" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="736" y="266.5" fill="#e6eeec">Smooth</text>
+<circle cx="716" cy="282" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<path d="M 712.67 284.67 L 716 284.67 L 716 279.33 L 719.33 279.33" fill="none" stroke="#8a9aae" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="736" y="286.5" fill="#e6eeec">Threshold</text>
+<circle cx="716" cy="302" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="8.8" font-weight="500" text-anchor="middle">
+<text x="716" y="305.3" fill="#8a9aae">C</text>
+</g>
+<text x="736" y="306.5" fill="#e6eeec">Categorical</text>
+<circle cx="716" cy="322" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="8.8" font-weight="500" text-anchor="middle">
+<text x="716" y="325.3" fill="#8a9aae">N</text>
+</g>
+<text x="736" y="326.5" fill="#e6eeec">Continuous</text>
+<circle cx="716" cy="342" r="7.5" fill="#0e1513" stroke="#8a9aae" stroke-width="1"/>
+<g font-family="'IBM Plex Sans', system-ui, sans-serif" font-size="8.8" font-weight="500" text-anchor="middle">
+<text x="716" y="345.3" fill="#8a9aae">D</text>
+</g>
+<text x="736" y="346.5" fill="#e6eeec">Discrete</text>
+</g>
+</svg>

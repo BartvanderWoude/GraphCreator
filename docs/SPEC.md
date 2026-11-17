@@ -1527,6 +1527,16 @@ Scene.marks: SceneMark[]                // drawn after the circles and names, be
 - **SVG:** a dashed circle gets `stroke-dasharray="5 3"`. Marks follow the names: per mark a `<circle>`, then a `<path d=… fill="none" stroke-linecap="round" stroke-linejoin="round">` or the letter in a `<g>` with its font attributes.
 - **PDF:** a dashed circle is stroked after `[5 3] 0 d` and followed by `[] 0 d`. A mark's path is `m`/`l`/`c` with `S`, round caps and joins (`1 J 1 j`, reset after). Letters are Helvetica, as all text.
 - **TikZ:** colours `gcPositive`, `gcNegative` and `gcNeutral` (the light `foreground`) are defined only when used. An edge's `\draw` gets `draw=gc<Tone>` and `line width=<0.75 × width>pt` and a `Stealth[length=<0.75 × arrowSize>pt,width=<0.75 × arrowSize>pt]` head. A badge uses its edge's colour. A dashed latent node adds `dashed`. A mark is `\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (…) {};` followed by a `\draw[gcEdge, line width=1.125pt, line cap=round, line join=round]` path (`--` and `.. controls … and … ..`) or, for a letter, `font=\sffamily\scriptsize, text=gcEdge` and the letter in the node. Legend rows are drawn the same way at the scene's positions.
+- **Details fixed in phase 70:**
+  - `SceneLegend` gains `rows: SceneLegendRow[]` (`{ label; line?: SceneEdge; badge?: SceneBadge; mark?: SceneMark; text: SceneText }`) after the role `items`, empty without display rows. `imageScene.ts` drops its own `EDGE_WIDTH` and arrowhead constants and uses `EDGE_WIDTH` and `arrowSize` from `display.ts`.
+  - "In use" counts the drawn edges (an edge between coincident centres is skipped). The Signs and Sign colors group, like Strength, needs at least one drawn edge with a `signBadge`, so Sign colors on an unsigned graph adds no row.
+  - Merging compares the swatch's look (line colour, width and badge glyph, or the mark's glyph or letter); a merged row takes its first member's place.
+  - Line sample: from the column's left edge to its right edge (24 px) at the row's middle, for sign and strength rows alike, with a closed head two thirds of `arrowSize(width)` (6, 8 and 10 px), the line running 1 px into it.
+  - Legend badge and marks are scaled by 16/20 (computed as `v × 16 / 20`, so numbers stay short), keeping their 1 px circle line: the badge has radius 5.9 and a 9.6 px glyph and sits on the line's middle before the head (9 px from the column's left edge); a mark has radius 7.5, an 8 px glyph square stroked 1.2 px, or an 8.8 px letter, centred in the column.
+  - The label width counts characters by code point, role labels included. Box widths are not rounded; a legend beside the graph widens the image to `ceil(width + LEGEND.beside + box width)`.
+  - SVG: a mark's `<path>` also carries `stroke` and `stroke-width`; each badge and mark letter in the legend sits in its own font `<g>` inside the legend's `<g>`.
+  - PDF: `[5 3] 0 d` follows the circle's colour line and `[] 0 d` follows its `h B`; a mark's path is `<RG> <w> w 1 J 1 j`, the path and `S`, then `0 J 0 j`.
+  - TikZ: lengths in pt have up to three decimals (`1.125pt`). The tone colours follow `gcEdge` in the order positive, negative, neutral; `gcEdge` is also defined when only marks or legend rows use it. `dashed` follows the node's `line width=1.5pt`; a dashed Latent swatch has `dash pattern=on 1.5pt off 1.125pt`. A legend line sample is `\draw[-{Stealth[…]}, line width=…, draw=…] (start) -- (tip);` without `shorten`; legend badges and letters keep `\scriptsize`, with `minimum size` and line widths from the scene (glyph lines `0.75 ×` the scene width). Order: nodes, edges, badges, marks, legend.
 
 #### Copy (5.7.8 addition, phase 67)
 
@@ -3636,7 +3646,7 @@ Phases: 66. Parallel: single phase. Check after the wave: all checks.
 
 Phases: 67. Parallel: single phase. Check after the wave: all checks. The app looks and works as before: nothing reads the new state yet.
 
-#### Phase 67: Display contracts [x]
+#### Phase 67: Display contracts [x] (bc64f88)
 
 - **Goal:** the types, helpers, colours, store state and texts of 4.18, so the panel, the canvas and the images can be built in parallel.
 - **Depends on:** phase 66.
@@ -3679,7 +3689,7 @@ Phases: 68, 69, 70. Parallel: all three, one sub agent each; their files are dis
 - **Done when:** all checks pass, and in the browser each option changes the canvas in both themes while path marking, hover and selection still win.
 - **Out of scope:** the side panel, the Export dialog and the images.
 
-#### Phase 70: Images with display options [ ]
+#### Phase 70: Images with display options [x]
 
 - **Goal:** SVG, PNG, PDF and TikZ draw the display options and the legend rows (4.18 "Images").
 - **Depends on:** phase 67.

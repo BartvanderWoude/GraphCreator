@@ -11,6 +11,8 @@ import {
   type SceneCircle,
   type SceneEdge,
   type SceneLegend,
+  type SceneMark,
+  type ScenePath,
   type SceneText,
 } from '@/lib/imageScene'
 import type { Graph } from '@/model/graph'
@@ -130,19 +132,53 @@ function edgeOps(edge: SceneEdge): string[] {
   ]
 }
 
+/** A circle, filled and stroked; a dashed one sets the dash pattern and resets it after. */
 function circleOps(c: SceneCircle): string[] {
   const { cx, cy, r } = c
   const k = r * KAPPA
   const stroked = c.strokeWidth > 0
-  return [
+  const dashed = stroked && c.dash !== undefined
+  const ops = [
     `${rgb(c.fill)} rg ${rgb(c.stroke)} RG ${num(Math.max(c.strokeWidth, 0))} w`,
+  ]
+  if (dashed) ops.push(`[${nums(...c.dash!)}] 0 d`)
+  ops.push(
     `${nums(cx + r, cy)} m`,
     `${nums(cx + r, cy + k, cx + k, cy + r, cx, cy + r)} c`,
     `${nums(cx - k, cy + r, cx - r, cy + k, cx - r, cy)} c`,
     `${nums(cx - r, cy - k, cx - k, cy - r, cx, cy - r)} c`,
     `${nums(cx + k, cy - r, cx + r, cy - k, cx + r, cy)} c`,
     stroked ? 'h B' : 'h f',
+  )
+  if (dashed) ops.push('[] 0 d')
+  return ops
+}
+
+/** A stroked, unfilled path with round caps and joins, reset to the defaults after. */
+function pathOps(p: ScenePath): string[] {
+  const parts = p.segments.map((s) => {
+    switch (s[0]) {
+      case 'M':
+        return `${nums(s[1], s[2])} m`
+      case 'L':
+        return `${nums(s[1], s[2])} l`
+      case 'C':
+        return `${nums(s[1], s[2], s[3], s[4], s[5], s[6])} c`
+    }
+  })
+  return [
+    `${rgb(p.color)} RG ${num(p.width)} w 1 J 1 j`,
+    `${parts.join(' ')} S`,
+    '0 J 0 j',
   ]
+}
+
+/** A rim mark (4.18): its circle, then its glyph or its letter. */
+function markOps(mark: SceneMark): string[] {
+  const ops = circleOps(mark.circle)
+  if (mark.path) ops.push(...pathOps(mark.path))
+  if (mark.text) ops.push(...textOps(mark.text))
+  return ops
 }
 
 function textOps(t: SceneText): string[] {
@@ -173,6 +209,12 @@ function legendOps(legend: SceneLegend): string[] {
   ]
   for (const item of legend.items)
     ops.push(...circleOps(item.swatch), ...textOps(item.text))
+  for (const row of legend.rows) {
+    if (row.line) ops.push(...edgeOps(row.line))
+    if (row.badge) ops.push(...badgeOps(row.badge))
+    if (row.mark) ops.push(...markOps(row.mark))
+    ops.push(...textOps(row.text))
+  }
   return ops
 }
 
@@ -186,8 +228,8 @@ function badgeOps(badge: SceneBadge): string[] {
 }
 
 /**
- * The page's content stream: the flip, the background, edges, sign badges, circles, names and
- * legend.
+ * The page's content stream: the flip, the background, edges, sign badges, circles, names, rim
+ * marks and legend.
  */
 function contentStream(scene: Scene): string {
   const ops = [
@@ -199,6 +241,7 @@ function contentStream(scene: Scene): string {
   for (const badge of scene.badges) ops.push(...badgeOps(badge))
   for (const circle of scene.circles) ops.push(...circleOps(circle))
   for (const text of scene.texts) ops.push(...textOps(text))
+  for (const mark of scene.marks) ops.push(...markOps(mark))
   if (scene.legend) ops.push(...legendOps(scene.legend))
   return ops.join('\n') + '\n'
 }

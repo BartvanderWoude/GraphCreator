@@ -1,0 +1,43 @@
+% GraphCreator export: Surgical site infection
+% Needs \usepackage{tikz} and \usetikzlibrary{arrows.meta}
+\definecolor{gcOutcomeFill}{HTML}{E2EAF8}
+\definecolor{gcOutcomeLine}{HTML}{5B83CF}
+\definecolor{gcOutcomeText}{HTML}{23407A}
+\definecolor{gcLatentFill}{HTML}{F3F4F6}
+\definecolor{gcLatentLine}{HTML}{80868F}
+\definecolor{gcLatentText}{HTML}{374151}
+\definecolor{gcOtherFill}{HTML}{FFFFFF}
+\definecolor{gcOtherLine}{HTML}{7D8A9C}
+\definecolor{gcOtherText}{HTML}{0F172A}
+\definecolor{gcEdge}{HTML}{64748B}
+\definecolor{gcPositive}{HTML}{15803D}
+\definecolor{gcNegative}{HTML}{B91C1C}
+\definecolor{gcNeutral}{HTML}{0F172A}
+\begin{tikzpicture}[x=0.75pt, y=-0.75pt]
+\node[circle, draw=gcOtherLine, fill=gcOtherFill, text=gcOtherText, line width=1.5pt, minimum size=72pt, inner sep=0pt, align=center, font=\sffamily\fontsize{10.5}{13.13}\selectfont] (v1) at (48,48) {Diabetes};
+\node[circle, draw=gcOtherLine, fill=gcOtherFill, text=gcOtherText, line width=1.5pt, minimum size=72pt, inner sep=0pt, align=center, font=\sffamily\fontsize{10.5}{13.13}\selectfont] (v2) at (48,208) {Wound\\class};
+\node[circle, draw=gcOutcomeLine, fill=gcOutcomeFill, text=gcOutcomeText, line width=1.5pt, minimum size=72pt, inner sep=0pt, align=center, font=\sffamily\fontsize{10.5}{13.13}\selectfont] (v3) at (348,128) {SSI};
+\node[circle, draw=gcLatentLine, fill=gcLatentFill, text=gcLatentText, line width=1.5pt, dashed, minimum size=72pt, inner sep=0pt, align=center, font=\sffamily\fontsize{10.5}{13.13}\selectfont] (v4) at (348,308) {Frailty};
+\node[circle, draw=gcOtherLine, fill=gcOtherFill, text=gcOtherText, line width=1.5pt, minimum size=72pt, inner sep=0pt, align=center, font=\sffamily\fontsize{10.5}{13.13}\selectfont] (v5) at (608,208) {Visits};
+\draw[-{Stealth[length=9pt,width=9pt]}, line width=2.25pt, draw=gcPositive, shorten >=1.5pt] (v1) -- (v3);
+\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcNeutral, shorten >=1.5pt] (v1) -- (v2);
+\draw[-{Stealth[length=11.25pt,width=11.25pt]}, line width=3.375pt, draw=gcNeutral, shorten >=1.5pt] (v2) -- (v3);
+\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcNegative, shorten >=1.5pt] (v4) -- (v3);
+\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcNeutral, shorten >=1.5pt] (v1) -- (v4);
+\draw[-{Stealth[length=6.75pt,width=6.75pt]}, line width=1.125pt, draw=gcNeutral, shorten >=1.5pt] (v5) -- (v3);
+\node[circle, draw=gcPositive, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcPositive] at (197.03,87.74) {$+$};
+\node[circle, draw=gcNeutral, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcNeutral] at (48,127) {$\pm$};
+\node[circle, draw=gcNeutral, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcNeutral] at (197.03,168.26) {$\pm$};
+\node[circle, draw=gcNegative, fill=white, line width=0.75pt, minimum size=12pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcNegative] at (348,219) {$-$};
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (14.06,14.06) {C};
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (14.06,174.06) {C};
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (81.94,174.06) {};
+\draw[gcEdge, line width=1.125pt, line cap=round, line join=round] (77.77,177.39) -- (81.94,177.39) -- (81.94,170.73) -- (86.11,170.73);
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (314.06,94.06) {C};
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (381.94,94.06) {};
+\draw[gcEdge, line width=1.125pt, line cap=round, line join=round] (377.77,98.23) -- (386.11,89.89);
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (314.06,274.06) {N};
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt] at (381.94,274.06) {};
+\draw[gcEdge, line width=1.125pt, line cap=round, line join=round] (377.77,278.23) .. controls (381.94,278.23) and (381.94,269.89) .. (386.11,269.89);
+\node[circle, draw=gcEdge, fill=white, line width=0.75pt, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize, text=gcEdge] at (574.06,174.06) {D};
+\end{tikzpicture}
